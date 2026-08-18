@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "favoriler",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "olusturmaTarihi", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

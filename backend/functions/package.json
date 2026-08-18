@@ -1,0 +1,17 @@
+{
+  "name": "izban-nereye-gider-fonksiyonlar",
+  "description": "İZBAN Nereye Gider? — Cloud Functions API",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "scripts": {
+    "yerel": "firebase emulators:start --only functions,firestore,hosting",
+    "kayitlar": "firebase functions:log",
+    "yayinla": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0"
+  }
+}

@@ -1,0 +1,35 @@
+# Bağımlılıklar
+node_modules/
+.pub-cache/
+.dart_tool/
+
+# Ortam ve gizli anahtarlar
+.env
+.env.*
+*.local
+backend/.firebaserc
+frontend/js/firebase-ayar.js
+mobile/lib/firebase_secenekleri.dart
+google-services.json
+GoogleService-Info.plist
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Flutter / Dart
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/ios/Pods/
+mobile/android/.gradle/
+mobile/android/local.properties
+*.iml
+
+# İşletim sistemi / editör
+.DS_Store
+.idea/
+.vscode/
+Thumbs.db

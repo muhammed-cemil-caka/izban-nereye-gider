@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>İZBAN Nereye Gider?</title>
+  <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
+  <link rel="stylesheet" href="css/stil.css">
+</head>
+<body>
+  <header class="ust-bant">
+    <div class="kapsayici ust-bant-ic">
+      <div class="marka">
+        <span class="marka-simge" aria-hidden="true">İZ</span>
+        <div>
+          <h1>İZBAN Nereye Gider?</h1>
+          <p class="marka-alt">Aliağa – Selçuk banliyö hattı yolculuk asistanı</p>
+        </div>
+      </div>
+      <button id="temaDugmesi" class="tema-dugmesi" type="button" aria-label="Temayı değiştir">
+        <span aria-hidden="true">◐</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="kapsayici">
+    <section class="kart secim-karti" aria-labelledby="secimBaslik">
+      <h2 id="secimBaslik" class="gizli">Yolculuk seçimi</h2>
+
+      <div class="secim-satiri">
+        <div class="alan">
+          <label for="binisSecim">Nereden biniyorsun?</label>
+          <select id="binisSecim"></select>
+        </div>
+
+        <button id="tersCevirDugmesi" class="ters-dugmesi" type="button" aria-label="Biniş ve iniş duraklarını yer değiştir" title="Yer değiştir">
+          <span aria-hidden="true">⇅</span>
+        </button>
+
+        <div class="alan">
+          <label for="inisSecim">Nereye gideceksin?</label>
+          <select id="inisSecim"></select>
+        </div>
+      </div>
+
+      <p id="hataMesaji" class="hata" role="alert" hidden></p>
+    </section>
+
+    <section id="sonucBolumu" class="sonuc" aria-live="polite">
+      <div class="kart ozet-karti">
+        <div class="yon-rozeti" id="yonRozeti">—</div>
+        <div class="ozet-kutulari">
+          <div class="ozet-kutu">
+            <span class="ozet-deger" id="sureDegeri">—</span>
+            <span class="ozet-etiket">tahmini süre</span>
+          </div>
+          <div class="ozet-kutu">
+            <span class="ozet-deger" id="durakDegeri">—</span>
+            <span class="ozet-etiket">durak</span>
+          </div>
+          <div class="ozet-kutu">
+            <span class="ozet-deger" id="aktarmaDegeri">—</span>
+            <span class="ozet-etiket">aktarma noktası</span>
+          </div>
+        </div>
+        <p class="ozet-cumle" id="ozetCumle"></p>
+      </div>
+
+      <div class="kart">
+        <h2 class="kart-baslik">Güzergâh</h2>
+        <ol class="hat-semasi" id="hatSemasi"></ol>
+      </div>
+
+      <div class="kart" id="aktarmaKarti" hidden>
+        <h2 class="kart-baslik">Yol üstündeki aktarmalar</h2>
+        <ul class="aktarma-listesi" id="aktarmaListesi"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="alt-bant">
+    <div class="kapsayici">
+      <p><strong>Uyarı:</strong> Durak sırası ve süreler tahminidir, resmî kaynak değildir.
+         Güncel tarife için <a href="https://www.izban.com.tr" target="_blank" rel="noopener noreferrer">izban.com.tr</a> adresine bakın.</p>
+      <p class="surum">Veri sürümü: <span id="veriSurumu">—</span></p>
+    </div>
+  </footer>
+
+  <script src="js/duraklar.js"></script>
+  <script src="js/hesap.js"></script>
+  <script src="js/uygulama.js"></script>
+</body>
+</html>
