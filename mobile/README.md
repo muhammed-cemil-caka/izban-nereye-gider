@@ -37,26 +37,28 @@ dart analyze
 | `lib/main.dart` | Uygulama girişi, tema |
 | `lib/modeller/durak.dart` | Durak modeli, JSON ayrıştırma |
 | `lib/modeller/yolculuk.dart` | Yolculuk hesabı (saf mantık) |
-| `lib/servisler/durak_servisi.dart` | Veri kaynağı |
+| `lib/servisler/durak_servisi.dart` | Veri kaynağı: önce Firestore, olmazsa yerel |
+| `lib/servisler/firestore_veri.dart` | Firestore REST okuma katmanı |
+| `lib/firebase_ayari.dart` | Proje kimliği ve API anahtarı (gizli değil) |
 | `lib/ekranlar/ana_ekran.dart` | Arayüz |
 | `assets/duraklar.json` | **Otomatik üretilir** — `node araclar/veri-dagit.js` |
 
-## Veriyi Firestore'a taşımak
+## Veri kaynağı
 
-`DurakServisi.duraklariGetir` gövdesini değiştirmek yeterli; arayüz tarafında hiçbir şey
-değişmez. `cloud_firestore` paketini ekleyip:
+Bağlı proje: `izban-nereye-gider`. `DurakServisi.duraklariGetir` önce Firestore'u
+dener, başarısız olursa `assets/duraklar.json` dosyasına düşer. Böylece uygulama
+ağ yokken de açılır, veri güncellendiğinde ise yeni sürüm mağaza güncellemesi
+beklemeden gelir. Ekranın altındaki "Kaynak" satırı hangisinin kullanıldığını yazar.
 
-```dart
-final anlik = await FirebaseFirestore.instance
-    .collection('duraklar')
-    .orderBy('sira')
-    .get();
-return anlik.docs.map((b) => Durak.jsondan(b.data())).toList();
-```
+Firestore'a `cloud_firestore` paketi yerine **REST API** ile erişiliyor
+(`lib/servisler/firestore_veri.dart`, tek bağımlılık `http`). Nedeni: uygulamanın
+`google-services.json` / `GoogleService-Info.plist` olmadan da çalışması. Okuma
+yetkisi kurallarda herkese açık olduğu için kimlik doğrulaması gerekmiyor.
 
-Bunun için önce `flutterfire configure` ile `firebase_options.dart` üretin ve
-`main()` içinde `Firebase.initializeApp()` çağırın. Üretilen dosya ve
-`google-services.json` / `GoogleService-Info.plist` `.gitignore` içindedir.
+Yazma işlemleri veya kullanıcıya özel veri (favoriler) gerekirse gerçek SDK'ya
+geçmek gerekir: `flutterfire configure` ile `firebase_options.dart` üretin,
+`main()` içinde `Firebase.initializeApp()` çağırın. Üretilen dosya ve platform
+yapılandırma dosyaları `.gitignore` içindedir.
 
 ## Test edilebilirlik
 

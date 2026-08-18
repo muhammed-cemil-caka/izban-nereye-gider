@@ -6,6 +6,10 @@
   var INIS_ANAHTAR = 'izban.inis';
   var TEMA_ANAHTAR = 'izban.tema';
 
+  // Gösterimde kullanılan veri. Sayfa yerel kopyayla anında açılır; Firestore
+  // yanıtı gelince bununla değiştirilip arayüz yeniden çizilir.
+  var aktifDuraklar = DURAKLAR;
+
   var oge = {
     binis: document.getElementById('binisSecim'),
     inis: document.getElementById('inisSecim'),
@@ -21,6 +25,7 @@
     aktarmaKarti: document.getElementById('aktarmaKarti'),
     aktarmaListesi: document.getElementById('aktarmaListesi'),
     veriSurumu: document.getElementById('veriSurumu'),
+    veriKaynagi: document.getElementById('veriKaynagi'),
     tema: document.getElementById('temaDugmesi')
   };
 
@@ -49,8 +54,9 @@
   /* ---------- Durak listeleri ---------- */
 
   function secimleriDoldur() {
-    DURAKLAR.forEach(function (durak) {
-      [oge.binis, oge.inis].forEach(function (secim) {
+    [oge.binis, oge.inis].forEach(function (secim) {
+      secim.textContent = '';
+      aktifDuraklar.forEach(function (durak) {
         var secenek = document.createElement('option');
         secenek.value = durak.kod;
         secenek.textContent = durak.ad;
@@ -66,7 +72,7 @@
       kayitliInis = localStorage.getItem(INIS_ANAHTAR);
     } catch (e) { /* özel mod */ }
 
-    var kodlar = DURAKLAR.map(function (d) { return d.kod; });
+    var kodlar = aktifDuraklar.map(function (d) { return d.kod; });
     oge.binis.value = kodlar.indexOf(kayitliBinis) !== -1 ? kayitliBinis : 'halkapinar';
     oge.inis.value = kodlar.indexOf(kayitliInis) !== -1 ? kayitliInis : 'havalimani';
 
@@ -169,7 +175,7 @@
   /* ---------- Akış ---------- */
 
   function guncelle() {
-    var sonuc = yolculukHesapla(DURAKLAR, oge.binis.value, oge.inis.value);
+    var sonuc = yolculukHesapla(aktifDuraklar, oge.binis.value, oge.inis.value);
     if (!sonuc.gecerli) {
       hataGoster(sonuc.hata);
       return;
@@ -194,6 +200,44 @@
     });
 
     guncelle();
+    firestoreDanTazele();
+  }
+
+  /**
+   * Firestore'dan güncel veriyi çeker. Başarılı olursa arayüzü yeni veriyle
+   * yeniden çizer; başarısız olursa sayfa yerel kopyayla çalışmaya devam eder.
+   */
+  function firestoreDanTazele() {
+    if (typeof firestoreDenDuraklariGetir !== 'function') return;
+
+    firestoreDenDuraklariGetir()
+      .then(function (duraklar) {
+        var oncekiBinis = oge.binis.value;
+        var oncekiInis = oge.inis.value;
+
+        aktifDuraklar = duraklar;
+        secimleriDoldur();
+
+        // Seçimler yeni listede de varsa korunur.
+        var kodlar = duraklar.map(function (d) { return d.kod; });
+        oge.binis.value = kodlar.indexOf(oncekiBinis) !== -1 ? oncekiBinis : kodlar[0];
+        oge.inis.value = kodlar.indexOf(oncekiInis) !== -1 ? oncekiInis : kodlar[kodlar.length - 1];
+
+        oge.veriKaynagi.textContent = 'Firebase';
+        guncelle();
+
+        return firestoreDenHatBilgisiGetir();
+      })
+      .then(function (hat) {
+        if (hat && hat.surum) {
+          oge.veriSurumu.textContent = hat.surum + ' (' + (hat.guncellemeTarihi || '—') + ')';
+        }
+      })
+      .catch(function (sorun) {
+        // Ağ yoksa, kurallar engelliyorsa veya koleksiyon boşsa buraya düşer.
+        console.warn('Firestore okunamadı, yerel kopya kullanılıyor:', sorun.message);
+        oge.veriKaynagi.textContent = 'yerel kopya';
+      });
   }
 
   baslat();

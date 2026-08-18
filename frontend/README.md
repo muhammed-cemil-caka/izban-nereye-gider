@@ -19,23 +19,29 @@ python3 -m http.server 5173 --directory frontend
 | `js/duraklar.js` | **Otomatik üretilir** — `node araclar/veri-dagit.js` |
 | `js/hesap.js` | Yolculuk hesabı; saf fonksiyonlar, DOM'a dokunmaz |
 | `js/uygulama.js` | Arayüz: seçimler, çizim, localStorage |
-| `js/firebase-ayar.ornek.js` | Firebase ayar şablonu |
+| `js/firebase-ayar.js` | Firebase proje bilgileri (gizli değil, bilerek depoda) |
+| `js/firebase-veri.js` | Firestore REST okuma katmanı |
+| `js/firebase-ayar.ornek.js` | Başka bir projeye bağlamak isteyenler için şablon |
 
 Betikler klasik `<script>` olarak yüklenir (ES modülü değil) — böylece sayfa `file://`
 üzerinden, sunucu olmadan da açılabilir.
 
 ## Firebase bağlantısı
 
-Site şu an `js/duraklar.js` içindeki yerel veriyle çalışır; Firebase'e ihtiyaç duymaz.
-Canlı veriye geçmek için:
+Bağlı proje: `izban-nereye-gider`. Sayfa açılırken şu sırayı izler:
 
-```bash
-cp frontend/js/firebase-ayar.ornek.js frontend/js/firebase-ayar.js
-```
+1. `js/duraklar.js` içindeki yerel kopyayla **anında** çizer — ağ beklenmez.
+2. Firestore REST'ten (`js/firebase-veri.js`) güncel veriyi çeker.
+3. Geldiğinde listeyi ve güzergâhı tazeler, alt bilgideki "Kaynak" satırını
+   `Firebase` yapar. Seçili duraklar korunur.
+4. İstek başarısız olursa yerel kopya kalır, konsola uyarı düşer.
 
-Kendi proje bilgilerinizi yazın (`firebase-ayar.js` `.gitignore` içindedir), `index.html`
-içine script etiketini ekleyin ve `uygulama.js` içinde `DURAKLAR` yerine
-`${API_ADRESI}/duraklar` çağrısını kullanın.
+`js/firebase-ayar.js` içindeki değerler **gizli değildir**; web istemcisine zaten açıkta
+gider ve yalnızca projeyi tanımlar. Güvenlik sınırı `backend/firestore.rules` dosyasıdır:
+`duraklar` ve `hat` herkese okunur, yazma tamamen kapalıdır.
+
+Firebase SDK'sı yerine düz `fetch` ile REST kullanılıyor — böylece paket yöneticisi,
+derleme adımı ve CDN bağımlılığı olmadan çalışıyor.
 
 ## Tema
 

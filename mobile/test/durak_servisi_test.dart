@@ -7,7 +7,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('assets/duraklar.json okunuyor ve sıralı', () async {
-    final duraklar = await DurakServisi().duraklariGetir();
+    final duraklar = await DurakServisi(firestoreKullan: false).duraklariGetir();
 
     expect(duraklar.length, greaterThan(20));
     expect(duraklar.first.ad, 'Aliağa');

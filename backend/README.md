@@ -2,6 +2,34 @@
 
 Firestore (veri) + Cloud Functions (API) + Hosting (frontend yayını).
 
+## Bağlı proje
+
+`izban-nereye-gider` — `.firebaserc` ile bağlı (bu dosya `.gitignore` içinde, depoya
+gitmez; şablonu `.firebaserc.ornek`).
+
+Şu an yayında olanlar: Firestore veritabanı (`europe-west1`), güvenlik kuralları ve
+`duraklar` + `hat/bilgi` verisi. Cloud Functions **yayınlanmadı** — v2 fonksiyonlar
+Blaze planı gerektiriyor. Site ve mobil uygulama Firestore'u REST üzerinden doğrudan
+okuduğu için fonksiyonlar olmadan da çalışıyor; `functions/` kodu Blaze'e geçildiğinde
+`firebase deploy --only functions` ile devreye alınabilir.
+
+## İlk veri yüklemesi hakkında
+
+Depodaki kurallar `duraklar` koleksiyonuna istemci yazmasını kapatıyor, dolayısıyla
+tohumlama yönetici kimliği ister. İlk yükleme, kurallar kısa süreliğine yazmaya açılıp
+veri yazıldıktan hemen sonra sıkı kurallar geri yayınlanarak yapıldı; şu an yazma
+tekrar kapalı (doğrulandı: REST yazma denemesi 403 dönüyor).
+
+Bundan sonraki güncellemeler için doğru yol servis hesabı anahtarıdır:
+
+Firebase Konsolu → Proje ayarları → Servis hesapları → "Yeni özel anahtar oluştur"
+
+```bash
+cd backend/functions && GOOGLE_APPLICATION_CREDENTIALS=/yol/anahtar.json node araclar/veri-yukle.js
+```
+
+Anahtar dosyasını depoya koymayın.
+
 ## Gereksinimler
 
 - Node.js 22 (Cloud Functions çalışma zamanı)

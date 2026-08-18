@@ -12,6 +12,27 @@ Tek kod deposunda üç parça:
 | [`backend/`](backend/) | API ve veri | Firebase (Firestore + Cloud Functions + Hosting) |
 | [`mobile/`](mobile/) | Mobil uygulama | Flutter (iOS + Android) |
 
+## Firebase
+
+| | |
+| --- | --- |
+| Proje kimliği | `izban-nereye-gider` |
+| Konsol | https://console.firebase.google.com/project/izban-nereye-gider |
+| Firestore konumu | `europe-west1` |
+| Web uygulaması | `IZBAN Web` |
+
+Firestore'da `duraklar` (28 belge) ve `hat/bilgi` dolu, güvenlik kuralları yayında:
+herkes okur, istemci yazamaz.
+
+**Veri akışı:** hem site hem mobil uygulama açılışta yerel kopyayla anında çizer,
+ardından Firestore'dan güncel veriyi çekip arayüzü tazeler. Firestore'a ulaşılamazsa
+(ağ yok, kural değişikliği, boş koleksiyon) yerel kopyayla çalışmaya devam eder —
+uygulama hiçbir durumda boş ekran göstermez. Arayüzün altındaki "Kaynak" satırı o an
+hangisinin kullanıldığını söyler.
+
+Firestore'a Firebase JS/Flutter SDK'sı yerine **REST API** ile erişiliyor; böylece
+web tarafında derleme adımı, mobilde de platform yapılandırma dosyası gerekmiyor.
+
 ## Veri tek yerden yönetilir
 
 Durak listesi, ilçeler, aktarmalar ve süreler yalnızca şu dosyada tutulur:
@@ -28,6 +49,12 @@ node araclar/veri-dagit.js
 
 Betik `frontend/js/duraklar.js` ve `mobile/assets/duraklar.json` dosyalarını yeniden yazar.
 Bu iki dosya otomatik üretilir — elle düzenlemeyin.
+
+Değişikliği Firestore'a da taşımak için (yönetici kimliği gerekir):
+
+```bash
+cd backend/functions && GOOGLE_APPLICATION_CREDENTIALS=/yol/anahtar.json node araclar/veri-yukle.js
+```
 
 > **Uyarı:** Depodaki durak sırası, ilçe/aktarma bilgileri ve süreler **tahminidir** ve
 > resmî kaynak değildir. Yayına almadan önce [izban.com.tr](https://www.izban.com.tr)

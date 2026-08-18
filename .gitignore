@@ -4,11 +4,13 @@ node_modules/
 .dart_tool/
 
 # Ortam ve gizli anahtarlar
+# Not: frontend/js/firebase-ayar.js ve mobile/lib/firebase_ayari.dart bilerek
+# depodadır — web istemci yapılandırması gizli değildir, güvenlik sınırı
+# backend/firestore.rules dosyasıdır.
 .env
 .env.*
 *.local
 backend/.firebaserc
-frontend/js/firebase-ayar.js
 mobile/lib/firebase_secenekleri.dart
 google-services.json
 GoogleService-Info.plist
