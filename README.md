@@ -33,6 +33,26 @@ hangisinin kullanıldığını söyler.
 Firestore'a Firebase JS/Flutter SDK'sı yerine **REST API** ile erişiliyor; böylece
 web tarafında derleme adımı, mobilde de platform yapılandırma dosyası gerekmiyor.
 
+### Okuma bütçesi
+
+Firestore her **belge** için ayrı okuma sayar. 28 duraklık listeyi her ziyarette
+çekmek ziyaret başına 28 okuma demektir — Spark planının günlük ~50.000 okumalık
+ücretsiz kotası bu hızda ~1.800 ziyarette biter. Durak verisi neredeyse hiç
+değişmediği için akış buna göre kuruldu:
+
+| Durum | Firestore okuması |
+| --- | --- |
+| Tarayıcı önbelleği taze (6 saat) | **0** |
+| Önbellek eski, sürüm aynı | **1** (`hat/bilgi`) |
+| Sürüm değişmiş | 1 + 28 (tarayıcı başına bir kez) |
+
+Yani sürekli maliyet ziyaret başına 28 okumadan **~0'a** iniyor; tam liste ancak veri
+gerçekten güncellendiğinde indiriliyor. Aynı mantık mobilde de var (orada önbellek
+uygulama oturumu boyunca bellekte, açılış başına 1 okuma).
+
+Veriyi güncellediğinizde `duraklar.json` içindeki `surum` alanını da artırın —
+istemciler yeni veriyi bu alandan anlıyor.
+
 ## Veri tek yerden yönetilir
 
 Durak listesi, ilçeler, aktarmalar ve süreler yalnızca şu dosyada tutulur:

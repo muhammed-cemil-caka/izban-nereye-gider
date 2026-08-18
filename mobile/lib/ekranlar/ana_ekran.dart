@@ -80,8 +80,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
               const SizedBox(height: 24),
               Text(
                 'Durak sırası ve süreler tahminidir, resmî kaynak değildir.\n'
-                'Veri sürümü: ${_servis.surum} · Kaynak: '
-                '${_servis.kaynak == VeriKaynagi.firebase ? 'Firebase' : 'yerel kopya'}',
+                'Veri sürümü: ${_servis.surum} · Kaynak: ${_servis.kaynakEtiketi}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],

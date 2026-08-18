@@ -45,10 +45,18 @@ dart analyze
 
 ## Veri kaynağı
 
-Bağlı proje: `izban-nereye-gider`. `DurakServisi.duraklariGetir` önce Firestore'u
-dener, başarısız olursa `assets/duraklar.json` dosyasına düşer. Böylece uygulama
-ağ yokken de açılır, veri güncellendiğinde ise yeni sürüm mağaza güncellemesi
-beklemeden gelir. Ekranın altındaki "Kaynak" satırı hangisinin kullanıldığını yazar.
+Bağlı proje: `izban-nereye-gider`. `DurakServisi.duraklariGetir` şu sırayı izler:
+
+1. `hat/bilgi` belgesini okur (tek belge = tek Firestore okuması).
+2. Sürüm `assets/duraklar.json` ile aynıysa yerel kopyayı kullanır — 28 belgelik
+   liste indirilmez.
+3. Sürüm değişmişse tam listeyi Firestore'dan çeker.
+4. Firebase'e hiç ulaşılamazsa yerel kopyayla devam eder.
+
+Böylece uygulama ağ yokken de açılır, veri güncellendiğinde yeni sürüm mağaza
+güncellemesi beklemeden gelir ve açılış başına Firestore maliyeti 28 okuma yerine
+1 okumada kalır. Ekranın altındaki "Kaynak" satırı hangi yolun kullanıldığını yazar
+(`Firebase`, `Firebase (doğrulandı)`, `yerel kopya`).
 
 Firestore'a `cloud_firestore` paketi yerine **REST API** ile erişiliyor
 (`lib/servisler/firestore_veri.dart`, tek bağımlılık `http`). Nedeni: uygulamanın

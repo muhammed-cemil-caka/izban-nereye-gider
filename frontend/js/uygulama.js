@@ -208,33 +208,33 @@
    * yeniden çizer; başarısız olursa sayfa yerel kopyayla çalışmaya devam eder.
    */
   function firestoreDanTazele() {
-    if (typeof firestoreDenDuraklariGetir !== 'function') return;
+    if (typeof guncelDuraklariGetir !== 'function') return;
 
-    firestoreDenDuraklariGetir()
-      .then(function (duraklar) {
-        var oncekiBinis = oge.binis.value;
-        var oncekiInis = oge.inis.value;
+    guncelDuraklariGetir(HAT_VERISI.surum)
+      .then(function (sonuc) {
+        // duraklar null ise yerel kopya güncel demektir; listeyi yeniden kurmaya
+        // gerek yok, ekranda zaten doğru veri duruyor.
+        if (sonuc.duraklar) {
+          var oncekiBinis = oge.binis.value;
+          var oncekiInis = oge.inis.value;
 
-        aktifDuraklar = duraklar;
-        secimleriDoldur();
+          aktifDuraklar = sonuc.duraklar;
+          secimleriDoldur();
 
-        // Seçimler yeni listede de varsa korunur.
-        var kodlar = duraklar.map(function (d) { return d.kod; });
-        oge.binis.value = kodlar.indexOf(oncekiBinis) !== -1 ? oncekiBinis : kodlar[0];
-        oge.inis.value = kodlar.indexOf(oncekiInis) !== -1 ? oncekiInis : kodlar[kodlar.length - 1];
+          // Seçimler yeni listede de varsa korunur.
+          var kodlar = sonuc.duraklar.map(function (d) { return d.kod; });
+          oge.binis.value = kodlar.indexOf(oncekiBinis) !== -1 ? oncekiBinis : kodlar[0];
+          oge.inis.value = kodlar.indexOf(oncekiInis) !== -1 ? oncekiInis : kodlar[kodlar.length - 1];
 
-        oge.veriKaynagi.textContent = 'Firebase';
-        guncelle();
-
-        return firestoreDenHatBilgisiGetir();
-      })
-      .then(function (hat) {
-        if (hat && hat.surum) {
-          oge.veriSurumu.textContent = hat.surum + ' (' + (hat.guncellemeTarihi || '—') + ')';
+          guncelle();
         }
+
+        oge.veriSurumu.textContent = sonuc.surum;
+        oge.veriKaynagi.textContent =
+          sonuc.kaynak === 'onbellek' ? 'Firebase (önbellek)' : 'Firebase';
       })
       .catch(function (sorun) {
-        // Ağ yoksa, kurallar engelliyorsa veya koleksiyon boşsa buraya düşer.
+        // Ağ yoksa, kurallar engelliyorsa veya belge yoksa buraya düşer.
         console.warn('Firestore okunamadı, yerel kopya kullanılıyor:', sorun.message);
         oge.veriKaynagi.textContent = 'yerel kopya';
       });

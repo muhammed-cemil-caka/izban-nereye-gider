@@ -5,12 +5,29 @@ import '../modeller/durak.dart';
 import 'firestore_veri.dart';
 
 /// Durak verisinin kaynağı.
-enum VeriKaynagi { firebase, yerel }
+enum VeriKaynagi {
+  /// Uygulamayla gelen kopya kullanıldı, sürümü Firebase doğruladı.
+  firebaseDogrulandi,
 
-/// Durak verisini önce Firestore'dan, olmazsa uygulama içindeki JSON'dan okur.
+  /// Veri Firestore'dan indirildi (yerel kopya eskiydi).
+  firebase,
+
+  /// Firebase'e ulaşılamadı, uygulamayla gelen kopya kullanıldı.
+  yerel,
+}
+
+/// Durak verisini en az Firestore okumasıyla getirir.
 ///
-/// Böylece uygulama ağ yokken de açılır; veri güncellendiğinde ise yeni sürüm
-/// mağaza güncellemesi beklemeden gelir.
+/// Firestore her BELGE için ayrı okuma sayar; 28 duraklık listeyi her açılışta
+/// çekmek açılış başına 28 okuma demek. Durak verisi neredeyse hiç değişmediği
+/// için akış şöyle:
+///
+///   1. `hat/bilgi` okunur (tek belge, tek okuma) ve sürüm karşılaştırılır.
+///   2. Sürüm uygulamadakiyle aynıysa yerel kopya kullanılır — ek okuma yok.
+///   3. Yalnızca sürüm değiştiyse 28 belgelik liste indirilir.
+///
+/// Firebase'e hiç ulaşılamazsa yerel kopyayla devam edilir; uygulama her
+/// durumda açılır.
 class DurakServisi {
   /// [firestoreKullan] false verilirse yalnızca yerel dosya okunur (testler için).
   DurakServisi({this.firestoreKullan = true})
@@ -38,38 +55,56 @@ class DurakServisi {
   String get surum => _surum;
   VeriKaynagi get kaynak => _kaynak;
 
+  String get kaynakEtiketi => switch (_kaynak) {
+        VeriKaynagi.firebase => 'Firebase',
+        VeriKaynagi.firebaseDogrulandi => 'Firebase (doğrulandı)',
+        VeriKaynagi.yerel => 'yerel kopya',
+      };
+
   Future<List<Durak>> duraklariGetir() async {
     final onbellek = _onbellek;
     if (onbellek != null) return onbellek;
 
+    final yerel = await _varlikVerisiOku();
+
     if (firestoreKullan) {
       try {
+        final hat = await _firestore.hatBilgisiGetir();
+        final uzakSurum = hat['surum'] as String?;
+
+        if (uzakSurum != null && uzakSurum == yerel.surum) {
+          // Yerel kopya güncel: 28 belgeyi indirmeye gerek yok.
+          return _yerlestir(yerel.duraklar, yerel.surum,
+              VeriKaynagi.firebaseDogrulandi);
+        }
+
         final duraklar = await _firestore.duraklariGetir();
-        _onbellek = duraklar;
-        _kaynak = VeriKaynagi.firebase;
-        _surum = 'Firebase';
-        return duraklar;
+        return _yerlestir(duraklar, uzakSurum ?? yerel.surum, VeriKaynagi.firebase);
       } catch (sorun) {
-        // Ağ yok, koleksiyon boş veya yetki reddi: yerel kopyaya düşülür.
         debugPrint('Firestore okunamadı, yerel kopya kullanılıyor: $sorun');
       }
     }
 
-    return _varliktanGetir();
+    return _yerlestir(yerel.duraklar, yerel.surum, VeriKaynagi.yerel);
   }
 
-  Future<List<Durak>> _varliktanGetir() async {
+  List<Durak> _yerlestir(List<Durak> duraklar, String surum, VeriKaynagi kaynak) {
+    _onbellek = duraklar;
+    _surum = surum;
+    _kaynak = kaynak;
+    return duraklar;
+  }
+
+  /// Uygulamayla gelen JSON'u okur; servis durumunu değiştirmez.
+  Future<({String surum, List<Durak> duraklar})> _varlikVerisiOku() async {
     final ham = await rootBundle.loadString(_varlikYolu);
     final json = jsonDecode(ham) as Map<String, dynamic>;
 
-    _surum = json['surum'] as String? ?? '—';
-    _kaynak = VeriKaynagi.yerel;
-
-    final duraklar = (json['duraklar'] as List<dynamic>)
-        .map((e) => Durak.jsondan(e as Map<String, dynamic>))
-        .toList();
-
-    _onbellek = duraklar;
-    return duraklar;
+    return (
+      surum: json['surum'] as String? ?? '—',
+      duraklar: (json['duraklar'] as List<dynamic>)
+          .map((e) => Durak.jsondan(e as Map<String, dynamic>))
+          .toList(),
+    );
   }
 }

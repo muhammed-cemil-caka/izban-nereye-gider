@@ -31,10 +31,21 @@ Betikler klasik `<script>` olarak yüklenir (ES modülü değil) — böylece sa
 Bağlı proje: `izban-nereye-gider`. Sayfa açılırken şu sırayı izler:
 
 1. `js/duraklar.js` içindeki yerel kopyayla **anında** çizer — ağ beklenmez.
-2. Firestore REST'ten (`js/firebase-veri.js`) güncel veriyi çeker.
-3. Geldiğinde listeyi ve güzergâhı tazeler, alt bilgideki "Kaynak" satırını
-   `Firebase` yapar. Seçili duraklar korunur.
-4. İstek başarısız olursa yerel kopya kalır, konsola uyarı düşer.
+2. `localStorage` önbelleği tazeyse (6 saat) hiçbir istek atmaz.
+3. Değilse tek belge okur (`hat/bilgi`) ve sürümü yerel kopyayla karşılaştırır.
+   Aynıysa iş biter — 28 belgelik liste indirilmez.
+4. Sürüm değişmişse tam listeyi çeker, önbelleğe yazar, arayüzü tazeler.
+   Seçili duraklar korunur.
+5. İstek başarısız olursa yerel kopya kalır, konsola uyarı düşer.
+
+Alt bilgideki "Kaynak" satırı o an hangi yolun kullanıldığını söyler:
+`Firebase`, `Firebase (önbellek)` veya `yerel kopya`.
+
+Önbelleği sıfırlamak için tarayıcı konsolunda:
+
+```js
+localStorage.removeItem('izban.veriOnbellegi')
+```
 
 `js/firebase-ayar.js` içindeki değerler **gizli değildir**; web istemcisine zaten açıkta
 gider ve yalnızca projeyi tanımlar. Güvenlik sınırı `backend/firestore.rules` dosyasıdır:

@@ -60,10 +60,89 @@ function firestoreDenDuraklariGetir() {
 function firestoreDenHatBilgisiGetir() {
   var adres = FIRESTORE_TABAN + '/hat/bilgi?key=' + FIREBASE_AYARI.apiKey;
 
-  return fetch(adres)
-    .then(function (yanit) {
-      if (!yanit.ok) return null;
-      return yanit.json().then(firestoreBelgesi);
-    })
-    .catch(function () { return null; });
+  return fetch(adres).then(function (yanit) {
+    if (!yanit.ok) throw new Error('hat/bilgi yanıtı: ' + yanit.status);
+    return yanit.json().then(firestoreBelgesi);
+  });
 }
+
+/* ---------- Okuma bütçesi ---------- */
+//
+// Firestore her BELGE için ayrı okuma sayar; 28 duraklık listeyi her ziyarette
+// çekmek ziyaret başına 28 okuma demek. Durak verisi neredeyse hiç değişmediği
+// için bunun yerine:
+//
+//   1. Tarayıcı önbelleği taze mi? → 0 okuma
+//   2. Değilse tek belge (hat/bilgi) okunup sürüm karşılaştırılır → 1 okuma
+//   3. Sürüm aynıysa uygulamayla gelen yerel kopya kullanılır → 0 ek okuma
+//   4. Yalnızca sürüm değiştiyse 28 belgelik liste çekilir
+//
+// Böylece ziyaret başına maliyet 28 okumadan ~0'a iniyor; tam liste ancak veri
+// gerçekten güncellendiğinde, tarayıcı başına bir kez okunuyor.
+
+var ONBELLEK_ANAHTAR = 'izban.veriOnbellegi';
+var ONBELLEK_OMRU_MS = 6 * 60 * 60 * 1000; // 6 saat
+
+function onbellektenOku() {
+  try {
+    var ham = localStorage.getItem(ONBELLEK_ANAHTAR);
+    if (!ham) return null;
+    var kutu = JSON.parse(ham);
+    if (!kutu || typeof kutu.zaman !== 'number') return null;
+    if (Date.now() - kutu.zaman > ONBELLEK_OMRU_MS) return null;
+    return kutu;
+  } catch (sorun) {
+    return null; // bozuk kayıt veya özel mod
+  }
+}
+
+function onbellegeYaz(surum, duraklar) {
+  try {
+    localStorage.setItem(ONBELLEK_ANAHTAR, JSON.stringify({
+      zaman: Date.now(),
+      surum: surum,
+      duraklar: duraklar || null
+    }));
+  } catch (sorun) {
+    // Kota dolu veya özel mod: önbelleksiz devam edilir.
+  }
+}
+
+/**
+ * Gösterilecek veriyi en az okumayla getirir.
+ *
+ * @param {string} yerelSurum duraklar.js içindeki sürüm
+ * @returns {Promise<{duraklar: ?Array, surum: string, kaynak: string, okuma: number}>}
+ *   `duraklar` null ise yerel kopya güncel demektir, değiştirmeye gerek yoktur.
+ */
+function guncelDuraklariGetir(yerelSurum) {
+  var onbellek = onbellektenOku();
+  if (onbellek) {
+    return Promise.resolve({
+      duraklar: onbellek.duraklar,
+      surum: onbellek.surum,
+      kaynak: 'onbellek',
+      okuma: 0
+    });
+  }
+
+  return firestoreDenHatBilgisiGetir().then(function (hat) {
+    if (!hat || !hat.surum) throw new Error('hat/bilgi okunamadı.');
+
+    if (hat.surum === yerelSurum) {
+      onbellegeYaz(hat.surum, null);
+      return { duraklar: null, surum: hat.surum, kaynak: 'firebase', okuma: 1 };
+    }
+
+    return firestoreDenDuraklariGetir().then(function (duraklar) {
+      onbellegeYaz(hat.surum, duraklar);
+      return {
+        duraklar: duraklar,
+        surum: hat.surum,
+        kaynak: 'firebase',
+        okuma: 1 + duraklar.length
+      };
+    });
+  });
+}
+

@@ -40,6 +40,25 @@ class FirestoreVeri {
     );
   }
 
+  /// Hat özetini (sürüm, uç duraklar) getirir — tek belge, tek okuma.
+  ///
+  /// Sürüm karşılaştırması bunun üzerinden yapılır: uygulamayla gelen kopya
+  /// güncelse 28 belgelik liste hiç çekilmez.
+  Future<Map<String, dynamic>> hatBilgisiGetir() async {
+    final adres = Uri.parse(
+      '${FirebaseAyari.firestoreTaban}/hat/bilgi?key=${FirebaseAyari.apiAnahtari}',
+    );
+
+    final yanit = await http.get(adres).timeout(_zamanAsimi);
+    if (yanit.statusCode != 200) {
+      throw Exception('hat/bilgi yanıtı: ${yanit.statusCode}');
+    }
+
+    return _belge(
+      jsonDecode(utf8.decode(yanit.bodyBytes)) as Map<String, dynamic>,
+    );
+  }
+
   /// Durakları kuzeyden güneye sıralı getirir.
   /// Ağ hatası, boş koleksiyon veya yetki sorununda hata fırlatır.
   Future<List<Durak>> duraklariGetir() async {
