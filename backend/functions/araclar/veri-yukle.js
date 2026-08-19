@@ -25,11 +25,19 @@ const veritabani = admin.firestore();
 
 async function yukle() {
   const toplu = veritabani.batch();
+  const guncelKodlar = new Set(kaynak.duraklar.map((d) => d.kod));
 
   kaynak.duraklar.forEach((durak, sira) => {
     const belge = veritabani.collection('duraklar').doc(durak.kod);
     toplu.set(belge, { ...durak, sira });
   });
+
+  // Listeden çıkarılmış durakların belgeleri silinmeli. Yalnızca yazmak yetmez:
+  // eski yükleme sırasında var olup sonradan kaldırılan duraklar Firestore'da
+  // kalır ve istemcilere hayalet durak olarak döner.
+  const mevcut = await veritabani.collection('duraklar').get();
+  const silinecekler = mevcut.docs.filter((belge) => !guncelKodlar.has(belge.id));
+  silinecekler.forEach((belge) => toplu.delete(belge.ref));
 
   toplu.set(veritabani.collection('hat').doc('bilgi'), {
     ...kaynak.hat,
@@ -40,6 +48,10 @@ async function yukle() {
 
   await toplu.commit();
   console.log(`${kaynak.duraklar.length} durak Firestore'a yüklendi.`);
+  if (silinecekler.length) {
+    console.log(`${silinecekler.length} eski durak silindi: ` +
+      silinecekler.map((b) => b.id).join(', '));
+  }
 }
 
 yukle().catch((sorun) => {
