@@ -35,3 +35,8 @@ fs.writeFileSync(
 console.log(`${kaynak.duraklar.length} durak dağıtıldı:`);
 console.log('  → frontend/js/duraklar.js');
 console.log('  → mobile/assets/duraklar.json');
+
+// duraklar.js değiştiği için index.html'deki damgalar tazelenmeli; aksi halde
+// tarayıcı eski veriyi önbellekten okumaya devam eder.
+const { damgala } = require('./varlik-damgala.js');
+console.log(`${damgala().length} varlık damgası tazelendi.`);

@@ -29,7 +29,7 @@ function konumAl() {
   var durum = konumDesteklenirMi();
   if (!durum.destekli) return Promise.reject(new Error(durum.sebep));
 
-  return new Promise(function (coz, reddet) {
+  var istek = new Promise(function (coz, reddet) {
     navigator.geolocation.getCurrentPosition(
       function (sonuc) {
         coz({
@@ -44,12 +44,27 @@ function konumAl() {
       { enableHighAccuracy: true, timeout: KONUM_ZAMAN_ASIMI_MS, maximumAge: 60000 }
     );
   });
+
+  // Bekçi: tarayıcı bazen hiçbir geri çağrı yapmaz — macOS'ta sistem konum
+  // servisi kapalıyken veya izin penceresi yanıtsız kaldığında olur. O durumda
+  // arayüz sonsuza kadar "alınıyor" durumunda kalmasın.
+  var bekci = new Promise(function (_, reddet) {
+    setTimeout(function () {
+      reddet(new Error(
+        'Konum yanıt vermedi. macOS kullanıyorsan Sistem Ayarları → Gizlilik ve ' +
+        'Güvenlik → Konum Servisleri altında tarayıcına izin verilmiş olmalı.'
+      ));
+    }, KONUM_ZAMAN_ASIMI_MS + 2000);
+  });
+
+  return Promise.race([istek, bekci]);
 }
 
 function konumHatasiniAcikla(hata) {
   switch (hata.code) {
     case hata.PERMISSION_DENIED:
-      return 'Konum izni verilmedi.';
+      return 'Konum izni verilmedi. Adres çubuğundaki kilit simgesinden ' +
+             'izin verip tekrar deneyebilirsin.';
     case hata.POSITION_UNAVAILABLE:
       return 'Konum bilgisi alınamadı.';
     case hata.TIMEOUT:

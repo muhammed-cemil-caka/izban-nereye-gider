@@ -34,6 +34,7 @@
     binisYap: document.getElementById('binisYapDugmesi'),
     yolTarifi: document.getElementById('yolTarifiBaglantisi'),
     konumTekrar: document.getElementById('konumTekrarDugmesi'),
+    binisYolTarifi: document.getElementById('binisYolTarifi'),
     tema: document.getElementById('temaDugmesi')
   };
 
@@ -174,6 +175,17 @@
     oge.sonuc.hidden = false;
   }
 
+  /** Seçili biniş durağına yürüyerek yol tarifi bağlantısını tazeler. */
+  function binisYolTarifiniGuncelle(durak) {
+    if (!durak.konum || (!durak.konum.enlem && !durak.konum.boylam)) {
+      oge.binisYolTarifi.hidden = true;
+      return;
+    }
+    oge.binisYolTarifi.hidden = false;
+    oge.binisYolTarifi.href = yolTarifiAdresi(durak);
+    oge.binisYolTarifi.textContent = durak.ad + ' durağına yol tarifi →';
+  }
+
   function hataGoster(mesaj) {
     oge.hata.textContent = mesaj;
     oge.hata.hidden = false;
@@ -233,6 +245,7 @@
     }
     secimiKaydet();
     sonucuGoster(sonuc);
+    binisYolTarifiniGuncelle(sonuc.binis);
   }
 
   function baslat() {

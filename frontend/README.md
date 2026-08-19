@@ -22,7 +22,7 @@ için tarayıcı düzenlenen dosyaları önbellekte tutuyor ve değişiklikler g
 | `js/duraklar.js` | **Otomatik üretilir** — `node araclar/veri-dagit.js` |
 | `js/hesap.js` | Yolculuk hesabı; saf fonksiyonlar, DOM'a dokunmaz |
 | `js/uygulama.js` | Arayüz: seçimler, çizim, localStorage |
-| `js/konum.js` | Tarayıcı konum servisi sarmalayıcısı |
+| `js/konum.js` | Tarayıcı konum servisi sarmalayıcısı (bekçi zamanlayıcı dahil) |
 | `js/firebase-ayar.js` | Firebase proje bilgileri (gizli değil, bilerek depoda) |
 | `js/firebase-veri.js` | Firestore REST okuma katmanı |
 | `js/firebase-ayar.ornek.js` | Başka bir projeye bağlamak isteyenler için şablon |
@@ -70,3 +70,20 @@ Hesaplama katmanı Node ile test edilir:
 ```bash
 node araclar/test-hesap.js
 ```
+
+## Önbellek
+
+`index.html` içindeki js/css bağlantıları içerik damgası taşır
+(`js/uygulama.js?s=faab2a19`). Dosya değişince damga da değişir ve tarayıcı
+yeni sürümü indirmek zorunda kalır. Damgaları tazelemek için:
+
+```bash
+node araclar/varlik-damgala.js
+```
+
+`veri-dagit.js` bu betiği kendiliğinden çağırır. **Frontend dosyalarını elle
+düzenledikten sonra bunu çalıştırın** — yoksa tarayıcı eski sürümü göstermeye
+devam eder.
+
+Yayında Firebase Hosting `index.html` için `no-cache`, js/css için 10 dakikalık
+önbellek gönderir (`backend/firebase.json`).

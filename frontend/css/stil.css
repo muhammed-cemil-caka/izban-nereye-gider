@@ -234,3 +234,13 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
 @media (max-width: 620px) {
   .konum-dugmeler .dugme { flex: 1 1 auto; text-align: center; }
 }
+
+.satir-baglanti {
+  align-self: flex-start;
+  color: var(--vurgu);
+  font-size: .82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.satir-baglanti:hover { text-decoration: underline; }
+.satir-baglanti:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
