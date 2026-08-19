@@ -18,7 +18,7 @@ void main() {
 
   test('hazır servis hiç okuma yapmaz', () async {
     final servis = DurakServisi.hazir(const [
-      Durak(kod: 'a', ad: 'A', ilce: 'İl', dakika: 0, aktarma: []),
+      Durak(kod: 'a', ad: 'A', ilce: 'İl', dakika: 0, konum: Konum(enlem: 38.4, boylam: 27.1), aktarma: []),
     ], surum: '9.9.9');
 
     expect((await servis.duraklariGetir()).single.kod, 'a');

@@ -4,6 +4,18 @@ import 'package:flutter/services.dart' show rootBundle;
 import '../modeller/durak.dart';
 import 'firestore_veri.dart';
 
+/// İki x.y.z sürümünü karşılaştırır: a>b ise 1, a<b ise -1, eşitse 0.
+int surumKarsilastir(String a, String b) {
+  final pa = a.split('.');
+  final pb = b.split('.');
+  for (var i = 0; i < (pa.length > pb.length ? pa.length : pb.length); i++) {
+    final x = i < pa.length ? (int.tryParse(pa[i]) ?? 0) : 0;
+    final y = i < pb.length ? (int.tryParse(pb[i]) ?? 0) : 0;
+    if (x != y) return x > y ? 1 : -1;
+  }
+  return 0;
+}
+
 /// Durak verisinin kaynağı.
 enum VeriKaynagi {
   /// Uygulamayla gelen kopya kullanıldı, sürümü Firebase doğruladı.
@@ -72,14 +84,16 @@ class DurakServisi {
         final hat = await _firestore.hatBilgisiGetir();
         final uzakSurum = hat['surum'] as String?;
 
-        if (uzakSurum != null && uzakSurum == yerel.surum) {
-          // Yerel kopya güncel: 28 belgeyi indirmeye gerek yok.
+        // Uzaktaki veri yeni DEĞİLSE (aynı ya da daha eski) yerel kopya kullanılır.
+        // Yalnızca eşitliğe bakmak, veritabanı henüz güncellenmemişken uygulamanın
+        // kendi yeni verisini eski veriyle ezmesine yol açardı.
+        if (uzakSurum == null || surumKarsilastir(uzakSurum, yerel.surum) <= 0) {
           return _yerlestir(yerel.duraklar, yerel.surum,
               VeriKaynagi.firebaseDogrulandi);
         }
 
         final duraklar = await _firestore.duraklariGetir();
-        return _yerlestir(duraklar, uzakSurum ?? yerel.surum, VeriKaynagi.firebase);
+        return _yerlestir(duraklar, uzakSurum, VeriKaynagi.firebase);
       } catch (sorun) {
         debugPrint('Firestore okunamadı, yerel kopya kullanılıyor: $sorun');
       }

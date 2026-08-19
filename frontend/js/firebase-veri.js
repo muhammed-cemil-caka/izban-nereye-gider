@@ -80,16 +80,34 @@ function firestoreDenHatBilgisiGetir() {
 // Böylece ziyaret başına maliyet 28 okumadan ~0'a iniyor; tam liste ancak veri
 // gerçekten güncellendiğinde, tarayıcı başına bir kez okunuyor.
 
+/**
+ * İki x.y.z sürümünü karşılaştırır: a>b ise 1, a<b ise -1, eşitse 0.
+ * Firestore'daki veri uygulamayla gelenden ESKİ olabilir (uygulama güncellendi
+ * ama veritabanı henüz yüklenmedi); o durumda uzaktaki veri kullanılmamalı.
+ */
+function surumKarsilastir(a, b) {
+  var pa = String(a).split('.').map(Number);
+  var pb = String(b).split('.').map(Number);
+  for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+    var x = pa[i] || 0;
+    var y = pb[i] || 0;
+    if (x !== y) return x > y ? 1 : -1;
+  }
+  return 0;
+}
+
 var ONBELLEK_ANAHTAR = 'izban.veriOnbellegi';
 var ONBELLEK_OMRU_MS = 6 * 60 * 60 * 1000; // 6 saat
 
-function onbellektenOku() {
+function onbellektenOku(yerelSurum) {
   try {
     var ham = localStorage.getItem(ONBELLEK_ANAHTAR);
     if (!ham) return null;
     var kutu = JSON.parse(ham);
     if (!kutu || typeof kutu.zaman !== 'number') return null;
     if (Date.now() - kutu.zaman > ONBELLEK_OMRU_MS) return null;
+    // Uygulama güncellendiyse önbellekteki eski veri atılır.
+    if (surumKarsilastir(kutu.surum, yerelSurum) < 0) return null;
     return kutu;
   } catch (sorun) {
     return null; // bozuk kayıt veya özel mod
@@ -116,7 +134,7 @@ function onbellegeYaz(surum, duraklar) {
  *   `duraklar` null ise yerel kopya güncel demektir, değiştirmeye gerek yoktur.
  */
 function guncelDuraklariGetir(yerelSurum) {
-  var onbellek = onbellektenOku();
+  var onbellek = onbellektenOku(yerelSurum);
   if (onbellek) {
     return Promise.resolve({
       duraklar: onbellek.duraklar,
@@ -129,9 +147,12 @@ function guncelDuraklariGetir(yerelSurum) {
   return firestoreDenHatBilgisiGetir().then(function (hat) {
     if (!hat || !hat.surum) throw new Error('hat/bilgi okunamadı.');
 
-    if (hat.surum === yerelSurum) {
-      onbellegeYaz(hat.surum, null);
-      return { duraklar: null, surum: hat.surum, kaynak: 'firebase', okuma: 1 };
+    // Uzaktaki veri yeni DEĞİLSE (aynı ya da daha eski) yerel kopya kullanılır.
+    // Eşitlikle yetinmek, veritabanı henüz güncellenmemişken uygulamanın kendi
+    // yeni verisini eski veriyle ezmesine yol açardı.
+    if (surumKarsilastir(hat.surum, yerelSurum) <= 0) {
+      onbellegeYaz(yerelSurum, null);
+      return { duraklar: null, surum: yerelSurum, kaynak: 'firebase', okuma: 1 };
     }
 
     return firestoreDenDuraklariGetir().then(function (duraklar) {

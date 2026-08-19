@@ -3,10 +3,10 @@ import 'package:izban_nereye_gider/modeller/durak.dart';
 import 'package:izban_nereye_gider/modeller/yolculuk.dart';
 
 const _ornekDuraklar = <Durak>[
-  Durak(kod: 'a', ad: 'A', ilce: 'İl', dakika: 0, aktarma: []),
-  Durak(kod: 'b', ad: 'B', ilce: 'İl', dakika: 10, aktarma: ['Metro']),
-  Durak(kod: 'c', ad: 'C', ilce: 'İl', dakika: 25, aktarma: []),
-  Durak(kod: 'd', ad: 'D', ilce: 'İl', dakika: 70, aktarma: []),
+  Durak(kod: 'a', ad: 'A', ilce: 'İl', dakika: 0, konum: Konum(enlem: 38.4, boylam: 27.1), aktarma: []),
+  Durak(kod: 'b', ad: 'B', ilce: 'İl', dakika: 10, konum: Konum(enlem: 38.4, boylam: 27.1), aktarma: ['Metro']),
+  Durak(kod: 'c', ad: 'C', ilce: 'İl', dakika: 25, konum: Konum(enlem: 38.4, boylam: 27.1), aktarma: []),
+  Durak(kod: 'd', ad: 'D', ilce: 'İl', dakika: 70, konum: Konum(enlem: 38.4, boylam: 27.1), aktarma: []),
 ];
 
 void main() {

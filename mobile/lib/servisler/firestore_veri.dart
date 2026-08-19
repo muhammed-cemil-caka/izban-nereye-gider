@@ -29,6 +29,10 @@ class FirestoreVeri {
           .map((e) => _deger(e as Map<String, dynamic>))
           .toList();
     }
+    // konum gibi iç içe alanlar mapValue olarak gelir.
+    if (alan.containsKey('mapValue')) {
+      return _belge(alan['mapValue'] as Map<String, dynamic>);
+    }
     return null;
   }
 

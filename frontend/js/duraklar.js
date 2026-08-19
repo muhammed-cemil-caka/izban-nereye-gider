@@ -1,9 +1,15 @@
 // OTOMATİK ÜRETİLDİ — elle düzenlemeyin.
 // Kaynak: backend/veri/duraklar.json — değişiklik sonrası: node araclar/veri-dagit.js
 const HAT_VERISI = {
-  "surum": "1.0.0",
-  "guncellemeTarihi": "2026-08-18",
-  "uyari": "Durak sırası, ilçe ve aktarma bilgileri ile süreler TAHMİNİDİR. Yayına almadan önce izban.com.tr üzerinden doğrulanmalıdır.",
+  "surum": "2.0.0",
+  "guncellemeTarihi": "2026-08-19",
+  "uyari": "Durak sırası, koordinatlar ve aktarmalar OpenStreetMap verisinden üretilmiştir. SÜRELER TAHMİNİDİR: gerçek mesafeden hesaplanır, resmî tarife değildir. Gerçek varış saatleri için izban.com.tr tarifesi kullanılmalıdır.",
+  "kaynak": {
+    "duraklar": "OpenStreetMap rota ilişkileri 15423228 ve 16191185",
+    "lisans": "ODbL — © OpenStreetMap katkıcıları",
+    "ilce": "Nominatim ters coğrafi kodlama",
+    "sureModeli": "65 km/sa ortalama hız, 1.08× ray katsayısı, durak başına 0.6 dk bekleme"
+  },
   "hat": {
     "ad": "İZBAN Banliyö Hattı",
     "kuzeyUcu": "Aliağa",
@@ -15,68 +21,175 @@ const HAT_VERISI = {
       "ad": "Aliağa",
       "ilce": "Aliağa",
       "dakika": 0,
+      "mesafeKm": 0,
+      "konum": {
+        "enlem": 38.788773,
+        "boylam": 26.967164
+      },
       "aktarma": []
     },
     {
       "kod": "bicerova",
       "ad": "Biçerova",
       "ilce": "Aliağa",
-      "dakika": 8,
+      "dakika": 5,
+      "mesafeKm": 4.79,
+      "konum": {
+        "enlem": 38.749225,
+        "boylam": 26.960827
+      },
       "aktarma": []
     },
     {
       "kod": "hatundere",
       "ad": "Hatundere",
       "ilce": "Menemen",
-      "dakika": 13,
+      "dakika": 14,
+      "mesafeKm": 13.67,
+      "konum": {
+        "enlem": 38.689897,
+        "boylam": 27.017432
+      },
       "aktarma": []
     },
     {
       "kod": "menemen",
       "ad": "Menemen",
       "ilce": "Menemen",
-      "dakika": 21,
-      "aktarma": [
-        "Şehirlerarası otobüs"
-      ]
+      "dakika": 25,
+      "mesafeKm": 25.46,
+      "konum": {
+        "enlem": 38.603221,
+        "boylam": 27.076514
+      },
+      "aktarma": []
     },
     {
-      "kod": "egekent",
-      "ad": "Egekent",
+      "kod": "egekent-2",
+      "ad": "Egekent 2",
       "ilce": "Menemen",
-      "dakika": 26,
+      "dakika": 31,
+      "mesafeKm": 31.41,
+      "konum": {
+        "enlem": 38.560558,
+        "boylam": 27.044252
+      },
       "aktarma": []
     },
     {
       "kod": "ulukent",
       "ad": "Ulukent",
       "ilce": "Menemen",
-      "dakika": 30,
+      "dakika": 34,
+      "mesafeKm": 33.15,
+      "konum": {
+        "enlem": 38.547782,
+        "boylam": 27.035451
+      },
       "aktarma": []
+    },
+    {
+      "kod": "egekent",
+      "ad": "Egekent",
+      "ilce": "Çiğli",
+      "dakika": 39,
+      "mesafeKm": 38.11,
+      "konum": {
+        "enlem": 38.507331,
+        "boylam": 27.045912
+      },
+      "aktarma": [
+        "Tramvay"
+      ]
+    },
+    {
+      "kod": "atasanayi",
+      "ad": "Atasanayi",
+      "ilce": "Çiğli",
+      "dakika": 40,
+      "mesafeKm": 39.32,
+      "konum": {
+        "enlem": 38.498993,
+        "boylam": 27.053177
+      },
+      "aktarma": [
+        "Tramvay"
+      ]
     },
     {
       "kod": "cigli",
       "ad": "Çiğli",
       "ilce": "Çiğli",
-      "dakika": 35,
-      "aktarma": []
+      "dakika": 42,
+      "mesafeKm": 40.63,
+      "konum": {
+        "enlem": 38.491608,
+        "boylam": 27.063423
+      },
+      "aktarma": [
+        "Tramvay"
+      ]
     },
     {
       "kod": "mavisehir",
       "ad": "Mavişehir",
       "ilce": "Karşıyaka",
-      "dakika": 40,
-      "aktarma": [
-        "Karşıyaka Tramvayı"
-      ]
+      "dakika": 45,
+      "mesafeKm": 42.79,
+      "konum": {
+        "enlem": 38.482184,
+        "boylam": 27.082995
+      },
+      "aktarma": []
+    },
+    {
+      "kod": "semikler",
+      "ad": "Şemikler",
+      "ilce": "Karşıyaka",
+      "dakika": 46,
+      "mesafeKm": 43.87,
+      "konum": {
+        "enlem": 38.474955,
+        "boylam": 27.089842
+      },
+      "aktarma": []
+    },
+    {
+      "kod": "demirkopru",
+      "ad": "Demirköprü",
+      "ilce": "Karşıyaka",
+      "dakika": 48,
+      "mesafeKm": 44.89,
+      "konum": {
+        "enlem": 38.468094,
+        "boylam": 27.096235
+      },
+      "aktarma": []
+    },
+    {
+      "kod": "nergiz",
+      "ad": "Nergiz",
+      "ilce": "Karşıyaka",
+      "dakika": 50,
+      "mesafeKm": 46.19,
+      "konum": {
+        "enlem": 38.459542,
+        "boylam": 27.104702
+      },
+      "aktarma": []
     },
     {
       "kod": "karsiyaka",
       "ad": "Karşıyaka",
       "ilce": "Karşıyaka",
-      "dakika": 44,
+      "dakika": 51,
+      "mesafeKm": 47.19,
+      "konum": {
+        "enlem": 38.457852,
+        "boylam": 27.115136
+      },
       "aktarma": [
-        "Karşıyaka Tramvayı",
+        "Tramvay",
         "Vapur"
       ]
     },
@@ -84,145 +197,338 @@ const HAT_VERISI = {
       "kod": "alaybey",
       "ad": "Alaybey",
       "ilce": "Karşıyaka",
-      "dakika": 47,
-      "aktarma": []
+      "dakika": 53,
+      "mesafeKm": 47.88,
+      "konum": {
+        "enlem": 38.460619,
+        "boylam": 27.121472
+      },
+      "aktarma": [
+        "Tramvay"
+      ]
+    },
+    {
+      "kod": "naldoken",
+      "ad": "Naldöken",
+      "ilce": "Karşıyaka",
+      "dakika": 54,
+      "mesafeKm": 48.69,
+      "konum": {
+        "enlem": 38.464582,
+        "boylam": 27.12853
+      },
+      "aktarma": [
+        "Tramvay"
+      ]
     },
     {
       "kod": "turan",
       "ad": "Turan",
       "ilce": "Bayraklı",
-      "dakika": 50,
+      "dakika": 56,
+      "mesafeKm": 50.64,
+      "konum": {
+        "enlem": 38.466765,
+        "boylam": 27.149061
+      },
       "aktarma": []
     },
     {
-      "kod": "naldoken",
-      "ad": "Naldöken",
+      "kod": "bayrakli",
+      "ad": "Bayraklı",
       "ilce": "Bayraklı",
-      "dakika": 53,
+      "dakika": 58,
+      "mesafeKm": 52.13,
+      "konum": {
+        "enlem": 38.463843,
+        "boylam": 27.164418
+      },
+      "aktarma": []
+    },
+    {
+      "kod": "salhane",
+      "ad": "Salhane",
+      "ilce": "Bayraklı",
+      "dakika": 61,
+      "mesafeKm": 53.88,
+      "konum": {
+        "enlem": 38.450557,
+        "boylam": 27.172182
+      },
       "aktarma": []
     },
     {
       "kod": "halkapinar",
       "ad": "Halkapınar",
       "ilce": "Konak",
-      "dakika": 58,
+      "dakika": 63,
+      "mesafeKm": 55.75,
+      "konum": {
+        "enlem": 38.43519,
+        "boylam": 27.168837
+      },
       "aktarma": [
         "Metro",
-        "Konak Tramvayı",
-        "Otobüs aktarma merkezi"
+        "Tramvay"
       ]
     },
     {
-      "kod": "alsancak",
-      "ad": "Alsancak",
+      "kod": "alsancak-gar",
+      "ad": "Alsancak Gar",
       "ilce": "Konak",
-      "dakika": 63,
+      "dakika": 65,
+      "mesafeKm": 57.69,
+      "konum": {
+        "enlem": 38.438597,
+        "boylam": 27.148762
+      },
       "aktarma": [
-        "Konak Tramvayı",
-        "Vapur"
+        "Tramvay"
+      ]
+    },
+    {
+      "kod": "hilal",
+      "ad": "Hilal",
+      "ilce": "Konak",
+      "dakika": 67,
+      "mesafeKm": 59.33,
+      "konum": {
+        "enlem": 38.425612,
+        "boylam": 27.154359
+      },
+      "aktarma": [
+        "Metro"
       ]
     },
     {
       "kod": "kemer",
       "ad": "Kemer",
       "ilce": "Konak",
-      "dakika": 67,
-      "aktarma": []
+      "dakika": 68,
+      "mesafeKm": 59.82,
+      "konum": {
+        "enlem": 38.42178,
+        "boylam": 27.156184
+      },
+      "aktarma": [
+        "Metro"
+      ]
     },
     {
       "kod": "sirinyer",
       "ad": "Şirinyer",
       "ilce": "Buca",
       "dakika": 72,
+      "mesafeKm": 63.51,
+      "konum": {
+        "enlem": 38.391941,
+        "boylam": 27.147142
+      },
+      "aktarma": []
+    },
+    {
+      "kod": "kosu",
+      "ad": "Koşu",
+      "ilce": "Buca",
+      "dakika": 74,
+      "mesafeKm": 64.5,
+      "konum": {
+        "enlem": 38.383636,
+        "boylam": 27.147495
+      },
+      "aktarma": []
+    },
+    {
+      "kod": "inkilap",
+      "ad": "İnkılap",
+      "ilce": "Buca",
+      "dakika": 76,
+      "mesafeKm": 66.36,
+      "konum": {
+        "enlem": 38.368872,
+        "boylam": 27.141503
+      },
+      "aktarma": []
+    },
+    {
+      "kod": "semt-garaji",
+      "ad": "Semt Garajı",
+      "ilce": "Gaziemir",
+      "dakika": 78,
+      "mesafeKm": 67.86,
+      "konum": {
+        "enlem": 38.357007,
+        "boylam": 27.136608
+      },
+      "aktarma": []
+    },
+    {
+      "kod": "esbas",
+      "ad": "ESBAŞ",
+      "ilce": "Gaziemir",
+      "dakika": 81,
+      "mesafeKm": 70.27,
+      "konum": {
+        "enlem": 38.336941,
+        "boylam": 27.136454
+      },
       "aktarma": []
     },
     {
       "kod": "gaziemir",
       "ad": "Gaziemir",
       "ilce": "Gaziemir",
-      "dakika": 78,
+      "dakika": 83,
+      "mesafeKm": 71.59,
+      "konum": {
+        "enlem": 38.326327,
+        "boylam": 27.139891
+      },
       "aktarma": []
     },
     {
       "kod": "sarnic",
       "ad": "Sarnıç",
       "ilce": "Gaziemir",
-      "dakika": 83,
+      "dakika": 85,
+      "mesafeKm": 73.35,
+      "konum": {
+        "enlem": 38.312123,
+        "boylam": 27.144581
+      },
       "aktarma": []
     },
     {
       "kod": "havalimani",
-      "ad": "Adnan Menderes Havalimanı",
+      "ad": "Havalimanı",
       "ilce": "Gaziemir",
       "dakika": 88,
-      "aktarma": [
-        "Havalimanı"
-      ]
+      "mesafeKm": 75.87,
+      "konum": {
+        "enlem": 38.291261,
+        "boylam": 27.147718
+      },
+      "aktarma": []
     },
     {
       "kod": "cumaovasi",
       "ad": "Cumaovası",
       "ilce": "Menderes",
-      "dakika": 93,
+      "dakika": 92,
+      "mesafeKm": 79.43,
+      "konum": {
+        "enlem": 38.264131,
+        "boylam": 27.162903
+      },
       "aktarma": []
     },
     {
       "kod": "develi",
       "ad": "Develi",
       "ilce": "Menderes",
-      "dakika": 98,
+      "dakika": 99,
+      "mesafeKm": 86.75,
+      "konum": {
+        "enlem": 38.203284,
+        "boylam": 27.166602
+      },
       "aktarma": []
     },
     {
       "kod": "tekeli",
       "ad": "Tekeli",
       "ilce": "Menderes",
-      "dakika": 102,
+      "dakika": 103,
+      "mesafeKm": 89.97,
+      "konum": {
+        "enlem": 38.181005,
+        "boylam": 27.185652
+      },
       "aktarma": []
     },
     {
       "kod": "pancar",
       "ad": "Pancar",
       "ilce": "Torbalı",
-      "dakika": 107,
+      "dakika": 108,
+      "mesafeKm": 95.42,
+      "konum": {
+        "enlem": 38.197416,
+        "boylam": 27.239537
+      },
       "aktarma": []
     },
     {
       "kod": "kuscuburun",
       "ad": "Kuşçuburun",
       "ilce": "Torbalı",
-      "dakika": 112,
+      "dakika": 115,
+      "mesafeKm": 102.16,
+      "konum": {
+        "enlem": 38.209128,
+        "boylam": 27.309317
+      },
       "aktarma": []
     },
     {
       "kod": "torbali",
       "ad": "Torbalı",
       "ilce": "Torbalı",
-      "dakika": 118,
+      "dakika": 121,
+      "mesafeKm": 108.07,
+      "konum": {
+        "enlem": 38.169825,
+        "boylam": 27.347025
+      },
       "aktarma": []
     },
     {
       "kod": "tepekoy",
       "ad": "Tepeköy",
       "ilce": "Torbalı",
-      "dakika": 123,
+      "dakika": 125,
+      "mesafeKm": 111.1,
+      "konum": {
+        "enlem": 38.147225,
+        "boylam": 27.36133
+      },
       "aktarma": []
     },
     {
-      "kod": "bagarasi",
-      "ad": "Bağarası",
+      "kod": "saglik",
+      "ad": "Sağlık",
+      "ilce": "Torbalı",
+      "dakika": 133,
+      "mesafeKm": 119.45,
+      "konum": {
+        "enlem": 38.084974,
+        "boylam": 27.400596
+      },
+      "aktarma": []
+    },
+    {
+      "kod": "belevi",
+      "ad": "Belevi",
       "ilce": "Selçuk",
-      "dakika": 131,
+      "dakika": 140,
+      "mesafeKm": 126.57,
+      "konum": {
+        "enlem": 38.031431,
+        "boylam": 27.433077
+      },
       "aktarma": []
     },
     {
       "kod": "selcuk",
       "ad": "Selçuk",
       "ilce": "Selçuk",
-      "dakika": 140,
-      "aktarma": [
-        "Şehirlerarası otobüs"
-      ]
+      "dakika": 151,
+      "mesafeKm": 137.81,
+      "konum": {
+        "enlem": 37.950734,
+        "boylam": 27.373029
+      },
+      "aktarma": []
     }
   ]
 };

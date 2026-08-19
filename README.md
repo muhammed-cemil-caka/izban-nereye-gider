@@ -43,8 +43,12 @@ değişmediği için akış buna göre kuruldu:
 | Durum | Firestore okuması |
 | --- | --- |
 | Tarayıcı önbelleği taze (6 saat) | **0** |
-| Önbellek eski, sürüm aynı | **1** (`hat/bilgi`) |
-| Sürüm değişmiş | 1 + 28 (tarayıcı başına bir kez) |
+| Önbellek eski, sürüm aynı veya uzaktaki daha eski | **1** (`hat/bilgi`) |
+| Firestore'da daha YENİ sürüm var | 1 + durak sayısı (tarayıcı başına bir kez) |
+
+Sürüm karşılaştırması tek yönlüdür: uzaktaki veri yalnızca **daha yeniyse**
+kullanılır. Aksi halde uygulama güncellenip veritabanı henüz yüklenmemişken
+istemci kendi yeni verisini eskisiyle ezerdi.
 
 Yani sürekli maliyet ziyaret başına 28 okumadan **~0'a** iniyor; tam liste ancak veri
 gerçekten güncellendiğinde indiriliyor. Aynı mantık mobilde de var (orada önbellek
@@ -55,11 +59,25 @@ istemciler yeni veriyi bu alandan anlıyor.
 
 ## Veri tek yerden yönetilir
 
-Durak listesi, ilçeler, aktarmalar ve süreler yalnızca şu dosyada tutulur:
+Durak listesi, koordinatlar, ilçeler, aktarmalar ve süreler yalnızca şu dosyada tutulur:
 
 ```
 backend/veri/duraklar.json
 ```
+
+Bu dosya elle yazılmaz; OpenStreetMap'ten üretilir:
+
+```bash
+node araclar/duraklari-osm-den-uret.js
+```
+
+Betik durak sırasını ve koordinatları İZBAN rota ilişkilerinden, aktarmaları
+duraklara 600 m'den yakın tramvay/metro/vapur noktalarından (yapım aşamasındakiler
+elenir), ilçeleri Nominatim'den alır. Veri **ODbL** lisanslıdır — yayında
+"© OpenStreetMap katkıcıları" ibaresi bulunmalıdır.
+
+**Süreler hâlâ tahminidir:** gerçek mesafeden sabit hız modeliyle hesaplanır,
+resmî tarife değildir. Model parametreleri dosyanın `kaynak.sureModeli` alanında yazılıdır.
 
 Bu dosyayı değiştirdikten sonra frontend ve mobile kopyalarını üretmek için:
 

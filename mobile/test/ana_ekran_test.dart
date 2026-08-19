@@ -4,17 +4,37 @@ import 'package:izban_nereye_gider/main.dart';
 import 'package:izban_nereye_gider/modeller/durak.dart';
 import 'package:izban_nereye_gider/servisler/durak_servisi.dart';
 
+// Gerçek İZBAN koordinatları — ileride en yakın durak testleri de bunu kullanır.
 const _duraklar = <Durak>[
-  Durak(kod: 'aliaga', ad: 'Aliağa', ilce: 'Aliağa', dakika: 0, aktarma: []),
-  Durak(kod: 'menemen', ad: 'Menemen', ilce: 'Menemen', dakika: 21, aktarma: []),
+  Durak(
+    kod: 'aliaga',
+    ad: 'Aliağa',
+    ilce: 'Aliağa',
+    dakika: 0,
+    konum: Konum(enlem: 38.788773, boylam: 26.967164),
+  ),
+  Durak(
+    kod: 'menemen',
+    ad: 'Menemen',
+    ilce: 'Menemen',
+    dakika: 25,
+    konum: Konum(enlem: 38.603221, boylam: 27.076514),
+  ),
   Durak(
     kod: 'halkapinar',
     ad: 'Halkapınar',
     ilce: 'Konak',
-    dakika: 58,
-    aktarma: ['Metro'],
+    dakika: 63,
+    konum: Konum(enlem: 38.435190, boylam: 27.168837),
+    aktarma: ['Metro', 'Tramvay'],
   ),
-  Durak(kod: 'selcuk', ad: 'Selçuk', ilce: 'Selçuk', dakika: 140, aktarma: []),
+  Durak(
+    kod: 'selcuk',
+    ad: 'Selçuk',
+    ilce: 'Selçuk',
+    dakika: 151,
+    konum: Konum(enlem: 37.950734, boylam: 27.373029),
+  ),
 ];
 
 Widget _uygulama() => IzbanUygulamasi(servis: DurakServisi.hazir(_duraklar));
@@ -31,7 +51,7 @@ void main() {
 
     // Varsayılan seçim uçtan uca: Aliağa → Selçuk
     expect(find.text('Selçuk yönü'), findsOneWidget);
-    expect(find.text('2 sa 20 dk'), findsOneWidget);
+    expect(find.text('2 sa 31 dk'), findsOneWidget);
     expect(find.text('3'), findsOneWidget); // durak sayısı
   });
 
@@ -47,6 +67,6 @@ void main() {
     expect(find.text('Aliağa yönü'), findsOneWidget);
     expect(find.text('Selçuk yönü'), findsNothing);
     // Süre yön değişse de aynı kalmalı.
-    expect(find.text('2 sa 20 dk'), findsOneWidget);
+    expect(find.text('2 sa 31 dk'), findsOneWidget);
   });
 }
