@@ -120,11 +120,5 @@ void main() {
       expect(const YakinDurak(_halkapinar, 2300).mesafeMetni, '2,3 km');
     });
 
-    test('yol tarifi adresi yürüyüş modunda ve doğru hedefte', () {
-      final adres = const YakinDurak(_halkapinar, 100).yolTarifiAdresi.toString();
-      expect(adres, startsWith('https://www.google.com/maps/dir/?api=1'));
-      expect(adres, contains('destination=38.43519,27.168837'));
-      expect(adres, contains('travelmode=walking'));
-    });
   });
 }

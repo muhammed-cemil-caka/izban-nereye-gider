@@ -7,9 +7,10 @@ const assert = require('assert');
 const { HAT_VERISI, DURAKLAR } = require('../frontend/js/duraklar.js');
 const {
   yolculukHesapla, sureBicimle,
-  metreUzaklik, mesafeBicimle, enYakinDurak, enYakinDuraklar, yolTarifiAdresi,
+  metreUzaklik, mesafeBicimle, enYakinDurak, enYakinDuraklar,
   durakAra, aramaIcinSadelestir
 } = require('../frontend/js/hesap.js');
+const { manevrayiTurkcelestir, yuruyusSuresiBicimle } = require('../frontend/js/rota.js');
 
 let sayac = 0;
 function dogrula(baslik, fn) { fn(); sayac++; console.log('  ✓ ' + baslik); }
@@ -115,13 +116,6 @@ dogrula('hiç aday yoksa null döner', () => {
   assert.strictEqual(enYakinDurak([], { enlem: 38.4, boylam: 27.1 }), null);
 });
 
-dogrula('yol tarifi adresi yürüyüş modunda ve doğru hedefte', () => {
-  const adres = yolTarifiAdresi(KONUMLU[0]);
-  assert.ok(adres.startsWith('https://www.google.com/maps/dir/?api=1'));
-  assert.ok(adres.includes('destination=38.43519,27.168837'));
-  assert.ok(adres.includes('travelmode=walking'));
-});
-
 dogrula('en yakın duraklar mesafeye göre sıralı', () => {
   const liste = enYakinDuraklar(KONUMLU, { enlem: 38.4360, boylam: 27.1690 }, 3);
   assert.strictEqual(liste.length, 3);
@@ -152,6 +146,39 @@ dogrula('gerçek veride her durak en yakın aday olabiliyor', () => {
   DURAKLAR.forEach((d) => {
     assert.strictEqual(enYakinDurak(DURAKLAR, d.konum).durak.kod, d.kod, `${d.ad} kendini bulmalı`);
   });
+});
+
+console.log('\nYürüyüş rotası');
+
+dogrula('manevralar Türkçeleştiriliyor', () => {
+  assert.strictEqual(
+    manevrayiTurkcelestir({ type: 'depart', modifier: 'left' }, '8294. Sokak'),
+    'Yola çık — 8294. Sokak'
+  );
+  assert.strictEqual(
+    manevrayiTurkcelestir({ type: 'turn', modifier: 'left' }, '6525. Sokak'),
+    'Sola dön — 6525. Sokak'
+  );
+  assert.strictEqual(
+    manevrayiTurkcelestir({ type: 'turn', modifier: 'slight right' }, ''),
+    'Hafif sağa dön'
+  );
+  assert.strictEqual(
+    manevrayiTurkcelestir({ type: 'end of road', modifier: 'right' }, 'Atatürk Cd.'),
+    'Yolun sonunda sağa dön — Atatürk Cd.'
+  );
+  assert.strictEqual(manevrayiTurkcelestir({ type: 'arrive' }, ''), 'Vardın');
+});
+
+dogrula('bilinmeyen manevra makul bir metne düşüyor', () => {
+  assert.strictEqual(manevrayiTurkcelestir({ type: 'notify' }, ''), 'Devam et');
+});
+
+dogrula('yürüyüş süresi biçimlendirme', () => {
+  assert.strictEqual(yuruyusSuresiBicimle(1140), '19 dk');
+  assert.strictEqual(yuruyusSuresiBicimle(20), '1 dk');
+  assert.strictEqual(yuruyusSuresiBicimle(3600), '1 sa');
+  assert.strictEqual(yuruyusSuresiBicimle(4500), '1 sa 15 dk');
 });
 
 console.log('\nDurak arama');

@@ -6,7 +6,7 @@
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/stil.css?s=b0e89454">
+  <link rel="stylesheet" href="css/stil.css?s=d5e39e4d">
 </head>
 <body>
   <header class="ust-bant">
@@ -45,9 +45,9 @@
           <button type="button" id="binisYapDugmesi" class="dugme dugme--birincil">
             Biniş durağı yap
           </button>
-          <a id="yolTarifiBaglantisi" class="dugme dugme--ikincil" href="#" target="_blank" rel="noopener noreferrer">
-            Yol tarifi al
-          </a>
+          <button type="button" id="yolTarifiDugmesi" class="dugme dugme--ikincil">
+            Yol tarifini haritada göster
+          </button>
         </div>
 
         <details class="konum-duzelt" id="konumDuzelt">
@@ -79,9 +79,9 @@
         <div class="alan">
           <label for="binisSecim">Nereden biniyorsun?</label>
           <select id="binisSecim"></select>
-          <a id="binisYolTarifi" class="satir-baglanti" href="#" target="_blank" rel="noopener noreferrer">
-            Bu durağa yol tarifi al →
-          </a>
+          <button type="button" id="binisYolTarifi" class="satir-baglanti">
+            Bu durağa yol tarifi →
+          </button>
         </div>
 
         <button id="tersCevirDugmesi" class="ters-dugmesi" type="button" aria-label="Biniş ve iniş duraklarını yer değiştir" title="Yer değiştir">
@@ -103,6 +103,17 @@
         <p class="harita-ipucu">Durağa tıkla · konum işaretini sürükleyerek yerini düzelt</p>
       </div>
       <div id="harita" class="harita"></div>
+
+      <div class="rota-sonuc" id="rotaSonucu" hidden>
+        <div class="rota-ozet">
+          <strong id="rotaBaslik">—</strong>
+          <span class="rota-olcu" id="rotaOlcu">—</span>
+          <button type="button" id="rotaTemizle" class="rota-kapat" aria-label="Yol tarifini kaldır">×</button>
+        </div>
+        <ol class="rota-adimlar" id="rotaAdimlar"></ol>
+      </div>
+
+      <p class="rota-durum" id="rotaDurum" hidden></p>
     </section>
 
     <section id="sonucBolumu" class="sonuc" aria-live="polite">
@@ -147,11 +158,12 @@
 
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="js/duraklar.js?s=d90b4a80"></script>
-  <script src="js/hesap.js?s=c455216f"></script>
+  <script src="js/hesap.js?s=69e91242"></script>
   <script src="js/konum.js?s=7f036328"></script>
-  <script src="js/harita.js?s=8481a4e6"></script>
+  <script src="js/harita.js?s=62199806"></script>
+  <script src="js/rota.js?s=59961fe7"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=dca18c06"></script>
+  <script src="js/uygulama.js?s=4de51966"></script>
 </body>
 </html>

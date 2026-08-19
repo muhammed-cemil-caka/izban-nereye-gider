@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../modeller/durak.dart';
 import '../modeller/yolculuk.dart';
+import '../servisler/rota_servisi.dart';
 
 /// Hattı, durakları ve kullanıcı konumunu gösteren harita.
 ///
@@ -17,6 +18,7 @@ class HaritaKarti extends StatefulWidget {
   final List<Durak> duraklar;
   final Yolculuk? yolculuk;
   final Konum? kullaniciKonumu;
+  final YuruyusRotasi? yuruyusRotasi;
   final ValueChanged<Durak> duragaBasildi;
   final ValueChanged<Konum> konumTasindi;
 
@@ -25,6 +27,7 @@ class HaritaKarti extends StatefulWidget {
     required this.duraklar,
     required this.yolculuk,
     required this.kullaniciKonumu,
+    required this.yuruyusRotasi,
     required this.duragaBasildi,
     required this.konumTasindi,
   });
@@ -40,6 +43,7 @@ class _HaritaKartiDurumu extends State<HaritaKarti> {
   static const _guzergahRengi = Color(0xFF0B5FA5);
   static const _binisRengi = Color(0xFF0B7A63);
   static const _inisRengi = Color(0xFFB3541E);
+  static const _yuruyusRengi = Color(0xFFB3541E);
 
   List<LatLng> get _hatNoktalari => widget.duraklar
       .where((d) => d.konum.gecerli)
@@ -105,6 +109,15 @@ class _HaritaKartiDurumu extends State<HaritaKarti> {
                           .toList(),
                       color: _guzergahRengi,
                       strokeWidth: 5,
+                    ),
+                  if (widget.yuruyusRotasi != null)
+                    Polyline(
+                      points: widget.yuruyusRotasi!.noktalar
+                          .map((k) => LatLng(k.enlem, k.boylam))
+                          .toList(),
+                      color: _yuruyusRengi,
+                      strokeWidth: 5,
+                      pattern: StrokePattern.dotted(),
                     ),
                 ]),
                 MarkerLayer(markers: _durakIsaretleri()),

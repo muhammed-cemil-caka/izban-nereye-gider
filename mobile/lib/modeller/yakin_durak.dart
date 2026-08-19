@@ -13,14 +13,6 @@ class YakinDurak {
     return '${(mesafeM / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
   }
 
-  /// Durağa yürüyerek yol tarifi için Google Haritalar adresi.
-  /// Uygulama kuruluysa uygulamada, değilse tarayıcıda açılır.
-  Uri get yolTarifiAdresi => Uri.parse(
-        'https://www.google.com/maps/dir/?api=1'
-        '&destination=${durak.konum.enlem},${durak.konum.boylam}'
-        '&travelmode=walking',
-      );
-
   /// Verilen konuma en yakın durağı bulur.
   /// Koordinatı olmayan duraklar atlanır; aday yoksa null döner.
   static YakinDurak? bul(List<Durak> duraklar, Konum konum) {

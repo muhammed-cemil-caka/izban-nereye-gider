@@ -24,6 +24,7 @@ için tarayıcı düzenlenen dosyaları önbellekte tutuyor ve değişiklikler g
 | `js/uygulama.js` | Arayüz: seçimler, çizim, localStorage |
 | `js/konum.js` | Tarayıcı konum servisi sarmalayıcısı (bekçi zamanlayıcı dahil) |
 | `js/harita.js` | Leaflet haritası: hat, duraklar, güzergâh, sürüklenebilir konum |
+| `js/rota.js` | OSRM yürüyüş rotası ve manevraların Türkçeleştirilmesi |
 | `vendor/leaflet/` | Leaflet 1.9.4 (BSD-2-Clause), CDN yerine depoda |
 | `js/firebase-ayar.js` | Firebase proje bilgileri (gizli değil, bilerek depoda) |
 | `js/firebase-veri.js` | Firestore REST okuma katmanı |

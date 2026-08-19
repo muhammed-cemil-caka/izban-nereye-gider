@@ -341,3 +341,38 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
 @media (max-width: 620px) {
   .harita { height: 300px; }
 }
+
+/* Yürüyüş rotası */
+.rota-sonuc { margin-top: .9rem; padding-top: .9rem; border-top: 1px solid var(--cizgi); }
+.rota-ozet { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.rota-ozet strong { font-size: .98rem; }
+.rota-olcu {
+  padding: .15rem .55rem; border-radius: 999px;
+  background: var(--vurgu-soluk); color: var(--guney);
+  font-size: .8rem; font-weight: 700;
+}
+.rota-kapat {
+  margin-left: auto;
+  width: 28px; height: 28px;
+  border: 1px solid var(--cizgi); border-radius: 8px;
+  background: var(--zemin); color: var(--yazi-soluk);
+  font-size: 1rem; line-height: 1; cursor: pointer;
+}
+.rota-kapat:hover { border-color: var(--hata); color: var(--hata); }
+
+.rota-adimlar {
+  margin: .8rem 0 0; padding: 0 0 0 1.2rem;
+  display: grid; gap: .35rem;
+  max-height: 220px; overflow-y: auto;
+  font-size: .88rem;
+}
+.rota-adimlar li { padding-left: .2rem; }
+.rota-adim-mesafe { color: var(--yazi-soluk); font-size: .78rem; margin-left: .35rem; }
+
+.rota-durum { margin: .8rem 0 0; font-size: .85rem; color: var(--yazi-soluk); }
+.rota-durum[data-tur="hata"] { color: var(--hata); font-weight: 600; }
+
+button.satir-baglanti {
+  border: none; background: none; padding: 0;
+  cursor: pointer; text-align: left;
+}

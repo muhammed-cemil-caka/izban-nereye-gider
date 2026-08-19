@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../modeller/durak.dart';
 import '../modeller/yakin_durak.dart';
 import '../modeller/yolculuk.dart';
 import '../servisler/durak_servisi.dart';
 import '../servisler/konum_servisi.dart';
+import '../servisler/rota_servisi.dart';
 import 'harita_karti.dart';
 
 class AnaEkran extends StatefulWidget {
@@ -32,6 +32,10 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   List<YakinDurak> _yakinAdaylar = const [];
   double? _konumDogrulukM;
   Konum? _kullaniciKonumu;
+  YuruyusRotasi? _yuruyusRotasi;
+  Durak? _rotaHedefi;
+  bool _rotaAraniyor = false;
+  String? _rotaHatasi;
   String? _konumHatasi;
   bool _konumAyarlariGerekli = false;
   bool _konumAraniyor = false;
@@ -82,16 +86,40 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     }
   }
 
-  Future<void> _yolTarifiAc(YakinDurak yakin) async {
-    final acildi = await launchUrl(
-      yakin.yolTarifiAdresi,
-      mode: LaunchMode.externalApplication,
-    );
-    if (!acildi && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harita uygulaması açılamadı.')),
-      );
+  /// Yürüyüş rotasını hesaplayıp haritada gösterir.
+  /// Google Haritalar'a yönlendirilmiyor: rota uygulamanın kendi haritasında.
+  Future<void> _yolTarifiniGoster(YakinDurak yakin) async {
+    final konum = _kullaniciKonumu;
+    if (konum == null) return;
+
+    setState(() {
+      _rotaAraniyor = true;
+      _rotaHatasi = null;
+    });
+
+    try {
+      final rota = await const RotaServisi().rotaAl(konum, yakin.durak.konum);
+      if (!mounted) return;
+      setState(() {
+        _yuruyusRotasi = rota;
+        _rotaHedefi = yakin.durak;
+        _rotaAraniyor = false;
+      });
+    } catch (sorun) {
+      if (!mounted) return;
+      setState(() {
+        _rotaHatasi = 'Yürüyüş rotası alınamadı.';
+        _rotaAraniyor = false;
+      });
     }
+  }
+
+  void _rotayiTemizle() {
+    setState(() {
+      _yuruyusRotasi = null;
+      _rotaHedefi = null;
+      _rotaHatasi = null;
+    });
   }
 
   void _tersCevir() {
@@ -150,7 +178,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                         : duraklar.first.kod;
                   }
                 }),
-                yolTarifiAc: _yolTarifiAc,
+                yolTarifiAc: _yolTarifiniGoster,
               ),
               const SizedBox(height: 16),
               _SecimKarti(
@@ -166,6 +194,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 duraklar: duraklar,
                 yolculuk: yolculuk,
                 kullaniciKonumu: _kullaniciKonumu,
+                yuruyusRotasi: _yuruyusRotasi,
                 duragaBasildi: (durak) => setState(() {
                   _binisKod = durak.kod;
                   if (_inisKod == _binisKod) {
@@ -187,6 +216,16 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                   });
                 },
               ),
+              if (_rotaAraniyor || _rotaHatasi != null || _yuruyusRotasi != null) ...[
+                const SizedBox(height: 16),
+                _RotaKarti(
+                  rota: _yuruyusRotasi,
+                  hedef: _rotaHedefi,
+                  araniyor: _rotaAraniyor,
+                  hata: _rotaHatasi,
+                  temizle: _rotayiTemizle,
+                ),
+              ],
               const SizedBox(height: 16),
               if (yolculuk == null)
                 const _UyariKarti(mesaj: 'Biniş ve iniş durağı aynı olamaz.')
@@ -614,5 +653,105 @@ class _KonumKarti extends StatelessWidget {
         ],
       ),
     ];
+  }
+}
+
+/// Hesaplanan yürüyüş rotasını adım adım gösterir.
+class _RotaKarti extends StatelessWidget {
+  final YuruyusRotasi? rota;
+  final Durak? hedef;
+  final bool araniyor;
+  final String? hata;
+  final VoidCallback temizle;
+
+  const _RotaKarti({
+    required this.rota,
+    required this.hedef,
+    required this.araniyor,
+    required this.hata,
+    required this.temizle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+
+    if (araniyor) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+              SizedBox(width: 12),
+              Text('Yürüyüş rotası hesaplanıyor…'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (hata != null) {
+      return Card(
+        color: tema.colorScheme.errorContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(hata!),
+        ),
+      );
+    }
+
+    final yol = rota;
+    if (yol == null) return const SizedBox.shrink();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${hedef?.ad ?? ""} durağına yürüyüş',
+                    style: tema.textTheme.titleSmall,
+                  ),
+                ),
+                IconButton(
+                  onPressed: temizle,
+                  icon: const Icon(Icons.close, size: 20),
+                  tooltip: 'Yol tarifini kaldır',
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+            Chip(
+              label: Text('${yol.mesafeMetni} · ${yol.sureMetni}'),
+              visualDensity: VisualDensity.compact,
+            ),
+            const SizedBox(height: 8),
+            ...yol.adimlar.map((adim) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.chevron_right, size: 16),
+                      const SizedBox(width: 4),
+                      Expanded(child: Text(adim.metin, style: tema.textTheme.bodySmall)),
+                      Text(
+                        adim.mesafeM < 1000
+                            ? '${adim.mesafeM.round()} m'
+                            : '${(adim.mesafeM / 1000).toStringAsFixed(1)} km',
+                        style: tema.textTheme.bodySmall
+                            ?.copyWith(color: tema.textTheme.bodySmall?.color?.withValues(alpha: .6)),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
   }
 }

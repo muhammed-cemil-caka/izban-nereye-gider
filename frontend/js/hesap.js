@@ -147,13 +147,6 @@ function durakAra(duraklar, sorgu) {
   });
 }
 
-/** Durağa yürüyerek yol tarifi için Google Haritalar adresi. */
-function yolTarifiAdresi(durak) {
-  return 'https://www.google.com/maps/dir/?api=1' +
-    '&destination=' + durak.konum.enlem + ',' + durak.konum.boylam +
-    '&travelmode=walking';
-}
-
 if (typeof module !== 'undefined') {
   module.exports = {
     durakBul: durakBul,
@@ -164,7 +157,6 @@ if (typeof module !== 'undefined') {
     enYakinDurak: enYakinDurak,
     enYakinDuraklar: enYakinDuraklar,
     durakAra: durakAra,
-    aramaIcinSadelestir: aramaIcinSadelestir,
-    yolTarifiAdresi: yolTarifiAdresi
+    aramaIcinSadelestir: aramaIcinSadelestir
   };
 }

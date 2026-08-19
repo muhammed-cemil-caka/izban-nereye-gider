@@ -1,0 +1,157 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../modeller/durak.dart';
+
+/// Yürüyüş rotasının bir adımı.
+class RotaAdimi {
+  final String metin;
+  final double mesafeM;
+
+  const RotaAdimi(this.metin, this.mesafeM);
+}
+
+/// Hesaplanmış yürüyüş rotası.
+class YuruyusRotasi {
+  final List<Konum> noktalar;
+  final double mesafeM;
+  final double sureSn;
+  final List<RotaAdimi> adimlar;
+
+  const YuruyusRotasi({
+    required this.noktalar,
+    required this.mesafeM,
+    required this.sureSn,
+    required this.adimlar,
+  });
+
+  String get mesafeMetni => mesafeM < 1000
+      ? '${mesafeM.round()} m'
+      : '${(mesafeM / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+
+  String get sureMetni {
+    final dakika = (sureSn / 60).round().clamp(1, 1 << 31);
+    if (dakika < 60) return '$dakika dk';
+    final saat = dakika ~/ 60;
+    final kalan = dakika % 60;
+    return kalan == 0 ? '$saat sa' : '$saat sa $kalan dk';
+  }
+}
+
+/// Yürüyüş rotası hesaplar — OSRM (OpenStreetMap tabanlı).
+///
+/// Servis notu: routing.openstreetmap.de FOSSGIS'in işlettiği ücretsiz bir
+/// topluluk servisidir, anahtar istemez ama ağır kullanıma uygun değildir.
+/// Rota yalnızca kullanıcı isteyince çekilir. Yayına çıkarken kendi OSRM
+/// örneğimize ya da anahtarlı bir servise geçilmeli.
+class RotaServisi {
+  const RotaServisi();
+
+  static const _taban =
+      'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
+  static const _zamanAsimi = Duration(seconds: 15);
+
+  static const _yonAdlari = <String, String>{
+    'left': 'sola',
+    'right': 'sağa',
+    'slight left': 'hafif sola',
+    'slight right': 'hafif sağa',
+    'sharp left': 'keskin sola',
+    'sharp right': 'keskin sağa',
+    'straight': 'düz',
+    'uturn': 'geri',
+  };
+
+  /// OSRM manevralarını Türkçeleştirir.
+  static String manevrayiTurkcelestir(
+    String tur,
+    String? yonKodu,
+    String? yolAdi,
+  ) {
+    final yon = _yonAdlari[yonKodu] ?? '';
+    final yer = (yolAdi != null && yolAdi.isNotEmpty) ? ' — $yolAdi' : '';
+
+    switch (tur) {
+      case 'depart':
+        return 'Yola çık$yer';
+      case 'arrive':
+        return 'Vardın$yer';
+      case 'turn':
+        if (yon.isEmpty) return 'Dön$yer';
+        return '${yon[0].toUpperCase()}${yon.substring(1)} dön$yer';
+      case 'end of road':
+        return 'Yolun sonunda ${yon.isEmpty ? "devam et" : yon} dön$yer';
+      case 'fork':
+        return 'Ayrımda ${yon.isEmpty ? "düz" : yon} git$yer';
+      case 'new name':
+      case 'continue':
+        return 'Devam et$yer';
+      case 'roundabout':
+      case 'rotary':
+        return 'Kavşaktan çık$yer';
+      case 'merge':
+        return 'Yola katıl$yer';
+      default:
+        return 'Devam et$yer';
+    }
+  }
+
+  Future<YuruyusRotasi> rotaAl(Konum baslangic, Konum bitis) async {
+    final adres = Uri.parse(
+      '$_taban/${baslangic.boylam},${baslangic.enlem}'
+      ';${bitis.boylam},${bitis.enlem}'
+      '?overview=full&geometries=geojson&steps=true',
+    );
+
+    final yanit = await http.get(adres).timeout(_zamanAsimi);
+    if (yanit.statusCode != 200) {
+      throw Exception('Rota servisi yanıtı: ${yanit.statusCode}');
+    }
+
+    final govde = jsonDecode(utf8.decode(yanit.bodyBytes)) as Map<String, dynamic>;
+    if (govde['code'] != 'Ok') throw Exception('Yürüyüş rotası bulunamadı.');
+
+    final rotalar = govde['routes'] as List<dynamic>;
+    if (rotalar.isEmpty) throw Exception('Yürüyüş rotası bulunamadı.');
+
+    final rota = rotalar.first as Map<String, dynamic>;
+    final geometri = rota['geometry'] as Map<String, dynamic>;
+
+    // GeoJSON [boylam, enlem] sırasıyla gelir.
+    final noktalar = (geometri['coordinates'] as List<dynamic>)
+        .map((n) => Konum(
+              enlem: ((n as List<dynamic>)[1] as num).toDouble(),
+              boylam: (n[0] as num).toDouble(),
+            ))
+        .toList();
+
+    final bacaklar = rota['legs'] as List<dynamic>;
+    final hamAdimlar =
+        bacaklar.isEmpty ? const [] : (bacaklar.first['steps'] as List<dynamic>);
+
+    final adimlar = <RotaAdimi>[];
+    for (var i = 0; i < hamAdimlar.length; i++) {
+      final adim = hamAdimlar[i] as Map<String, dynamic>;
+      final manevra = adim['maneuver'] as Map<String, dynamic>;
+      final mesafe = (adim['distance'] as num).toDouble();
+
+      // Sıfıra yakın adımlar listeyi gereksiz uzatıyor.
+      if (mesafe < 5 && i != 0 && i != hamAdimlar.length - 1) continue;
+
+      adimlar.add(RotaAdimi(
+        manevrayiTurkcelestir(
+          manevra['type'] as String? ?? '',
+          manevra['modifier'] as String?,
+          adim['name'] as String?,
+        ),
+        mesafe,
+      ));
+    }
+
+    return YuruyusRotasi(
+      noktalar: noktalar,
+      mesafeM: (rota['distance'] as num).toDouble(),
+      sureSn: (rota['duration'] as num).toDouble(),
+      adimlar: adimlar,
+    );
+  }
+}

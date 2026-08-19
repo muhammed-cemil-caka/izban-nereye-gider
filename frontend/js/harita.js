@@ -14,6 +14,7 @@ var IZMIR_MERKEZ = { enlem: 38.42, boylam: 27.14 };
 
 var HAT_RENGI = '#7a8798';
 var GUZERGAH_RENGI = '#0b5fa5';
+var YURUYUS_RENGI = '#b3541e';
 
 /**
  * Harita kurar ve üzerinde çalışacak küçük bir arayüz döndürür.
@@ -74,6 +75,7 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   var guzergahCizgisi = null;
   var durakKatmani = L.layerGroup().addTo(harita);
   var konumIsareti = null;
+  var yuruyusCizgisi = null;
   var durakIsaretleri = {};
 
   /** Tüm hattı ve durakları çizer. Yalnızca veri değiştiğinde çağrılır. */
@@ -164,6 +166,29 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     }
   }
 
+  /** Yürüyüş rotasını çizer ve görünür alana oturtur. */
+  function yuruyusRotasiniCiz(noktalar) {
+    yuruyusRotasiniTemizle();
+    if (!noktalar || !noktalar.length) return;
+
+    yuruyusCizgisi = L.polyline(noktalar, {
+      color: YURUYUS_RENGI,
+      weight: 5,
+      opacity: .95,
+      dashArray: '1 9',
+      lineCap: 'round'
+    }).addTo(harita);
+
+    sinirlaraOturt(yuruyusCizgisi.getBounds(), [40, 40]);
+  }
+
+  function yuruyusRotasiniTemizle() {
+    if (yuruyusCizgisi) {
+      harita.removeLayer(yuruyusCizgisi);
+      yuruyusCizgisi = null;
+    }
+  }
+
   function guzergahaOdaklan() {
     if (guzergahCizgisi) sinirlaraOturt(guzergahCizgisi.getBounds(), [32, 32]);
   }
@@ -191,6 +216,8 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   setTimeout(bekleyeniUygula, 0);
 
   return {
+    yuruyusRotasiniCiz: yuruyusRotasiniCiz,
+    yuruyusRotasiniTemizle: yuruyusRotasiniTemizle,
     duraklariCiz: duraklariCiz,
     guzergahiVurgula: guzergahiVurgula,
     konumuGoster: konumuGoster,

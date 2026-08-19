@@ -143,9 +143,9 @@ Ayrıntılar: [`mobile/README.md`](mobile/README.md)
 ## Konum ve en yakın durak
 
 Uygulama açılışında konum izni ister, izin verilirse en yakın durağı bulur ve
-iki işlem sunar: durağı biniş noktası yapmak, ya da Google Haritalar'da
-**yürüyerek** yol tarifi açmak. Yol tarifi ayrıca seçili biniş durağı için de
-alınabilir, en yakın durakla sınırlı değildir.
+iki işlem sunar: durağı biniş noktası yapmak, ya da **yürüyüş yol tarifini
+uygulamanın kendi haritasında** göstermek. Yol tarifi ayrıca seçili biniş durağı
+için de alınabilir, en yakın durakla sınırlı değildir.
 
 ### Konum isabeti
 
@@ -204,7 +204,19 @@ yeşil / iniş turuncu gösterilir. Durağa tıklamak onu biniş durağı yapar.
 Kullanıcı konumu **sürüklenebilir** bir işaretle gösterilir — masaüstünde şaşan
 tarayıcı konumunu düzeltmenin en doğrudan yolu budur.
 
-### Döşeme sunucusu uyarısı
+### Yürüyüş yol tarifi
+
+Rota, harici bir harita uygulamasına yönlendirmeden **uygulama içinde** çizilir:
+mesafe, yürüme süresi ve Türkçe adım adım tarif (sokak adlarıyla) gösterilir.
+Google Haritalar'a yönlendirme kaldırıldı.
+
+Yönlendirme servisi: [OSRM](https://routing.openstreetmap.de) yürüyüş profili —
+FOSSGIS'in işlettiği ücretsiz topluluk servisi, anahtar istemez. Rota yalnızca
+kullanıcı düğmeye bastığında çekilir, kendiliğinden değil.
+
+Kod: `frontend/js/rota.js` · `mobile/lib/servisler/rota_servisi.dart`
+
+### Döşeme ve yönlendirme sunucusu uyarısı
 
 `tile.openstreetmap.org` bağışlarla dönen bir altyapıdır ve
 [kullanım politikası](https://operations.osmfoundation.org/policies/tiles)
@@ -213,10 +225,15 @@ uyarı basar. Geliştirme ve düşük trafik için uygundur; **yayına çıkmada
 anahtarlı bir sağlayıcıya (MapTiler, Stadia, Thunderforest) ya da kendi
 sunduğumuz döşemelere geçilmelidir.
 
-Döşeme adresi her iki istemcide de tek bir sabitte tutulur, geçiş tek satırdır:
+Aynı uyarı yönlendirme servisi için de geçerlidir: `routing.openstreetmap.de`
+ücretsiz bir topluluk servisidir ve ağır kullanıma uygun değildir.
 
-- `frontend/js/harita.js` → `DOSEME_ADRESI`
-- `mobile/lib/ekranlar/harita_karti.dart` → `HaritaKarti.dosemeAdresi`
+Her iki adres de tek sabitte tutulur, geçiş tek satırdır:
+
+| | Web | Mobil |
+| --- | --- | --- |
+| Döşeme | `js/harita.js` → `DOSEME_ADRESI` | `harita_karti.dart` → `HaritaKarti.dosemeAdresi` |
+| Rota | `js/rota.js` → `ROTA_TABAN` | `rota_servisi.dart` → `RotaServisi._taban` |
 
 Haritada "© OpenStreetMap katkıcıları" ibaresi bulunmak zorundadır.
 

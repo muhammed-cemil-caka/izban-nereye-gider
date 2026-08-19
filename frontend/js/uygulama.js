@@ -34,7 +34,13 @@
     yakinDurakAd: document.getElementById('yakinDurakAd'),
     yakinDurakMesafe: document.getElementById('yakinDurakMesafe'),
     binisYap: document.getElementById('binisYapDugmesi'),
-    yolTarifi: document.getElementById('yolTarifiBaglantisi'),
+    yolTarifi: document.getElementById('yolTarifiDugmesi'),
+    rotaSonucu: document.getElementById('rotaSonucu'),
+    rotaBaslik: document.getElementById('rotaBaslik'),
+    rotaOlcu: document.getElementById('rotaOlcu'),
+    rotaAdimlar: document.getElementById('rotaAdimlar'),
+    rotaTemizle: document.getElementById('rotaTemizle'),
+    rotaDurum: document.getElementById('rotaDurum'),
     konumTekrar: document.getElementById('konumTekrarDugmesi'),
     binisYolTarifi: document.getElementById('binisYolTarifi'),
     konumDogruluk: document.getElementById('konumDogruluk'),
@@ -183,15 +189,71 @@
     oge.sonuc.hidden = false;
   }
 
-  /** Seçili biniş durağına yürüyerek yol tarifi bağlantısını tazeler. */
+  /** Seçili biniş durağına yol tarifi düğmesini tazeler. */
   function binisYolTarifiniGuncelle(durak) {
-    if (!durak.konum || (!durak.konum.enlem && !durak.konum.boylam)) {
-      oge.binisYolTarifi.hidden = true;
+    var koordinatVar = durak.konum && (durak.konum.enlem || durak.konum.boylam);
+    oge.binisYolTarifi.hidden = !koordinatVar;
+    if (koordinatVar) {
+      oge.binisYolTarifi.textContent = durak.ad + ' durağına yol tarifi →';
+      oge.binisYolTarifi.__durak = durak;
+    }
+  }
+
+  /* ---------- Yürüyüş rotası ---------- */
+
+  var sonKonum = null;
+
+  function rotaDurumuYaz(metin, tur) {
+    oge.rotaDurum.textContent = metin;
+    oge.rotaDurum.hidden = !metin;
+    oge.rotaDurum.setAttribute('data-tur', tur || 'bilgi');
+  }
+
+  function rotayiTemizle() {
+    oge.rotaSonucu.hidden = true;
+    oge.rotaAdimlar.textContent = '';
+    rotaDurumuYaz('');
+    if (harita) harita.yuruyusRotasiniTemizle();
+  }
+
+  /** Kullanıcının konumundan verilen durağa yürüyüş rotası çizer. */
+  function yolTarifiniGoster(durak) {
+    if (!sonKonum) {
+      rotaDurumuYaz('Önce konumunu bulmam gerekiyor.', 'hata');
       return;
     }
-    oge.binisYolTarifi.hidden = false;
-    oge.binisYolTarifi.href = yolTarifiAdresi(durak);
-    oge.binisYolTarifi.textContent = durak.ad + ' durağına yol tarifi →';
+    if (typeof yuruyusRotasiAl !== 'function') return;
+
+    rotaDurumuYaz('Yürüyüş rotası hesaplanıyor…');
+    oge.rotaSonucu.hidden = true;
+
+    yuruyusRotasiAl(sonKonum, durak.konum)
+      .then(function (rota) {
+        if (harita) harita.yuruyusRotasiniCiz(rota.noktalar);
+
+        oge.rotaBaslik.textContent = durak.ad + ' durağına yürüyüş';
+        oge.rotaOlcu.textContent =
+          mesafeBicimle(rota.mesafeM) + ' · ' + yuruyusSuresiBicimle(rota.sureSn);
+
+        oge.rotaAdimlar.textContent = '';
+        rota.adimlar.forEach(function (adim) {
+          var satir = document.createElement('li');
+          satir.textContent = adim.metin;
+
+          var mesafe = document.createElement('span');
+          mesafe.className = 'rota-adim-mesafe';
+          mesafe.textContent = mesafeBicimle(adim.mesafeM);
+          satir.appendChild(mesafe);
+
+          oge.rotaAdimlar.appendChild(satir);
+        });
+
+        oge.rotaSonucu.hidden = false;
+        rotaDurumuYaz('');
+      })
+      .catch(function (sorun) {
+        rotaDurumuYaz(sorun.message, 'hata');
+      });
   }
 
   function hataGoster(mesaj) {
@@ -228,10 +290,9 @@
 
     oge.yakinDurakAd.textContent = enYakin.durak.ad;
     oge.yakinDurakMesafe.textContent = mesafeBicimle(enYakin.mesafeM);
-    oge.yolTarifi.href = yolTarifiAdresi(enYakin.durak);
     oge.yolTarifi.setAttribute(
       'aria-label',
-      enYakin.durak.ad + ' durağına yürüyerek yol tarifi (Google Haritalar\'da açılır)'
+      enYakin.durak.ad + ' durağına yürüyerek yol tarifini haritada göster'
     );
 
     dogruluguYaz(dogrulukM, kesinMi);
@@ -347,6 +408,7 @@
     tumAdaylar = adaylar;
     yakinDuragiGoster(adaylar, konum.dogrulukM, kesinMi);
 
+    sonKonum = { enlem: konum.enlem, boylam: konum.boylam };
     if (harita) harita.konumuGoster(konum);
   }
 
@@ -555,6 +617,17 @@
     });
 
     oge.konumTekrar.addEventListener('click', konumuBul);
+
+    oge.yolTarifi.addEventListener('click', function () {
+      if (yakinDurak) yolTarifiniGoster(yakinDurak);
+    });
+
+    oge.binisYolTarifi.addEventListener('click', function () {
+      if (oge.binisYolTarifi.__durak) yolTarifiniGoster(oge.binisYolTarifi.__durak);
+    });
+
+    oge.rotaTemizle.addEventListener('click', rotayiTemizle);
+
     aramayiBagla();
 
     haritayiKur();
