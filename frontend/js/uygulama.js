@@ -5,6 +5,7 @@
   var BINIS_ANAHTAR = 'izban.binis';
   var INIS_ANAHTAR = 'izban.inis';
   var TEMA_ANAHTAR = 'izban.tema';
+  var ELLE_KONUM_ANAHTAR = 'izban.elleKonum';
 
   // Gösterimde kullanılan veri. Sayfa yerel kopyayla anında açılır; Firestore
   // yanıtı gelince bununla değiştirilip arayüz yeniden çizilir.
@@ -206,7 +207,11 @@
     oge.konumMetni.textContent = metin;
     oge.konumKarti.setAttribute('data-durum', durum);
     oge.konumSonucu.hidden = durum !== 'hazir';
-    oge.konumTekrar.hidden = durum !== 'hata';
+
+    // Tekrar düğmesi iki durumda gerekli: hata varsa, ya da elle girilmiş bir
+    // konum kullanılıyorsa (kullanıcı tarayıcı konumuna dönebilmeli).
+    oge.konumTekrar.hidden = durum !== 'hata' && !elleKonumuOku();
+    oge.konumTekrar.textContent = elleKonumuOku() ? 'Konumumu yeniden bul' : 'Konumumu bul';
   }
 
   // Bu değerin üstündeki doğruluklarda en yakın durak yanılabilir; kullanıcı uyarılır.
@@ -237,8 +242,11 @@
   function dogruluguYaz(dogrulukM, kesinMi) {
     if (dogrulukM === null) {
       // Elle girilen konum: doğruluk kavramı geçerli değil.
+      var kayitli = elleKonumuOku();
       oge.konumDogruluk.setAttribute('data-kaba', 'hayir');
-      oge.konumDogruluk.textContent = 'Konum senin girdiğin yere göre hesaplandı.';
+      oge.konumDogruluk.textContent = kayitli && kayitli.etiket
+        ? 'Konum senin girdiğin yere göre: ' + kayitli.etiket.split(',')[0]
+        : 'Konum senin girdiğin yere göre hesaplandı.';
       return;
     }
 
@@ -300,6 +308,33 @@
   var sonDogruluk = { dogrulukM: 0, enYakinMesafe: 0 };
   var izlemeyiDurdur = null;
 
+  /** Kullanıcının elle girdiği konumu saklar; her açılışta yeniden girilmesin. */
+  function elleKonumuKaydet(konum, etiket) {
+    try {
+      localStorage.setItem(ELLE_KONUM_ANAHTAR, JSON.stringify({
+        enlem: konum.enlem,
+        boylam: konum.boylam,
+        etiket: etiket || ''
+      }));
+    } catch (sorun) { /* özel mod */ }
+  }
+
+  function elleKonumuOku() {
+    try {
+      var ham = localStorage.getItem(ELLE_KONUM_ANAHTAR);
+      if (!ham) return null;
+      var kayit = JSON.parse(ham);
+      if (typeof kayit.enlem !== 'number' || typeof kayit.boylam !== 'number') return null;
+      return kayit;
+    } catch (sorun) {
+      return null;
+    }
+  }
+
+  function elleKonumuUnut() {
+    try { localStorage.removeItem(ELLE_KONUM_ANAHTAR); } catch (sorun) { /* özel mod */ }
+  }
+
   /** Bir konumdan aday listesini kurup arayüzü tazeler. */
   function konumuIsle(konum, kesinMi) {
     var adaylar = enYakinDuraklar(aktifDuraklar, konum, 4);
@@ -312,8 +347,24 @@
     yakinDuragiGoster(adaylar, konum.dogrulukM, kesinMi);
   }
 
+  /**
+   * Açılış akışı: kullanıcı daha önce konumunu elle düzelttiyse ona güvenilir.
+   * Masaüstünde tarayıcı konumu Wi-Fi tabanlı olduğu için elle girilen değer
+   * neredeyse her zaman daha isabetlidir.
+   */
+  function konumuBaslat() {
+    var kayitli = elleKonumuOku();
+    if (kayitli) {
+      konumuIsle({ enlem: kayitli.enlem, boylam: kayitli.boylam, dogrulukM: null }, true);
+      return;
+    }
+    konumuBul();
+  }
+
   function konumuBul() {
     if (izlemeyiDurdur) izlemeyiDurdur();
+    // Tarayıcı konumu istendiği anda elle girilen değer geçerliliğini yitirir.
+    elleKonumuUnut();
     konumDurumunuYaz('Konumun alınıyor…', 'bekliyor');
 
     izlemeyiDurdur = konumIzle(
@@ -373,6 +424,7 @@
           boylam: durak.konum.boylam,
           dogrulukM: null
         }, true);
+        elleKonumuKaydet(durak.konum, durak.ad);
         oge.binis.value = durak.kod;
         guncelle();
         aramayiKapat();
@@ -390,6 +442,7 @@
         // Elle girilen konum tarayıcıdan daha güvenilir sayılır: izleme durur.
         if (izlemeyiDurdur) izlemeyiDurdur();
         konumuIsle({ enlem: yer.enlem, boylam: yer.boylam, dogrulukM: null }, true);
+        elleKonumuKaydet(yer, yer.ad);
         aramayiKapat();
       });
     });
@@ -474,7 +527,7 @@
 
     guncelle();
     firestoreDanTazele();
-    konumuBul();
+    konumuBaslat();
   }
 
   /**

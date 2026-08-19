@@ -165,7 +165,16 @@ Bunun önüne geçmek için:
   arayıp konumunu kendisi belirleyebilir. Durak araması yerel veriyle anında
   çalışır (Türkçe karakter yazmaya gerek yok), yer araması Nominatim'e gider.
 
-**Sınır:** masaüstü tarayıcıda konum Wi-Fi tabanlıdır ve yüz metrelerce şaşabilir;
+Elle girilen konum `localStorage`'da saklanır; sonraki açılışlarda tarayıcı
+konumu istenmez, doğrudan o kullanılır. "Konumumu yeniden bul" düğmesi kaydı
+silip tarayıcı konumuna döner.
+
+**Sınır — masaüstünde GPS yoktur:** Mac ve çoğu dizüstü bilgisayarda GPS alıcısı
+bulunmaz. macOS konumu, görünen Wi-Fi ağlarını Apple'ın veritabanında arayarak
+tahmin eder; şehir içinde tipik isabet 50–500 metredir. Bu yazılımla aşılamaz,
+okunacak bir GPS donanımı yoktur. Gerçek GPS isabeti (5–20 m) yalnızca telefonda
+alınır: Flutter uygulaması ya da telefon tarayıcısından açılan **https** adres.
+Masaüstü tarayıcıda konum Wi-Fi tabanlıdır ve yüz metrelerce şaşabilir;
 telefon uygulamasındaki GPS'e denk isabet beklenmemelidir. Tarayıcı yalnızca
 işletim sisteminin verdiği konumu aktarır, bunu iyileştirmek uygulamanın elinde
 değildir — bu yüzden elle düzeltme ve alternatif durak listesi eklendi. Tarife için harita SDK'sı veya API anahtarı
