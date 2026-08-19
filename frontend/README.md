@@ -11,6 +11,13 @@ python3 araclar/gelistirme-sunucusu.py
 Bu betik `Cache-Control: no-store` gönderir; `python3 -m http.server` göndermediği
 için tarayıcı düzenlenen dosyaları önbellekte tutuyor ve değişiklikler görünmüyor.
 
+Port doluysa betik ham hata yerine ne yapılacağını yazar: sunucu zaten başka bir
+terminalde çalışıyor olabilir. Yan yana çalıştırmak için port verilebilir:
+
+```bash
+python3 araclar/gelistirme-sunucusu.py 5174
+```
+
 <http://localhost:5173>
 
 ## Dosyalar
