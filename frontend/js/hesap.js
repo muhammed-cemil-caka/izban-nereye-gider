@@ -121,6 +121,32 @@ function enYakinDuraklar(duraklar, konum, adet) {
     .slice(0, adet || 3);
 }
 
+/** Türkçe harfleri sadeleştirip karşılaştırmaya uygun hale getirir. */
+function aramaIcinSadelestir(metin) {
+  var harita = {
+    'ç': 'c', 'Ç': 'c', 'ğ': 'g', 'Ğ': 'g', 'ı': 'i', 'I': 'i', 'İ': 'i',
+    'ö': 'o', 'Ö': 'o', 'ş': 's', 'Ş': 's', 'ü': 'u', 'Ü': 'u'
+  };
+  return String(metin)
+    .replace(/[çÇğĞıIİöÖşŞüÜ]/g, function (h) { return harita[h]; })
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Durak adlarında arama yapar. Yerel veriyle çalıştığı için ağ gerektirmez ve
+ * konum servisi şaştığında kullanıcının doğrudan durak seçmesini sağlar.
+ */
+function durakAra(duraklar, sorgu) {
+  var temiz = aramaIcinSadelestir(sorgu);
+  if (temiz.length < 2) return [];
+
+  return duraklar.filter(function (durak) {
+    return aramaIcinSadelestir(durak.ad).indexOf(temiz) !== -1 ||
+           aramaIcinSadelestir(durak.ilce).indexOf(temiz) !== -1;
+  });
+}
+
 /** Durağa yürüyerek yol tarifi için Google Haritalar adresi. */
 function yolTarifiAdresi(durak) {
   return 'https://www.google.com/maps/dir/?api=1' +
@@ -137,6 +163,8 @@ if (typeof module !== 'undefined') {
     mesafeBicimle: mesafeBicimle,
     enYakinDurak: enYakinDurak,
     enYakinDuraklar: enYakinDuraklar,
+    durakAra: durakAra,
+    aramaIcinSadelestir: aramaIcinSadelestir,
     yolTarifiAdresi: yolTarifiAdresi
   };
 }

@@ -7,7 +7,8 @@ const assert = require('assert');
 const { HAT_VERISI, DURAKLAR } = require('../frontend/js/duraklar.js');
 const {
   yolculukHesapla, sureBicimle,
-  metreUzaklik, mesafeBicimle, enYakinDurak, enYakinDuraklar, yolTarifiAdresi
+  metreUzaklik, mesafeBicimle, enYakinDurak, enYakinDuraklar, yolTarifiAdresi,
+  durakAra, aramaIcinSadelestir
 } = require('../frontend/js/hesap.js');
 
 let sayac = 0;
@@ -151,6 +152,45 @@ dogrula('gerçek veride her durak en yakın aday olabiliyor', () => {
   DURAKLAR.forEach((d) => {
     assert.strictEqual(enYakinDurak(DURAKLAR, d.konum).durak.kod, d.kod, `${d.ad} kendini bulmalı`);
   });
+});
+
+console.log('\nDurak arama');
+
+dogrula('Türkçe karakter sadeleştirmesi', () => {
+  assert.strictEqual(aramaIcinSadelestir('Şirinyer'), 'sirinyer');
+  assert.strictEqual(aramaIcinSadelestir('ÇİĞLİ'), 'cigli');
+  assert.strictEqual(aramaIcinSadelestir('  Halkapınar '), 'halkapinar');
+});
+
+dogrula('Türkçe karakter yazmadan durak bulunuyor', () => {
+  const sonuc = durakAra(DURAKLAR, 'mavisehir');
+  assert.strictEqual(sonuc.length, 1);
+  assert.strictEqual(sonuc[0].ad, 'Mavişehir');
+});
+
+dogrula('büyük/küçük harf ayrımı yok', () => {
+  assert.strictEqual(durakAra(DURAKLAR, 'SELÇUK').length, durakAra(DURAKLAR, 'selcuk').length);
+});
+
+dogrula('parça eşleşmesi çalışıyor', () => {
+  const sonuc = durakAra(DURAKLAR, 'kent');
+  const adlar = sonuc.map((d) => d.ad);
+  assert.ok(adlar.includes('Egekent'), 'Egekent bulunmalı');
+  assert.ok(adlar.includes('Ulukent'), 'Ulukent bulunmalı');
+});
+
+dogrula('ilçeye göre de arama yapılıyor', () => {
+  const sonuc = durakAra(DURAKLAR, 'gaziemir');
+  assert.ok(sonuc.length >= 3, `Gaziemir ilçesinde en az 3 durak olmalı, bulunan: ${sonuc.length}`);
+});
+
+dogrula('çok kısa sorgu sonuç döndürmüyor', () => {
+  assert.strictEqual(durakAra(DURAKLAR, 'a').length, 0);
+  assert.strictEqual(durakAra(DURAKLAR, '').length, 0);
+});
+
+dogrula('eşleşmeyen sorgu boş dönüyor', () => {
+  assert.strictEqual(durakAra(DURAKLAR, 'ankaragucu').length, 0);
 });
 
 console.log('\nGerçek durak verisi');

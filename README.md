@@ -153,13 +153,22 @@ Tek bir `getCurrentPosition` çağrısı çoğu zaman ilk gelen kaba konumu dön
 (Wi-Fi/IP tabanlı, kilometrelerce sapabilir) ve yanlış durağı en yakın gösterir.
 Bunun önüne geçmek için:
 
-- Web'de `watchPosition` ile konum akışı dinlenir, en isabetli ölçüm tutulur;
-  ±100 m'ye ulaşılınca beklemek biter, ulaşılamazsa 8 saniye sonra eldeki en iyi
-  ölçüm kullanılır. Önbellekteki eski konum kabul edilmez (`maximumAge: 0`).
+- Web'de izleme açık tutulur ve konum **zamanla iyileştirilir**: ilk sonuç 6
+  saniyede gösterilir, ardından daha isabetli her ölçüm arayüze yansır. ±30 m'ye
+  inince izleme durur, en geç 45 saniyede kapanır. Önbellekteki eski konum kabul
+  edilmez (`maximumAge: 0`).
 - Mobilde `LocationAccuracy.best` istenir.
 - Ölçüm doğruluğu ekranda yazar. ±200 m'nin üstündeyse kullanıcı uyarılır.
 - Her iki istemcide de **en yakın dört durak** listelenir; GPS şaşarsa kullanıcı
-  doğru durağı kendisi seçebilir. Tarife için harita SDK'sı veya API anahtarı
+  doğru durağı kendisi seçebilir.
+- Webde ayrıca **elle düzeltme** vardır: kullanıcı durak, mahalle veya cadde adı
+  arayıp konumunu kendisi belirleyebilir. Durak araması yerel veriyle anında
+  çalışır (Türkçe karakter yazmaya gerek yok), yer araması Nominatim'e gider.
+
+**Sınır:** masaüstü tarayıcıda konum Wi-Fi tabanlıdır ve yüz metrelerce şaşabilir;
+telefon uygulamasındaki GPS'e denk isabet beklenmemelidir. Tarayıcı yalnızca
+işletim sisteminin verdiği konumu aktarır, bunu iyileştirmek uygulamanın elinde
+değildir — bu yüzden elle düzeltme ve alternatif durak listesi eklendi. Tarife için harita SDK'sı veya API anahtarı
 kullanılmaz — tek bir bağlantı açılır, navigasyonu Google üstlenir.
 
 İzin reddedilirse uygulama normal çalışmaya devam eder; yalnızca en yakın durak

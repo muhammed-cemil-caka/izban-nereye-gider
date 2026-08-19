@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
-  <link rel="stylesheet" href="css/stil.css?s=9e99c103">
+  <link rel="stylesheet" href="css/stil.css?s=1b412db3">
 </head>
 <body>
   <header class="ust-bant">
@@ -48,6 +48,17 @@
             Yol tarifi al
           </a>
         </div>
+
+        <details class="konum-duzelt" id="konumDuzelt">
+          <summary>Konumum yanlış mı? Yerimi kendim gireyim</summary>
+          <div class="konum-duzelt-ic">
+            <label for="konumArama" class="gizli">Bulunduğun yeri ara</label>
+            <input type="search" id="konumArama" placeholder="Durak, mahalle veya cadde adı"
+                   autocomplete="off" enterkeyhint="search">
+            <p class="konum-arama-durum" id="konumAramaDurum" hidden></p>
+            <ul class="konum-arama-liste" id="konumAramaListe"></ul>
+          </div>
+        </details>
 
         <div class="konum-alternatif" id="konumAlternatif" hidden>
           <p class="konum-alternatif-baslik">Yakındaki diğer duraklar:</p>
@@ -126,10 +137,10 @@
   </footer>
 
   <script src="js/duraklar.js?s=d90b4a80"></script>
-  <script src="js/hesap.js?s=9e61c35d"></script>
-  <script src="js/konum.js?s=984e99a2"></script>
+  <script src="js/hesap.js?s=c455216f"></script>
+  <script src="js/konum.js?s=7f036328"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=7db7a8ea"></script>
+  <script src="js/uygulama.js?s=6d26e0c7"></script>
 </body>
 </html>

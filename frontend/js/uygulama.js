@@ -38,6 +38,9 @@
     konumDogruluk: document.getElementById('konumDogruluk'),
     konumAlternatif: document.getElementById('konumAlternatif'),
     konumAlternatifListe: document.getElementById('konumAlternatifListe'),
+    konumArama: document.getElementById('konumArama'),
+    konumAramaDurum: document.getElementById('konumAramaDurum'),
+    konumAramaListe: document.getElementById('konumAramaListe'),
     tema: document.getElementById('temaDugmesi')
   };
 
@@ -213,7 +216,7 @@
   // alternatiflerden birini seçtiğinde de bu sıra korunur.
   var tumAdaylar = [];
 
-  function yakinDuragiGoster(adaylar, dogrulukM) {
+  function yakinDuragiGoster(adaylar, dogrulukM, kesinMi) {
     var enYakin = adaylar[0];
     yakinDurak = enYakin.durak;
 
@@ -225,19 +228,32 @@
       enYakin.durak.ad + ' durağına yürüyerek yol tarifi (Google Haritalar\'da açılır)'
     );
 
-    dogruluguYaz(dogrulukM);
+    dogruluguYaz(dogrulukM, kesinMi);
     alternatifleriYaz(adaylar.slice(1));
 
     konumDurumunuYaz('', 'hazir');
   }
 
-  function dogruluguYaz(dogrulukM) {
+  function dogruluguYaz(dogrulukM, kesinMi) {
+    if (dogrulukM === null) {
+      // Elle girilen konum: doğruluk kavramı geçerli değil.
+      oge.konumDogruluk.setAttribute('data-kaba', 'hayir');
+      oge.konumDogruluk.textContent = 'Konum senin girdiğin yere göre hesaplandı.';
+      return;
+    }
+
     var kaba = dogrulukM > KABA_KONUM_ESIGI_M;
     oge.konumDogruluk.setAttribute('data-kaba', kaba ? 'evet' : 'hayir');
-    oge.konumDogruluk.textContent = kaba
+
+    var metin = kaba
       ? 'Konum ±' + Math.round(dogrulukM) + ' m doğrulukla alındı — en yakın durak ' +
         'şaşabilir, aşağıdan seçebilirsin.'
       : 'Konum doğruluğu ±' + Math.round(dogrulukM) + ' m';
+
+    // İzleme sürdüğü sürece konum iyileşmeye devam edebilir.
+    if (!kesinMi) metin += ' · iyileştiriliyor…';
+
+    oge.konumDogruluk.textContent = metin;
   }
 
   /** GPS şaşarsa kullanıcı doğru durağı kendisi seçebilsin. */
@@ -269,7 +285,7 @@
         var kalanlar = tumAdaylar.filter(function (d) {
           return d.durak.kod !== aday.durak.kod;
         });
-        yakinDuragiGoster([aday].concat(kalanlar), sonDogruluk.dogrulukM);
+        yakinDuragiGoster([aday].concat(kalanlar), sonDogruluk.dogrulukM, true);
         oge.binis.value = aday.durak.kod;
         guncelle();
       });
@@ -282,25 +298,134 @@
   }
 
   var sonDogruluk = { dogrulukM: 0, enYakinMesafe: 0 };
+  var izlemeyiDurdur = null;
+
+  /** Bir konumdan aday listesini kurup arayüzü tazeler. */
+  function konumuIsle(konum, kesinMi) {
+    var adaylar = enYakinDuraklar(aktifDuraklar, konum, 4);
+    if (!adaylar.length) {
+      konumDurumunuYaz('Duraklarda koordinat bilgisi yok.', 'hata');
+      return;
+    }
+    sonDogruluk = { dogrulukM: konum.dogrulukM, enYakinMesafe: adaylar[0].mesafeM };
+    tumAdaylar = adaylar;
+    yakinDuragiGoster(adaylar, konum.dogrulukM, kesinMi);
+  }
 
   function konumuBul() {
+    if (izlemeyiDurdur) izlemeyiDurdur();
     konumDurumunuYaz('Konumun alınıyor…', 'bekliyor');
 
-    konumAl()
-      .then(function (konum) {
-        var adaylar = enYakinDuraklar(aktifDuraklar, konum, 4);
-        if (!adaylar.length) {
-          konumDurumunuYaz('Duraklarda koordinat bilgisi yok.', 'hata');
-          return;
-        }
-        sonDogruluk = { dogrulukM: konum.dogrulukM, enYakinMesafe: adaylar[0].mesafeM };
-        tumAdaylar = adaylar;
-        yakinDuragiGoster(adaylar, konum.dogrulukM);
-      })
-      .catch(function (sorun) {
+    izlemeyiDurdur = konumIzle(
+      function (konum, kesinMi) { konumuIsle(konum, kesinMi); },
+      function (mesaj) {
         // İzin reddi dahil her durumda site çalışmaya devam eder.
-        konumDurumunuYaz(sorun.message, 'hata');
+        konumDurumunuYaz(mesaj, 'hata');
+      }
+    );
+  }
+
+  /* ---------- Elle konum düzeltme ---------- */
+
+  var aramaSayaci = null;
+
+  function aramaDurumuYaz(metin) {
+    oge.konumAramaDurum.textContent = metin;
+    oge.konumAramaDurum.hidden = !metin;
+  }
+
+  function aramayiKapat() {
+    oge.konumAramaListe.textContent = '';
+    aramaDurumuYaz('');
+    oge.konumArama.value = '';
+    document.getElementById('konumDuzelt').open = false;
+  }
+
+  function aramaSatiriEkle(etiket, secildi) {
+    var satir = document.createElement('li');
+    var dugme = document.createElement('button');
+    dugme.type = 'button';
+    dugme.textContent = etiket;
+    dugme.addEventListener('click', secildi);
+    satir.appendChild(dugme);
+    oge.konumAramaListe.appendChild(satir);
+  }
+
+  function aramaBasligiEkle(metin) {
+    var satir = document.createElement('li');
+    satir.className = 'konum-arama-baslik';
+    satir.textContent = metin;
+    oge.konumAramaListe.appendChild(satir);
+  }
+
+  /** Durak eşleşmeleri: yerel veri, ağ gerektirmez, her zaman çalışır. */
+  function durakSonuclariniYaz(sorgu) {
+    var eslesenler = durakAra(aktifDuraklar, sorgu).slice(0, 5);
+    if (!eslesenler.length) return 0;
+
+    aramaBasligiEkle('Duraklar');
+    eslesenler.forEach(function (durak) {
+      aramaSatiriEkle(durak.ad + ' · ' + durak.ilce, function () {
+        // "Buradayım" demek yerine doğrudan durağı seçmek daha net.
+        if (izlemeyiDurdur) izlemeyiDurdur();
+        konumuIsle({
+          enlem: durak.konum.enlem,
+          boylam: durak.konum.boylam,
+          dogrulukM: null
+        }, true);
+        oge.binis.value = durak.kod;
+        guncelle();
+        aramayiKapat();
       });
+    });
+    return eslesenler.length;
+  }
+
+  function yerSonuclariniYaz(sonuclar) {
+    if (!sonuclar.length) return;
+
+    aramaBasligiEkle('Yerler');
+    sonuclar.forEach(function (yer) {
+      aramaSatiriEkle(yer.ad, function () {
+        // Elle girilen konum tarayıcıdan daha güvenilir sayılır: izleme durur.
+        if (izlemeyiDurdur) izlemeyiDurdur();
+        konumuIsle({ enlem: yer.enlem, boylam: yer.boylam, dogrulukM: null }, true);
+        aramayiKapat();
+      });
+    });
+  }
+
+  function aramayiBagla() {
+    oge.konumArama.addEventListener('input', function () {
+      var sorgu = oge.konumArama.value;
+      clearTimeout(aramaSayaci);
+      oge.konumAramaListe.textContent = '';
+
+      if (sorgu.trim().length < 3) {
+        aramaDurumuYaz('');
+        return;
+      }
+
+      // Durak eşleşmeleri anında gösterilir; ağ beklenmez.
+      var durakSayisi = durakSonuclariniYaz(sorgu);
+
+      // Nominatim ücretsiz ve gönüllü bir servis; her tuşta istek atılmaz.
+      aramaSayaci = setTimeout(function () {
+        aramaDurumuYaz('Yerler aranıyor…');
+        yerAra(sorgu)
+          .then(function (sonuclar) {
+            yerSonuclariniYaz(sonuclar);
+            aramaDurumuYaz(
+              sonuclar.length || durakSayisi
+                ? ''
+                : 'Sonuç yok. Mahalle, cadde veya durak adı deneyebilirsin.'
+            );
+          })
+          .catch(function () {
+            aramaDurumuYaz(durakSayisi ? '' : 'Yer araması şu an çalışmıyor.');
+          });
+      }, 600);
+    });
   }
 
   /* ---------- Akış ---------- */
@@ -345,6 +470,7 @@
     });
 
     oge.konumTekrar.addEventListener('click', konumuBul);
+    aramayiBagla();
 
     guncelle();
     firestoreDanTazele();

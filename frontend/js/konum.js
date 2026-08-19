@@ -8,8 +8,9 @@
 // (Wi-Fi/IP tabanlı, kilometrelerce sapabilir). Bunun yerine watchPosition ile
 // konum akışı dinlenip en iyi ölçüm tutuluyor: ya hedef doğruluğa ulaşılır ya da
 // süre dolunca eldeki en iyisi kullanılır.
-var HEDEF_DOGRULUK_M = 100;   // bu doğruluğa ulaşınca beklemeyi bırak
-var TOPLAMA_SURESI_MS = 8000; // daha iyisini beklemek için ayrılan süre
+var HEDEF_DOGRULUK_M = 30;    // bu doğruluğa inince izlemeyi bitir
+var ILK_SONUC_SURESI_MS = 6000; // bu süre sonunda eldeki en iyi ölçüm gösterilir
+var IZLEME_SURESI_MS = 45000; // konumu iyileştirmek için toplam izleme süresi
 var BEKCI_SURESI_MS = 15000;  // hiçbir ölçüm gelmezse pes etme süresi
 
 /** Tarayıcı konum desteği ve güvenli bağlam kontrolü. */
@@ -103,6 +104,105 @@ function konumAl() {
   });
 }
 
+/**
+ * Konumu izlemeye devam ederek zamanla iyileştirir.
+ *
+ * Tek ölçümle yetinmek masaüstünde büyük sapmalara yol açıyor: ilk gelen Wi-Fi
+ * tabanlı konum yüzlerce metre şaşabiliyor. Burada izleme açık tutulup her
+ * daha isabetli ölçümde geri çağrı tetikleniyor — böylece konum, Google
+ * Haritalar'ın mavi noktası gibi, zamanla toparlanıyor.
+ *
+ * @param {function} olcumGeldi  her iyileşmede çağrılır: (konum, kesinMi)
+ * @param {function} hataOldu    kalıcı hatada çağrılır: (hataMesaji)
+ * @returns {function} izlemeyi erken durdurmak için çağrılacak fonksiyon
+ */
+function konumIzle(olcumGeldi, hataOldu) {
+  var durum = konumDesteklenirMi();
+  if (!durum.destekli) {
+    hataOldu(durum.sebep);
+    return function () {};
+  }
+
+  var enIyi = null;
+  var izleyici = null;
+  var ilkSonucSayaci = null;
+  var izlemeSayaci = null;
+  var bekciSayaci = null;
+  var ilkSonucVerildi = false;
+  var bitti = false;
+
+  function durdur() {
+    if (bitti) return;
+    bitti = true;
+    if (izleyici !== null) navigator.geolocation.clearWatch(izleyici);
+    clearTimeout(ilkSonucSayaci);
+    clearTimeout(izlemeSayaci);
+    clearTimeout(bekciSayaci);
+  }
+
+  function bildir(kesinMi) {
+    if (enIyi) olcumGeldi(enIyi, kesinMi);
+  }
+
+  izleyici = navigator.geolocation.watchPosition(
+    function (sonuc) {
+      var olcum = {
+        enlem: sonuc.coords.latitude,
+        boylam: sonuc.coords.longitude,
+        dogrulukM: sonuc.coords.accuracy
+      };
+
+      // Yalnızca daha isabetli ölçümler eskisinin yerini alır.
+      if (enIyi && olcum.dogrulukM >= enIyi.dogrulukM) return;
+      enIyi = olcum;
+
+      // Hedefe ulaşıldıysa izlemeye gerek yok.
+      if (olcum.dogrulukM <= HEDEF_DOGRULUK_M) {
+        ilkSonucVerildi = true;
+        durdur();
+        bildir(true);
+        return;
+      }
+
+      // İlk sonuç verildikten sonraki her iyileşme arayüze yansıtılır.
+      if (ilkSonucVerildi) bildir(false);
+    },
+    function (hata) {
+      if (bitti) return;
+      durdur();
+      hataOldu(konumHatasiniAcikla(hata));
+    },
+    { enableHighAccuracy: true, timeout: BEKCI_SURESI_MS, maximumAge: 0 }
+  );
+
+  // Hedefe ulaşılmasa bile kullanıcı sonsuza kadar beklemesin.
+  ilkSonucSayaci = setTimeout(function () {
+    if (enIyi && !ilkSonucVerildi) {
+      ilkSonucVerildi = true;
+      bildir(false);
+    }
+  }, ILK_SONUC_SURESI_MS);
+
+  // İyileştirme sonsuza kadar sürmesin; pil ve gereksiz iş.
+  izlemeSayaci = setTimeout(function () {
+    durdur();
+    bildir(true);
+  }, IZLEME_SURESI_MS);
+
+  // Tarayıcı hiçbir geri çağrı yapmazsa arayüz asılı kalmasın.
+  bekciSayaci = setTimeout(function () {
+    if (!enIyi) {
+      durdur();
+      hataOldu(
+        'Konum yanıt vermedi. macOS kullanıyorsan Sistem Ayarları → Gizlilik ve ' +
+        'Güvenlik → Konum Servisleri altında tarayıcına izin verilmiş olmalı.'
+      );
+    }
+  }, BEKCI_SURESI_MS + 2000);
+
+  return durdur;
+}
+
 function konumHatasiniAcikla(hata) {
   switch (hata.code) {
     case hata.PERMISSION_DENIED:
@@ -128,4 +228,43 @@ function konumIzinDurumu() {
   return navigator.permissions.query({ name: 'geolocation' })
     .then(function (sonuc) { return sonuc.state; })
     .catch(function () { return 'bilinmiyor'; });
+}
+
+/* ---------- Elle konum düzeltme ---------- */
+//
+// Masaüstünde tarayıcı konumu Wi-Fi tabanlıdır ve yüzlerce metre şaşabilir.
+// Kullanıcı kendi yerini arayarak düzeltebilsin diye Nominatim kullanılıyor:
+// ücretsiz, anahtar gerektirmiyor, durak verisini üretirken de aynı servisi
+// kullanıyoruz. Sonuçlar İzmir çevresiyle sınırlanır.
+
+var NOMINATIM_ARAMA = 'https://nominatim.openstreetmap.org/search';
+var IZMIR_KUTUSU = '26.8,39.0,27.7,37.8'; // lon_min, lat_max, lon_max, lat_min
+
+/**
+ * Yer adı arar.
+ * @returns {Promise<Array<{ad: string, enlem: number, boylam: number}>>}
+ */
+function yerAra(sorgu) {
+  var temiz = String(sorgu || '').trim();
+  if (temiz.length < 3) return Promise.resolve([]);
+
+  var adres = NOMINATIM_ARAMA +
+    '?format=jsonv2&limit=5&countrycodes=tr&bounded=1' +
+    '&viewbox=' + IZMIR_KUTUSU +
+    '&q=' + encodeURIComponent(temiz);
+
+  return fetch(adres, { headers: { 'Accept': 'application/json' } })
+    .then(function (yanit) {
+      if (!yanit.ok) throw new Error('Arama başarısız (' + yanit.status + ')');
+      return yanit.json();
+    })
+    .then(function (sonuclar) {
+      return (sonuclar || []).map(function (s) {
+        return {
+          ad: s.display_name,
+          enlem: parseFloat(s.lat),
+          boylam: parseFloat(s.lon)
+        };
+      });
+    });
 }
