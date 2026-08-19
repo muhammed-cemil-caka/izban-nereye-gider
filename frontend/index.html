@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
-  <link rel="stylesheet" href="css/stil.css?s=1b412db3">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/stil.css?s=b0e89454">
 </head>
 <body>
   <header class="ust-bant">
@@ -96,6 +97,14 @@
       <p id="hataMesaji" class="hata" role="alert" hidden></p>
     </section>
 
+    <section class="kart harita-karti" aria-labelledby="haritaBaslik">
+      <div class="harita-ust">
+        <h2 id="haritaBaslik" class="kart-baslik">Harita</h2>
+        <p class="harita-ipucu">Durağa tıkla · konum işaretini sürükleyerek yerini düzelt</p>
+      </div>
+      <div id="harita" class="harita"></div>
+    </section>
+
     <section id="sonucBolumu" class="sonuc" aria-live="polite">
       <div class="kart ozet-karti">
         <div class="yon-rozeti" id="yonRozeti">—</div>
@@ -136,11 +145,13 @@
     </div>
   </footer>
 
+  <script src="vendor/leaflet/leaflet.js"></script>
   <script src="js/duraklar.js?s=d90b4a80"></script>
   <script src="js/hesap.js?s=c455216f"></script>
   <script src="js/konum.js?s=7f036328"></script>
+  <script src="js/harita.js?s=8481a4e6"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=425ad08d"></script>
+  <script src="js/uygulama.js?s=dca18c06"></script>
 </body>
 </html>

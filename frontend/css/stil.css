@@ -297,3 +297,47 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
   margin-top: .3rem;
 }
 .konum-arama-baslik:first-child { margin-top: 0; }
+
+/* Harita */
+.harita-ust { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.harita-ipucu { margin: 0 0 .9rem; font-size: .78rem; color: var(--yazi-soluk); }
+
+.harita {
+  height: 380px;
+  border-radius: 10px;
+  border: 1px solid var(--cizgi);
+  overflow: hidden;
+  background: var(--zemin);
+}
+
+/* Leaflet'in kendi kutuları site temasına uysun. */
+.leaflet-container { font: inherit; background: var(--zemin); }
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--zemin-kart) 88%, transparent) !important;
+  color: var(--yazi-soluk) !important;
+  font-size: .68rem !important;
+}
+.leaflet-control-attribution a { color: var(--vurgu) !important; }
+.leaflet-bar a {
+  background: var(--zemin-kart) !important;
+  color: var(--yazi) !important;
+  border-color: var(--cizgi) !important;
+}
+.leaflet-bar a:hover { background: var(--zemin) !important; }
+.leaflet-tooltip {
+  background: var(--zemin-kart); color: var(--yazi);
+  border: 1px solid var(--cizgi); box-shadow: var(--golge);
+}
+.leaflet-tooltip-top::before { border-top-color: var(--cizgi); }
+
+/* Koyu temada döşemeler göz yormasın. */
+:root[data-tema="koyu"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.92); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="acik"]) .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.92);
+  }
+}
+
+@media (max-width: 620px) {
+  .harita { height: 300px; }
+}

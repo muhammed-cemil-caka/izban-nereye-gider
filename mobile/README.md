@@ -41,6 +41,7 @@ dart analyze
 | `lib/servisler/firestore_veri.dart` | Firestore REST okuma katmanı |
 | `lib/servisler/konum_servisi.dart` | GPS izni ve konum alma |
 | `lib/modeller/yakin_durak.dart` | En yakın durak ve yol tarifi bağlantısı |
+| `lib/ekranlar/harita_karti.dart` | flutter_map haritası: hat, duraklar, güzergâh |
 | `lib/firebase_ayari.dart` | Proje kimliği ve API anahtarı (gizli değil) |
 | `lib/ekranlar/ana_ekran.dart` | Arayüz |
 | `assets/duraklar.json` | **Otomatik üretilir** — `node araclar/veri-dagit.js` |

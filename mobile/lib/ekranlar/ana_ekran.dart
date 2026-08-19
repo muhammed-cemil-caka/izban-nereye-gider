@@ -5,6 +5,7 @@ import '../modeller/yakin_durak.dart';
 import '../modeller/yolculuk.dart';
 import '../servisler/durak_servisi.dart';
 import '../servisler/konum_servisi.dart';
+import 'harita_karti.dart';
 
 class AnaEkran extends StatefulWidget {
   /// Verilmezse assets/duraklar.json okunur; testler hazır servis geçebilir.
@@ -30,6 +31,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   YakinDurak? _yakinDurak;
   List<YakinDurak> _yakinAdaylar = const [];
   double? _konumDogrulukM;
+  Konum? _kullaniciKonumu;
   String? _konumHatasi;
   bool _konumAyarlariGerekli = false;
   bool _konumAraniyor = false;
@@ -64,6 +66,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           _yakinAdaylar = adaylar;
           _yakinDurak = adaylar.isEmpty ? null : adaylar.first;
           _konumDogrulukM = dogrulukM;
+          _kullaniciKonumu = konum;
           _konumHatasi = adaylar.isEmpty ? 'Duraklarda koordinat bilgisi yok.' : null;
           _konumAraniyor = false;
         });
@@ -157,6 +160,32 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 binisDegisti: (kod) => setState(() => _binisKod = kod),
                 inisDegisti: (kod) => setState(() => _inisKod = kod),
                 tersCevir: _tersCevir,
+              ),
+              const SizedBox(height: 16),
+              HaritaKarti(
+                duraklar: duraklar,
+                yolculuk: yolculuk,
+                kullaniciKonumu: _kullaniciKonumu,
+                duragaBasildi: (durak) => setState(() {
+                  _binisKod = durak.kod;
+                  if (_inisKod == _binisKod) {
+                    final indeks = duraklar.indexWhere((d) => d.kod == durak.kod);
+                    _inisKod = indeks < duraklar.length / 2
+                        ? duraklar.last.kod
+                        : duraklar.first.kod;
+                  }
+                }),
+                konumTasindi: (konum) {
+                  // Sürükleme, GPS şaştığında yeri elle düzeltmenin en doğrudan yolu.
+                  final adaylar = YakinDurak.enYakinlar(duraklar, konum);
+                  setState(() {
+                    _kullaniciKonumu = konum;
+                    _yakinAdaylar = adaylar;
+                    _yakinDurak = adaylar.isEmpty ? null : adaylar.first;
+                    _konumDogrulukM = null;
+                    _konumHatasi = null;
+                  });
+                },
               ),
               const SizedBox(height: 16),
               if (yolculuk == null)

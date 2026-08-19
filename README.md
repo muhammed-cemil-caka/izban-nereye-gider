@@ -190,6 +190,36 @@ Platform notları:
 - **iOS:** `NSLocationWhenInUseUsageDescription` (Info.plist).
 - **Android:** `ACCESS_FINE_LOCATION` ve `ACCESS_COARSE_LOCATION`.
 
+## Harita
+
+Her iki istemcide de **OpenStreetMap** kullanılır — API anahtarı ve
+faturalandırma hesabı gerektirmez.
+
+- **Web:** Leaflet 1.9.4, `frontend/vendor/leaflet/` altında depoda tutulur
+  (CDN bağımlılığı yok). Kod: `frontend/js/harita.js`
+- **Mobil:** `flutter_map` paketi. Kod: `mobile/lib/ekranlar/harita_karti.dart`
+
+Haritada hat çizilir, 41 durak işaretlenir, seçili güzergâh vurgulanır, biniş
+yeşil / iniş turuncu gösterilir. Durağa tıklamak onu biniş durağı yapar.
+Kullanıcı konumu **sürüklenebilir** bir işaretle gösterilir — masaüstünde şaşan
+tarayıcı konumunu düzeltmenin en doğrudan yolu budur.
+
+### Döşeme sunucusu uyarısı
+
+`tile.openstreetmap.org` bağışlarla dönen bir altyapıdır ve
+[kullanım politikası](https://operations.osmfoundation.org/policies/tiles)
+ağır/ticari kullanımı kısıtlar. `flutter_map` paketi de çalışırken bu konuda
+uyarı basar. Geliştirme ve düşük trafik için uygundur; **yayına çıkmadan önce**
+anahtarlı bir sağlayıcıya (MapTiler, Stadia, Thunderforest) ya da kendi
+sunduğumuz döşemelere geçilmelidir.
+
+Döşeme adresi her iki istemcide de tek bir sabitte tutulur, geçiş tek satırdır:
+
+- `frontend/js/harita.js` → `DOSEME_ADRESI`
+- `mobile/lib/ekranlar/harita_karti.dart` → `HaritaKarti.dosemeAdresi`
+
+Haritada "© OpenStreetMap katkıcıları" ibaresi bulunmak zorundadır.
+
 ## Testler
 
 ```bash

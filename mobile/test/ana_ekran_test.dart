@@ -57,8 +57,17 @@ Widget _uygulama({KonumSonucu? konum}) => IzbanUygulamasi(
       ),
     );
 
+/// Ekranı uzun tutar: ListView tembel çizdiği için kısa ekranda alttaki
+/// kartlar hiç oluşturulmuyor ve testler onları bulamıyor.
+void _uzunEkran(WidgetTester tester) {
+  tester.view.devicePixelRatio = 1.0;
+  tester.view.physicalSize = const Size(1000, 2600);
+  addTearDown(tester.view.reset);
+}
+
 void main() {
   testWidgets('açılışta yolculuk özeti gösteriliyor', (tester) async {
+    _uzunEkran(tester);
     await tester.pumpWidget(_uygulama());
     await tester.pumpAndSettle();
 
@@ -70,13 +79,11 @@ void main() {
     expect(find.text('2 sa 31 dk'), findsOneWidget);
     expect(find.text('3'), findsOneWidget); // durak sayısı
 
-    // Güzergâh kartı liste içinde aşağıda; ListView tembel çizdiği için
-    // görünür alana kaydırılmadan oluşturulmuyor.
-    await tester.scrollUntilVisible(find.text('GÜZERGÂH'), 200);
     expect(find.text('GÜZERGÂH'), findsOneWidget);
   });
 
   testWidgets('yer değiştir butonu yönü tersine çevirir', (tester) async {
+    _uzunEkran(tester);
     await tester.pumpWidget(_uygulama());
     await tester.pumpAndSettle();
 
@@ -92,6 +99,7 @@ void main() {
   });
 
   testWidgets('konum reddedilince uygulama çalışmaya devam ediyor', (tester) async {
+    _uzunEkran(tester);
     await tester.pumpWidget(_uygulama());
     await tester.pumpAndSettle();
 
@@ -100,11 +108,11 @@ void main() {
 
     // Yolculuk özeti hâlâ görünüyor olmalı.
     expect(find.text('Selçuk yönü'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('GÜZERGÂH'), 200);
     expect(find.text('GÜZERGÂH'), findsOneWidget);
   });
 
   testWidgets('konum bulununca en yakın durak gösteriliyor', (tester) async {
+    _uzunEkran(tester);
     await tester.pumpWidget(_uygulama(
       // Halkapınar'ın ~300 m kuzeyi
       konum: const KonumBulundu(Konum(enlem: 38.4380, boylam: 27.1695), 20),
@@ -122,6 +130,7 @@ void main() {
   });
 
   testWidgets('kaba konumda uyarı gösteriliyor', (tester) async {
+    _uzunEkran(tester);
     await tester.pumpWidget(_uygulama(
       konum: const KonumBulundu(Konum(enlem: 38.4380, boylam: 27.1695), 900),
     ));
@@ -134,6 +143,7 @@ void main() {
   });
 
   testWidgets('alternatif durak seçilince biniş değişiyor', (tester) async {
+    _uzunEkran(tester);
     await tester.pumpWidget(_uygulama(
       konum: const KonumBulundu(Konum(enlem: 38.4380, boylam: 27.1695), 900),
     ));
@@ -143,13 +153,12 @@ void main() {
     await tester.tap(find.textContaining('Menemen ·'));
     await tester.pumpAndSettle();
 
-    // Özet kartı listede aşağıda kaldığı için görünür alana kaydırılmalı.
     // Menemen'den Selçuk'a: 151 - 25 = 126 dk
-    await tester.scrollUntilVisible(find.text('2 sa 6 dk'), 200);
     expect(find.text('2 sa 6 dk'), findsOneWidget);
   });
 
   testWidgets('biniş durağı yap butonu seçimi değiştiriyor', (tester) async {
+    _uzunEkran(tester);
     await tester.pumpWidget(_uygulama(
       konum: const KonumBulundu(Konum(enlem: 38.4380, boylam: 27.1695), 20),
     ));
@@ -160,7 +169,6 @@ void main() {
     await tester.pumpAndSettle();
 
     // Halkapınar'dan Selçuk'a: 151 - 63 = 88 dk
-    await tester.scrollUntilVisible(find.text('1 sa 28 dk'), 200);
     expect(find.text('1 sa 28 dk'), findsOneWidget);
     expect(find.text('Selçuk yönü'), findsOneWidget);
   });

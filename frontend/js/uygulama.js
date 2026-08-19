@@ -10,6 +10,7 @@
   // Gösterimde kullanılan veri. Sayfa yerel kopyayla anında açılır; Firestore
   // yanıtı gelince bununla değiştirilip arayüz yeniden çizilir.
   var aktifDuraklar = DURAKLAR;
+  var harita = null;
 
   var oge = {
     binis: document.getElementById('binisSecim'),
@@ -345,6 +346,8 @@
     sonDogruluk = { dogrulukM: konum.dogrulukM, enYakinMesafe: adaylar[0].mesafeM };
     tumAdaylar = adaylar;
     yakinDuragiGoster(adaylar, konum.dogrulukM, kesinMi);
+
+    if (harita) harita.konumuGoster(konum);
   }
 
   /**
@@ -481,6 +484,34 @@
     });
   }
 
+  /* ---------- Harita ---------- */
+
+  function haritayiKur() {
+    if (typeof haritaKur !== 'function' || typeof L === 'undefined') return;
+
+    harita = haritaKur(
+      'harita',
+      function duragaTiklandi(durak) {
+        // Haritadan durak seçmek, biniş listesinden seçmekle aynı şey.
+        oge.binis.value = durak.kod;
+        if (oge.inis.value === oge.binis.value) {
+          var kodlar = aktifDuraklar.map(function (d) { return d.kod; });
+          var indeks = kodlar.indexOf(durak.kod);
+          oge.inis.value = indeks < kodlar.length / 2 ? kodlar[kodlar.length - 1] : kodlar[0];
+        }
+        guncelle();
+      },
+      function konumSuruklendi(konum) {
+        // Sürükleme, masaüstünde şaşan tarayıcı konumunu düzeltmenin en doğrudan yolu.
+        if (izlemeyiDurdur) izlemeyiDurdur();
+        konumuIsle({ enlem: konum.enlem, boylam: konum.boylam, dogrulukM: null }, true);
+        elleKonumuKaydet(konum, 'haritadan seçtiğin nokta');
+      }
+    );
+
+    harita.duraklariCiz(aktifDuraklar);
+  }
+
   /* ---------- Akış ---------- */
 
   function guncelle() {
@@ -492,6 +523,7 @@
     secimiKaydet();
     sonucuGoster(sonuc);
     binisYolTarifiniGuncelle(sonuc.binis);
+    if (harita) harita.guzergahiVurgula(sonuc);
   }
 
   function baslat() {
@@ -525,6 +557,7 @@
     oge.konumTekrar.addEventListener('click', konumuBul);
     aramayiBagla();
 
+    haritayiKur();
     guncelle();
     firestoreDanTazele();
     konumuBaslat();
@@ -547,6 +580,7 @@
 
           aktifDuraklar = sonuc.duraklar;
           secimleriDoldur();
+          if (harita) harita.duraklariCiz(aktifDuraklar);
 
           // Seçimler yeni listede de varsa korunur.
           var kodlar = sonuc.duraklar.map(function (d) { return d.kod; });
