@@ -5,7 +5,10 @@
 // kırılmasınlar diye. Gerçek dosya ayrıca bütünlük açısından denetlenir.
 const assert = require('assert');
 const { HAT_VERISI, DURAKLAR } = require('../frontend/js/duraklar.js');
-const { yolculukHesapla, sureBicimle } = require('../frontend/js/hesap.js');
+const {
+  yolculukHesapla, sureBicimle,
+  metreUzaklik, mesafeBicimle, enYakinDurak, yolTarifiAdresi
+} = require('../frontend/js/hesap.js');
 
 let sayac = 0;
 function dogrula(baslik, fn) { fn(); sayac++; console.log('  ✓ ' + baslik); }
@@ -60,6 +63,69 @@ dogrula('süre biçimlendirme', () => {
   assert.strictEqual(sureBicimle(45), '45 dk');
   assert.strictEqual(sureBicimle(60), '1 sa');
   assert.strictEqual(sureBicimle(140), '2 sa 20 dk');
+});
+
+console.log('\nKonum ve en yakın durak');
+
+// Gerçek koordinatlar: Halkapınar, Alsancak Gar, Selçuk
+const KONUMLU = [
+  { kod: 'halkapinar', ad: 'Halkapınar', konum: { enlem: 38.435190, boylam: 27.168837 } },
+  { kod: 'alsancak-gar', ad: 'Alsancak Gar', konum: { enlem: 38.438597, boylam: 27.148762 } },
+  { kod: 'selcuk', ad: 'Selçuk', konum: { enlem: 37.950734, boylam: 27.373029 } }
+];
+
+dogrula('mesafe hesabı bilinen aralıkta', () => {
+  // Halkapınar ile Alsancak Gar arası kuş uçuşu yaklaşık 1,8 km
+  const m = metreUzaklik(KONUMLU[0].konum, KONUMLU[1].konum);
+  assert.ok(m > 1500 && m < 2100, `beklenmedik mesafe: ${Math.round(m)} m`);
+});
+
+dogrula('aynı noktanın mesafesi sıfır', () => {
+  assert.strictEqual(Math.round(metreUzaklik(KONUMLU[0].konum, KONUMLU[0].konum)), 0);
+});
+
+dogrula('mesafe biçimlendirme', () => {
+  assert.strictEqual(mesafeBicimle(450), '450 m');
+  assert.strictEqual(mesafeBicimle(999), '999 m');
+  assert.strictEqual(mesafeBicimle(2300), '2,3 km');
+});
+
+dogrula('en yakın durak doğru seçiliyor', () => {
+  // Halkapınar'ın hemen yanındaki bir nokta
+  const sonuc = enYakinDurak(KONUMLU, { enlem: 38.4360, boylam: 27.1690 });
+  assert.strictEqual(sonuc.durak.kod, 'halkapinar');
+  assert.ok(sonuc.mesafeM < 500);
+});
+
+dogrula('uzak konumda da en yakın olan bulunuyor', () => {
+  const sonuc = enYakinDurak(KONUMLU, { enlem: 37.96, boylam: 27.37 });
+  assert.strictEqual(sonuc.durak.kod, 'selcuk');
+});
+
+dogrula('koordinatsız duraklar atlanıyor', () => {
+  const karisik = [
+    { kod: 'yok', ad: 'Koordinatsız', konum: { enlem: 0, boylam: 0 } },
+    KONUMLU[0]
+  ];
+  assert.strictEqual(enYakinDurak(karisik, { enlem: 38.44, boylam: 27.17 }).durak.kod, 'halkapinar');
+});
+
+dogrula('hiç aday yoksa null döner', () => {
+  assert.strictEqual(enYakinDurak([], { enlem: 38.4, boylam: 27.1 }), null);
+});
+
+dogrula('yol tarifi adresi yürüyüş modunda ve doğru hedefte', () => {
+  const adres = yolTarifiAdresi(KONUMLU[0]);
+  assert.ok(adres.startsWith('https://www.google.com/maps/dir/?api=1'));
+  assert.ok(adres.includes('destination=38.43519,27.168837'));
+  assert.ok(adres.includes('travelmode=walking'));
+});
+
+dogrula('gerçek veride her durak en yakın aday olabiliyor', () => {
+  // Her durağın kendi koordinatı verildiğinde kendisi bulunmalı.
+  DURAKLAR.forEach((d) => {
+    assert.strictEqual(enYakinDurak(DURAKLAR, d.konum).durak.kod, d.kod, `${d.ad} kendini bulmalı`);
+  });
 });
 
 console.log('\nGerçek durak verisi');

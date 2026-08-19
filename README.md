@@ -102,14 +102,20 @@ cd backend/functions && GOOGLE_APPLICATION_CREDENTIALS=/yol/anahtar.json node ar
 
 ### Frontend
 
-Derleme gerekmez, `frontend/index.html` dosyasını çift tıklayarak açabilirsiniz.
-Yerel sunucuyla çalıştırmak için:
-
 ```bash
-python3 -m http.server 5173 --directory frontend
+python3 araclar/gelistirme-sunucusu.py
 ```
 
 Sonra <http://localhost:5173> adresini açın.
+
+`python3 -m http.server` yerine bu betik kullanılır: o sunucu önbellek başlığı
+göndermediği için tarayıcı düzenlenen dosyaların eski sürümünü tutuyor ve
+değişiklikler sayfaya yansımıyor.
+
+`frontend/index.html` çift tıklanarak da açılabilir ama `file://` üzerinde iki
+özellik çalışmaz: Firestore isteği CORS'a takılır (yerel kopyaya düşer) ve
+**konum servisi devre dışı kalır** — tarayıcılar konumu yalnızca güvenli
+bağlamda (https veya localhost) verir.
 
 ### Backend
 
@@ -134,10 +140,33 @@ cd mobile && flutter pub get && flutter run
 
 Ayrıntılar: [`mobile/README.md`](mobile/README.md)
 
+## Konum ve en yakın durak
+
+Uygulama açılışında konum izni ister, izin verilirse en yakın durağı bulur ve
+iki işlem sunar: durağı biniş noktası yapmak, ya da Google Haritalar'da
+**yürüyerek** yol tarifi açmak. Tarife için harita SDK'sı veya API anahtarı
+kullanılmaz — tek bir bağlantı açılır, navigasyonu Google üstlenir.
+
+İzin reddedilirse uygulama normal çalışmaya devam eder; yalnızca en yakın durak
+kartı kapanır ve "Konumumu bul" düğmesi görünür. Konum cihazdan dışarı gönderilmez,
+en yakın durak hesabı tamamen istemcide yapılır.
+
+Platform notları:
+
+- **Web:** yalnızca `https://` veya `localhost` üzerinde çalışır.
+- **iOS:** `NSLocationWhenInUseUsageDescription` (Info.plist).
+- **Android:** `ACCESS_FINE_LOCATION` ve `ACCESS_COARSE_LOCATION`.
+
 ## Testler
 
 ```bash
 node araclar/test-hesap.js
+```
+
+Durak verisini OpenStreetMap'ten yeniden üretmek için:
+
+```bash
+node araclar/duraklari-osm-den-uret.js
 ```
 
 ```bash

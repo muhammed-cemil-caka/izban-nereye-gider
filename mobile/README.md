@@ -39,6 +39,8 @@ dart analyze
 | `lib/modeller/yolculuk.dart` | Yolculuk hesabı (saf mantık) |
 | `lib/servisler/durak_servisi.dart` | Veri kaynağı: önce Firestore, olmazsa yerel |
 | `lib/servisler/firestore_veri.dart` | Firestore REST okuma katmanı |
+| `lib/servisler/konum_servisi.dart` | GPS izni ve konum alma |
+| `lib/modeller/yakin_durak.dart` | En yakın durak ve yol tarifi bağlantısı |
 | `lib/firebase_ayari.dart` | Proje kimliği ve API anahtarı (gizli değil) |
 | `lib/ekranlar/ana_ekran.dart` | Arayüz |
 | `assets/duraklar.json` | **Otomatik üretilir** — `node araclar/veri-dagit.js` |
@@ -73,3 +75,17 @@ yapılandırma dosyaları `.gitignore` içindedir.
 `AnaEkran` ve `IzbanUygulamasi` isteğe bağlı bir `DurakServisi` alır. Testler
 `DurakServisi.hazir([...])` ile hazır veri geçer; böylece widget testleri asset
 yüklemesine bağlı kalmaz.
+
+## Konum izni
+
+Uygulama açılışında konum ister. İzinler manifest dosyalarında tanımlıdır:
+
+- iOS: `NSLocationWhenInUseUsageDescription` — `ios/Runner/Info.plist`
+- Android: `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` — `AndroidManifest.xml`
+
+İzin reddedilirse uygulama çalışmaya devam eder, yalnızca en yakın durak kartı
+kapanır. Kalıcı reddedilmişse kart "Ayarları aç" düğmesi gösterir.
+
+Testlerde gerçek GPS kullanılmaz: `AnaEkran` ve `IzbanUygulamasi` isteğe bağlı
+bir `KonumServisi` alır, testler `KonumBulundu`/`KonumHatasi` döndüren sahte bir
+servis geçer.

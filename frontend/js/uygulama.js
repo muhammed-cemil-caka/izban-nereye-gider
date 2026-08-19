@@ -26,6 +26,14 @@
     aktarmaListesi: document.getElementById('aktarmaListesi'),
     veriSurumu: document.getElementById('veriSurumu'),
     veriKaynagi: document.getElementById('veriKaynagi'),
+    konumKarti: document.getElementById('konumKarti'),
+    konumMetni: document.getElementById('konumMetni'),
+    konumSonucu: document.getElementById('konumSonucu'),
+    yakinDurakAd: document.getElementById('yakinDurakAd'),
+    yakinDurakMesafe: document.getElementById('yakinDurakMesafe'),
+    binisYap: document.getElementById('binisYapDugmesi'),
+    yolTarifi: document.getElementById('yolTarifiBaglantisi'),
+    konumTekrar: document.getElementById('konumTekrarDugmesi'),
     tema: document.getElementById('temaDugmesi')
   };
 
@@ -172,6 +180,49 @@
     oge.sonuc.hidden = true;
   }
 
+  /* ---------- Konum ---------- */
+
+  var yakinDurak = null;
+
+  function konumDurumunuYaz(metin, durum) {
+    oge.konumMetni.textContent = metin;
+    oge.konumKarti.setAttribute('data-durum', durum);
+    oge.konumSonucu.hidden = durum !== 'hazir';
+    oge.konumTekrar.hidden = durum !== 'hata';
+  }
+
+  function yakinDuragiGoster(sonuc) {
+    yakinDurak = sonuc.durak;
+
+    oge.yakinDurakAd.textContent = sonuc.durak.ad;
+    oge.yakinDurakMesafe.textContent = mesafeBicimle(sonuc.mesafeM);
+    oge.yolTarifi.href = yolTarifiAdresi(sonuc.durak);
+    oge.yolTarifi.setAttribute(
+      'aria-label',
+      sonuc.durak.ad + ' durağına yürüyerek yol tarifi (Google Haritalar\'da açılır)'
+    );
+
+    konumDurumunuYaz('', 'hazir');
+  }
+
+  function konumuBul() {
+    konumDurumunuYaz('Konumun alınıyor…', 'bekliyor');
+
+    konumAl()
+      .then(function (konum) {
+        var sonuc = enYakinDurak(aktifDuraklar, konum);
+        if (!sonuc) {
+          konumDurumunuYaz('Duraklarda koordinat bilgisi yok.', 'hata');
+          return;
+        }
+        yakinDuragiGoster(sonuc);
+      })
+      .catch(function (sorun) {
+        // İzin reddi dahil her durumda site çalışmaya devam eder.
+        konumDurumunuYaz(sorun.message, 'hata');
+      });
+  }
+
   /* ---------- Akış ---------- */
 
   function guncelle() {
@@ -199,8 +250,24 @@
       guncelle();
     });
 
+    oge.binisYap.addEventListener('click', function () {
+      if (!yakinDurak) return;
+      oge.binis.value = yakinDurak.kod;
+      // Biniş ile iniş çakışırsa iniş durağını hattın diğer ucuna al.
+      if (oge.inis.value === oge.binis.value) {
+        var kodlar = aktifDuraklar.map(function (d) { return d.kod; });
+        var indeks = kodlar.indexOf(yakinDurak.kod);
+        oge.inis.value = indeks < kodlar.length / 2 ? kodlar[kodlar.length - 1] : kodlar[0];
+      }
+      guncelle();
+      oge.binis.focus();
+    });
+
+    oge.konumTekrar.addEventListener('click', konumuBul);
+
     guncelle();
     firestoreDanTazele();
+    konumuBul();
   }
 
   /**

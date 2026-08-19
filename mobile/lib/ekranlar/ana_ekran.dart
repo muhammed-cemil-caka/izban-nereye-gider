@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../modeller/durak.dart';
+import '../modeller/yakin_durak.dart';
 import '../modeller/yolculuk.dart';
 import '../servisler/durak_servisi.dart';
+import '../servisler/konum_servisi.dart';
 
 class AnaEkran extends StatefulWidget {
   /// Verilmezse assets/duraklar.json okunur; testler hazır servis geçebilir.
   final DurakServisi? servis;
 
-  const AnaEkran({super.key, this.servis});
+  /// Verilmezse gerçek cihaz konumu kullanılır; testler sahte servis geçebilir.
+  final KonumServisi? konumServisi;
+
+  const AnaEkran({super.key, this.servis, this.konumServisi});
 
   @override
   State<AnaEkran> createState() => _AnaEkranDurumu();
@@ -20,11 +26,63 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   String? _binisKod;
   String? _inisKod;
 
+  KonumServisi get _konumServisi => widget.konumServisi ?? const KonumServisi();
+  YakinDurak? _yakinDurak;
+  String? _konumHatasi;
+  bool _konumAyarlariGerekli = false;
+  bool _konumAraniyor = false;
+
   @override
   void initState() {
     super.initState();
     _servis = widget.servis ?? DurakServisi();
     _duraklarGelecegi = _servis.duraklariGetir();
+
+    // Kullanıcı uygulamayı açar açmaz konum isteniyor; reddedilirse uygulama
+    // normal çalışmaya devam eder, yalnızca en yakın durak kartı kapanır.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _konumuBul());
+  }
+
+  Future<void> _konumuBul() async {
+    if (_konumAraniyor) return;
+    setState(() {
+      _konumAraniyor = true;
+      _konumHatasi = null;
+    });
+
+    final sonuc = await _konumServisi.konumAl();
+    if (!mounted) return;
+
+    switch (sonuc) {
+      case KonumBulundu(:final konum):
+        final duraklar = await _duraklarGelecegi;
+        if (!mounted) return;
+        setState(() {
+          _yakinDurak = YakinDurak.bul(duraklar, konum);
+          _konumHatasi = _yakinDurak == null ? 'Duraklarda koordinat bilgisi yok.' : null;
+          _konumAraniyor = false;
+        });
+
+      case KonumHatasi(:final mesaj, :final ayarlarGerekli):
+        setState(() {
+          _yakinDurak = null;
+          _konumHatasi = mesaj;
+          _konumAyarlariGerekli = ayarlarGerekli;
+          _konumAraniyor = false;
+        });
+    }
+  }
+
+  Future<void> _yolTarifiAc(YakinDurak yakin) async {
+    final acildi = await launchUrl(
+      yakin.yolTarifiAdresi,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!acildi && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harita uygulaması açılamadı.')),
+      );
+    }
   }
 
   void _tersCevir() {
@@ -61,6 +119,25 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              _KonumKarti(
+                yakinDurak: _yakinDurak,
+                hata: _konumHatasi,
+                araniyor: _konumAraniyor,
+                ayarlarGerekli: _konumAyarlariGerekli,
+                tekrarDene: _konumuBul,
+                ayarlariAc: _konumServisi.ayarlariAc,
+                binisYap: (durak) => setState(() {
+                  _binisKod = durak.kod;
+                  if (_inisKod == _binisKod) {
+                    final indeks = duraklar.indexWhere((d) => d.kod == durak.kod);
+                    _inisKod = indeks < duraklar.length / 2
+                        ? duraklar.last.kod
+                        : duraklar.first.kod;
+                  }
+                }),
+                yolTarifiAc: _yolTarifiAc,
+              ),
+              const SizedBox(height: 16),
               _SecimKarti(
                 duraklar: duraklar,
                 binisKod: _binisKod!,
@@ -321,5 +398,124 @@ class _UyariKarti extends StatelessWidget {
         child: Text(mesaj),
       ),
     );
+  }
+}
+
+/// Konum durumunu ve en yakın durağı gösteren kart.
+class _KonumKarti extends StatelessWidget {
+  final YakinDurak? yakinDurak;
+  final String? hata;
+  final bool araniyor;
+  final bool ayarlarGerekli;
+  final VoidCallback tekrarDene;
+  final VoidCallback ayarlariAc;
+  final ValueChanged<Durak> binisYap;
+  final ValueChanged<YakinDurak> yolTarifiAc;
+
+  const _KonumKarti({
+    required this.yakinDurak,
+    required this.hata,
+    required this.araniyor,
+    required this.ayarlarGerekli,
+    required this.tekrarDene,
+    required this.ayarlariAc,
+    required this.binisYap,
+    required this.yolTarifiAc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('KONUMUN', style: tema.textTheme.labelMedium),
+            const SizedBox(height: 8),
+            if (araniyor)
+              const Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 12),
+                  Text('Konumun alınıyor…'),
+                ],
+              )
+            else if (yakinDurak != null)
+              ..._sonuc(context, tema, yakinDurak!)
+            else
+              ..._hata(context, tema),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _sonuc(BuildContext context, ThemeData tema, YakinDurak yakin) {
+    return [
+      Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 8,
+        children: [
+          const Text('En yakın durak:'),
+          Text(
+            yakin.durak.ad,
+            style: tema.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          Chip(
+            label: Text(yakin.mesafeMetni),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          FilledButton(
+            onPressed: () => binisYap(yakin.durak),
+            child: const Text('Biniş durağı yap'),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => yolTarifiAc(yakin),
+            icon: const Icon(Icons.directions_walk, size: 18),
+            label: const Text('Yol tarifi al'),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _hata(BuildContext context, ThemeData tema) {
+    return [
+      Text(
+        hata ?? 'Konum alınamadı.',
+        style: tema.textTheme.bodyMedium?.copyWith(color: tema.colorScheme.error),
+      ),
+      const SizedBox(height: 12),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton(
+            onPressed: tekrarDene,
+            child: const Text('Konumumu bul'),
+          ),
+          if (ayarlarGerekli)
+            TextButton(
+              onPressed: ayarlariAc,
+              child: const Text('Ayarları aç'),
+            ),
+        ],
+      ),
+    ];
   }
 }

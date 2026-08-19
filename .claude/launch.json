@@ -4,7 +4,10 @@
     {
       "name": "frontend",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "5173", "--directory", "frontend"],
+      "runtimeArgs": [
+        "araclar/gelistirme-sunucusu.py",
+        "5173"
+      ],
       "port": 5173
     }
   ]

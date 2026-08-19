@@ -5,8 +5,11 @@ Derleme adımı, paket yöneticisi ve çerçeve yok. `index.html` çift tıklana
 ## Çalıştırma
 
 ```bash
-python3 -m http.server 5173 --directory frontend
+python3 araclar/gelistirme-sunucusu.py
 ```
+
+Bu betik `Cache-Control: no-store` gönderir; `python3 -m http.server` göndermediği
+için tarayıcı düzenlenen dosyaları önbellekte tutuyor ve değişiklikler görünmüyor.
 
 <http://localhost:5173>
 
@@ -19,6 +22,7 @@ python3 -m http.server 5173 --directory frontend
 | `js/duraklar.js` | **Otomatik üretilir** — `node araclar/veri-dagit.js` |
 | `js/hesap.js` | Yolculuk hesabı; saf fonksiyonlar, DOM'a dokunmaz |
 | `js/uygulama.js` | Arayüz: seçimler, çizim, localStorage |
+| `js/konum.js` | Tarayıcı konum servisi sarmalayıcısı |
 | `js/firebase-ayar.js` | Firebase proje bilgileri (gizli değil, bilerek depoda) |
 | `js/firebase-veri.js` | Firestore REST okuma katmanı |
 | `js/firebase-ayar.ornek.js` | Başka bir projeye bağlamak isteyenler için şablon |

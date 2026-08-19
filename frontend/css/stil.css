@@ -49,6 +49,9 @@
 
 * { box-sizing: border-box; }
 
+/* hidden özniteliği, display tanımlayan sınıf kurallarınca ezilmemeli. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--zemin);
@@ -195,4 +198,39 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
   .ters-dugmesi { justify-self: center; transform: rotate(90deg); }
   .ters-dugmesi:hover { transform: rotate(270deg); }
   .ozet-kutulari { grid-template-columns: 1fr; }
+}
+
+/* Konum kartı */
+.konum-durum { display: flex; align-items: center; gap: .6rem; }
+.konum-durum p { margin: 0; color: var(--yazi-soluk); font-size: .92rem; }
+.konum-simge { color: var(--vurgu); font-size: 1.1rem; }
+.konum-karti[data-durum="hata"] .konum-simge { color: var(--hata); }
+.konum-karti[data-durum="hazir"] .konum-durum { display: none; }
+
+.konum-sonuc { margin: 0 0 .9rem; font-size: 1.02rem; }
+.konum-sonuc strong { font-size: 1.15rem; }
+.konum-mesafe {
+  display: inline-block; margin-left: .4rem;
+  padding: .1rem .5rem; border-radius: 999px;
+  background: var(--vurgu-soluk); color: var(--vurgu);
+  font-size: .8rem; font-weight: 700;
+}
+
+.konum-dugmeler { display: flex; gap: .6rem; flex-wrap: wrap; }
+.dugme {
+  display: inline-block;
+  padding: .55rem .95rem;
+  border-radius: 10px;
+  border: 1px solid var(--cizgi);
+  font: inherit; font-size: .92rem; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+  transition: filter .15s ease;
+}
+.dugme:hover { filter: brightness(1.06); }
+.dugme:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+.dugme--birincil { background: var(--vurgu); color: var(--vurgu-yazi); border-color: var(--vurgu); }
+.dugme--ikincil { background: var(--zemin); color: var(--vurgu); }
+
+@media (max-width: 620px) {
+  .konum-dugmeler .dugme { flex: 1 1 auto; text-align: center; }
 }

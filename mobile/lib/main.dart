@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'ekranlar/ana_ekran.dart';
 import 'servisler/durak_servisi.dart';
+import 'servisler/konum_servisi.dart';
 
 void main() {
   runApp(const IzbanUygulamasi());
@@ -10,7 +11,10 @@ class IzbanUygulamasi extends StatelessWidget {
   /// Testler hazır veri geçebilsin diye dışarıdan verilebilir.
   final DurakServisi? servis;
 
-  const IzbanUygulamasi({super.key, this.servis});
+  /// Testler sahte konum servisi geçebilir.
+  final KonumServisi? konumServisi;
+
+  const IzbanUygulamasi({super.key, this.servis, this.konumServisi});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +32,7 @@ class IzbanUygulamasi extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: AnaEkran(servis: servis),
+      home: AnaEkran(servis: servis, konumServisi: konumServisi),
     );
   }
 }

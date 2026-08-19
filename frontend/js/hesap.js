@@ -60,6 +60,65 @@ function yolculukHesapla(duraklar, binisKod, inisKod) {
   };
 }
 
+/* ---------- Konum ---------- */
+
+/** İki nokta arası kuş uçuşu mesafe (metre) — haversine. */
+function metreUzaklik(a, b) {
+  var yaricapM = 6371000;
+  var p = Math.PI / 180;
+
+  var dEnlem = (b.enlem - a.enlem) * p;
+  var dBoylam = (b.boylam - a.boylam) * p;
+
+  var sinEnlem = Math.sin(dEnlem / 2);
+  var sinBoylam = Math.sin(dBoylam / 2);
+
+  var h = sinEnlem * sinEnlem +
+    Math.cos(a.enlem * p) * Math.cos(b.enlem * p) * sinBoylam * sinBoylam;
+
+  return 2 * yaricapM * Math.asin(Math.sqrt(h));
+}
+
+/** 450 → "450 m", 2300 → "2,3 km" */
+function mesafeBicimle(metre) {
+  if (metre < 1000) return Math.round(metre) + ' m';
+  return (metre / 1000).toFixed(1).replace('.', ',') + ' km';
+}
+
+/**
+ * Verilen konuma en yakın durağı bulur.
+ * Koordinatı olmayan duraklar atlanır; hiç aday yoksa null döner.
+ */
+function enYakinDurak(duraklar, konum) {
+  var enIyi = null;
+
+  duraklar.forEach(function (durak) {
+    if (!durak.konum || (!durak.konum.enlem && !durak.konum.boylam)) return;
+
+    var mesafe = metreUzaklik(konum, durak.konum);
+    if (!enIyi || mesafe < enIyi.mesafeM) {
+      enIyi = { durak: durak, mesafeM: mesafe };
+    }
+  });
+
+  return enIyi;
+}
+
+/** Durağa yürüyerek yol tarifi için Google Haritalar adresi. */
+function yolTarifiAdresi(durak) {
+  return 'https://www.google.com/maps/dir/?api=1' +
+    '&destination=' + durak.konum.enlem + ',' + durak.konum.boylam +
+    '&travelmode=walking';
+}
+
 if (typeof module !== 'undefined') {
-  module.exports = { durakBul: durakBul, sureBicimle: sureBicimle, yolculukHesapla: yolculukHesapla };
+  module.exports = {
+    durakBul: durakBul,
+    sureBicimle: sureBicimle,
+    yolculukHesapla: yolculukHesapla,
+    metreUzaklik: metreUzaklik,
+    mesafeBicimle: mesafeBicimle,
+    enYakinDurak: enYakinDurak,
+    yolTarifiAdresi: yolTarifiAdresi
+  };
 }

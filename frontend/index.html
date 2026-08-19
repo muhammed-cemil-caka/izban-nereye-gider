@@ -24,6 +24,35 @@
   </header>
 
   <main class="kapsayici">
+    <section class="kart konum-karti" id="konumKarti" aria-labelledby="konumBaslik">
+      <h2 id="konumBaslik" class="kart-baslik">Konumun</h2>
+
+      <div id="konumDurumu" class="konum-durum">
+        <span class="konum-simge" aria-hidden="true">◎</span>
+        <p id="konumMetni">Konumun alınıyor…</p>
+      </div>
+
+      <div id="konumSonucu" hidden>
+        <p class="konum-sonuc">
+          En yakın durak:
+          <strong id="yakinDurakAd">—</strong>
+          <span class="konum-mesafe" id="yakinDurakMesafe">—</span>
+        </p>
+        <div class="konum-dugmeler">
+          <button type="button" id="binisYapDugmesi" class="dugme dugme--birincil">
+            Biniş durağı yap
+          </button>
+          <a id="yolTarifiBaglantisi" class="dugme dugme--ikincil" href="#" target="_blank" rel="noopener noreferrer">
+            Yol tarifi al
+          </a>
+        </div>
+      </div>
+
+      <button type="button" id="konumTekrarDugmesi" class="dugme dugme--ikincil" hidden>
+        Konumumu bul
+      </button>
+    </section>
+
     <section class="kart secim-karti" aria-labelledby="secimBaslik">
       <h2 id="secimBaslik" class="gizli">Yolculuk seçimi</h2>
 
@@ -88,6 +117,7 @@
 
   <script src="js/duraklar.js"></script>
   <script src="js/hesap.js"></script>
+  <script src="js/konum.js"></script>
   <script src="js/firebase-ayar.js"></script>
   <script src="js/firebase-veri.js"></script>
   <script src="js/uygulama.js"></script>
