@@ -115,6 +115,38 @@ void main() {
     expect(find.text('Halkapınar'), findsWidgets);
     expect(find.text('Biniş durağı yap'), findsOneWidget);
     expect(find.text('Yol tarifi al'), findsOneWidget);
+
+    // Doğruluk yazısı ve alternatif duraklar da görünmeli.
+    expect(find.text('Konum doğruluğu ±20 m'), findsOneWidget);
+    expect(find.text('Yakındaki diğer duraklar:'), findsOneWidget);
+  });
+
+  testWidgets('kaba konumda uyarı gösteriliyor', (tester) async {
+    await tester.pumpWidget(_uygulama(
+      konum: const KonumBulundu(Konum(enlem: 38.4380, boylam: 27.1695), 900),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('en yakın durak şaşabilir'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('alternatif durak seçilince biniş değişiyor', (tester) async {
+    await tester.pumpWidget(_uygulama(
+      konum: const KonumBulundu(Konum(enlem: 38.4380, boylam: 27.1695), 900),
+    ));
+    await tester.pumpAndSettle();
+
+    // Halkapınar en yakın; Menemen alternatiflerden biri.
+    await tester.tap(find.textContaining('Menemen ·'));
+    await tester.pumpAndSettle();
+
+    // Özet kartı listede aşağıda kaldığı için görünür alana kaydırılmalı.
+    // Menemen'den Selçuk'a: 151 - 25 = 126 dk
+    await tester.scrollUntilVisible(find.text('2 sa 6 dk'), 200);
+    expect(find.text('2 sa 6 dk'), findsOneWidget);
   });
 
   testWidgets('biniş durağı yap butonu seçimi değiştiriyor', (tester) async {
@@ -124,12 +156,12 @@ void main() {
     await tester.pumpAndSettle();
 
     // Varsayılan biniş Aliağa; en yakın durak Halkapınar.
-    expect(find.text('Selçuk yönü'), findsOneWidget);
-
     await tester.tap(find.text('Biniş durağı yap'));
     await tester.pumpAndSettle();
 
     // Halkapınar'dan Selçuk'a: 151 - 63 = 88 dk
+    await tester.scrollUntilVisible(find.text('1 sa 28 dk'), 200);
     expect(find.text('1 sa 28 dk'), findsOneWidget);
+    expect(find.text('Selçuk yönü'), findsOneWidget);
   });
 }

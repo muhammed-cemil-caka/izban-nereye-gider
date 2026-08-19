@@ -28,6 +28,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
   KonumServisi get _konumServisi => widget.konumServisi ?? const KonumServisi();
   YakinDurak? _yakinDurak;
+  List<YakinDurak> _yakinAdaylar = const [];
+  double? _konumDogrulukM;
   String? _konumHatasi;
   bool _konumAyarlariGerekli = false;
   bool _konumAraniyor = false;
@@ -54,18 +56,22 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     if (!mounted) return;
 
     switch (sonuc) {
-      case KonumBulundu(:final konum):
+      case KonumBulundu(:final konum, :final dogrulukM):
         final duraklar = await _duraklarGelecegi;
         if (!mounted) return;
+        final adaylar = YakinDurak.enYakinlar(duraklar, konum);
         setState(() {
-          _yakinDurak = YakinDurak.bul(duraklar, konum);
-          _konumHatasi = _yakinDurak == null ? 'Duraklarda koordinat bilgisi yok.' : null;
+          _yakinAdaylar = adaylar;
+          _yakinDurak = adaylar.isEmpty ? null : adaylar.first;
+          _konumDogrulukM = dogrulukM;
+          _konumHatasi = adaylar.isEmpty ? 'Duraklarda koordinat bilgisi yok.' : null;
           _konumAraniyor = false;
         });
 
       case KonumHatasi(:final mesaj, :final ayarlarGerekli):
         setState(() {
           _yakinDurak = null;
+          _yakinAdaylar = const [];
           _konumHatasi = mesaj;
           _konumAyarlariGerekli = ayarlarGerekli;
           _konumAraniyor = false;
@@ -121,6 +127,12 @@ class _AnaEkranDurumu extends State<AnaEkran> {
             children: [
               _KonumKarti(
                 yakinDurak: _yakinDurak,
+                adaylar: _yakinAdaylar,
+                dogrulukM: _konumDogrulukM,
+                digeriniSec: (secilen) => setState(() {
+                  _yakinDurak = secilen;
+                  _binisKod = secilen.durak.kod;
+                }),
                 hata: _konumHatasi,
                 araniyor: _konumAraniyor,
                 ayarlarGerekli: _konumAyarlariGerekli,
@@ -403,7 +415,14 @@ class _UyariKarti extends StatelessWidget {
 
 /// Konum durumunu ve en yakın durağı gösteren kart.
 class _KonumKarti extends StatelessWidget {
+  /// Kaba konumda en yakın durak şaşabildiği için kullanıcıya bu eşiğin
+  /// üstünde uyarı gösterilir ve alternatifler öne çıkarılır.
+  static const kabaKonumEsigiM = 200.0;
+
   final YakinDurak? yakinDurak;
+  final List<YakinDurak> adaylar;
+  final double? dogrulukM;
+  final ValueChanged<YakinDurak> digeriniSec;
   final String? hata;
   final bool araniyor;
   final bool ayarlarGerekli;
@@ -414,6 +433,9 @@ class _KonumKarti extends StatelessWidget {
 
   const _KonumKarti({
     required this.yakinDurak,
+    required this.adaylar,
+    required this.dogrulukM,
+    required this.digeriniSec,
     required this.hata,
     required this.araniyor,
     required this.ayarlarGerekli,
@@ -475,6 +497,18 @@ class _KonumKarti extends StatelessWidget {
           ),
         ],
       ),
+      if (dogrulukM != null) ...[
+        const SizedBox(height: 4),
+        Text(
+          _dogrulukMetni(dogrulukM!),
+          style: tema.textTheme.bodySmall?.copyWith(
+            color: dogrulukM! > kabaKonumEsigiM
+                ? tema.colorScheme.tertiary
+                : tema.textTheme.bodySmall?.color,
+            fontWeight: dogrulukM! > kabaKonumEsigiM ? FontWeight.bold : null,
+          ),
+        ),
+      ],
       const SizedBox(height: 12),
       Wrap(
         spacing: 8,
@@ -490,6 +524,40 @@ class _KonumKarti extends StatelessWidget {
             label: const Text('Yol tarifi al'),
           ),
         ],
+      ),
+      ..._alternatifler(tema, yakin),
+    ];
+  }
+
+  String _dogrulukMetni(double dogruluk) {
+    if (dogruluk > kabaKonumEsigiM) {
+      return 'Konum ±${dogruluk.round()} m doğrulukla alındı — '
+          'en yakın durak şaşabilir, aşağıdan seçebilirsin.';
+    }
+    return 'Konum doğruluğu ±${dogruluk.round()} m';
+  }
+
+  /// GPS şaşarsa kullanıcı doğru durağı kendisi seçebilsin.
+  List<Widget> _alternatifler(ThemeData tema, YakinDurak secili) {
+    final digerleri =
+        adaylar.where((a) => a.durak.kod != secili.durak.kod).toList();
+    if (digerleri.isEmpty) return const [];
+
+    return [
+      const SizedBox(height: 12),
+      const Divider(height: 1),
+      const SizedBox(height: 12),
+      Text('Yakındaki diğer duraklar:', style: tema.textTheme.bodySmall),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: digerleri
+            .map((aday) => ActionChip(
+                  onPressed: () => digeriniSec(aday),
+                  label: Text('${aday.durak.ad} · ${aday.mesafeMetni}'),
+                ))
+            .toList(),
       ),
     ];
   }

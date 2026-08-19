@@ -35,6 +35,9 @@
     yolTarifi: document.getElementById('yolTarifiBaglantisi'),
     konumTekrar: document.getElementById('konumTekrarDugmesi'),
     binisYolTarifi: document.getElementById('binisYolTarifi'),
+    konumDogruluk: document.getElementById('konumDogruluk'),
+    konumAlternatif: document.getElementById('konumAlternatif'),
+    konumAlternatifListe: document.getElementById('konumAlternatifListe'),
     tema: document.getElementById('temaDugmesi')
   };
 
@@ -203,31 +206,96 @@
     oge.konumTekrar.hidden = durum !== 'hata';
   }
 
-  function yakinDuragiGoster(sonuc) {
-    yakinDurak = sonuc.durak;
+  // Bu değerin üstündeki doğruluklarda en yakın durak yanılabilir; kullanıcı uyarılır.
+  var KABA_KONUM_ESIGI_M = 200;
 
-    oge.yakinDurakAd.textContent = sonuc.durak.ad;
-    oge.yakinDurakMesafe.textContent = mesafeBicimle(sonuc.mesafeM);
-    oge.yolTarifi.href = yolTarifiAdresi(sonuc.durak);
+  // Konumdan hesaplanan, mesafeye göre sıralı tam aday listesi. Kullanıcı
+  // alternatiflerden birini seçtiğinde de bu sıra korunur.
+  var tumAdaylar = [];
+
+  function yakinDuragiGoster(adaylar, dogrulukM) {
+    var enYakin = adaylar[0];
+    yakinDurak = enYakin.durak;
+
+    oge.yakinDurakAd.textContent = enYakin.durak.ad;
+    oge.yakinDurakMesafe.textContent = mesafeBicimle(enYakin.mesafeM);
+    oge.yolTarifi.href = yolTarifiAdresi(enYakin.durak);
     oge.yolTarifi.setAttribute(
       'aria-label',
-      sonuc.durak.ad + ' durağına yürüyerek yol tarifi (Google Haritalar\'da açılır)'
+      enYakin.durak.ad + ' durağına yürüyerek yol tarifi (Google Haritalar\'da açılır)'
     );
+
+    dogruluguYaz(dogrulukM);
+    alternatifleriYaz(adaylar.slice(1));
 
     konumDurumunuYaz('', 'hazir');
   }
+
+  function dogruluguYaz(dogrulukM) {
+    var kaba = dogrulukM > KABA_KONUM_ESIGI_M;
+    oge.konumDogruluk.setAttribute('data-kaba', kaba ? 'evet' : 'hayir');
+    oge.konumDogruluk.textContent = kaba
+      ? 'Konum ±' + Math.round(dogrulukM) + ' m doğrulukla alındı — en yakın durak ' +
+        'şaşabilir, aşağıdan seçebilirsin.'
+      : 'Konum doğruluğu ±' + Math.round(dogrulukM) + ' m';
+  }
+
+  /** GPS şaşarsa kullanıcı doğru durağı kendisi seçebilsin. */
+  function alternatifleriYaz(digerleri) {
+    oge.konumAlternatifListe.textContent = '';
+
+    if (!digerleri.length) {
+      oge.konumAlternatif.hidden = true;
+      return;
+    }
+
+    digerleri.forEach(function (aday) {
+      var satir = document.createElement('li');
+      var dugme = document.createElement('button');
+      dugme.type = 'button';
+
+      var ad = document.createElement('span');
+      ad.textContent = aday.durak.ad;
+      dugme.appendChild(ad);
+
+      var mesafe = document.createElement('span');
+      mesafe.className = 'konum-alternatif-mesafe';
+      mesafe.textContent = mesafeBicimle(aday.mesafeM);
+      dugme.appendChild(mesafe);
+
+      dugme.addEventListener('click', function () {
+        // Seçilen durak öne alınır; kalanlar mesafe sırasını korur, böylece
+        // liste "en yakın önce" mantığından kopmaz.
+        var kalanlar = tumAdaylar.filter(function (d) {
+          return d.durak.kod !== aday.durak.kod;
+        });
+        yakinDuragiGoster([aday].concat(kalanlar), sonDogruluk.dogrulukM);
+        oge.binis.value = aday.durak.kod;
+        guncelle();
+      });
+
+      satir.appendChild(dugme);
+      oge.konumAlternatifListe.appendChild(satir);
+    });
+
+    oge.konumAlternatif.hidden = false;
+  }
+
+  var sonDogruluk = { dogrulukM: 0, enYakinMesafe: 0 };
 
   function konumuBul() {
     konumDurumunuYaz('Konumun alınıyor…', 'bekliyor');
 
     konumAl()
       .then(function (konum) {
-        var sonuc = enYakinDurak(aktifDuraklar, konum);
-        if (!sonuc) {
+        var adaylar = enYakinDuraklar(aktifDuraklar, konum, 4);
+        if (!adaylar.length) {
           konumDurumunuYaz('Duraklarda koordinat bilgisi yok.', 'hata');
           return;
         }
-        yakinDuragiGoster(sonuc);
+        sonDogruluk = { dogrulukM: konum.dogrulukM, enYakinMesafe: adaylar[0].mesafeM };
+        tumAdaylar = adaylar;
+        yakinDuragiGoster(adaylar, konum.dogrulukM);
       })
       .catch(function (sorun) {
         // İzin reddi dahil her durumda site çalışmaya devam eder.

@@ -54,7 +54,9 @@ class KonumServisi {
     try {
       final yer = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+          // İlk gelen kaba konum yerine mümkün olan en isabetli ölçüm istenir;
+          // en yakın durak hesabı buna dayanıyor.
+          accuracy: LocationAccuracy.best,
           timeLimit: _zamanAsimi,
         ),
       );

@@ -144,7 +144,22 @@ Ayrıntılar: [`mobile/README.md`](mobile/README.md)
 
 Uygulama açılışında konum izni ister, izin verilirse en yakın durağı bulur ve
 iki işlem sunar: durağı biniş noktası yapmak, ya da Google Haritalar'da
-**yürüyerek** yol tarifi açmak. Tarife için harita SDK'sı veya API anahtarı
+**yürüyerek** yol tarifi açmak. Yol tarifi ayrıca seçili biniş durağı için de
+alınabilir, en yakın durakla sınırlı değildir.
+
+### Konum isabeti
+
+Tek bir `getCurrentPosition` çağrısı çoğu zaman ilk gelen kaba konumu döndürür
+(Wi-Fi/IP tabanlı, kilometrelerce sapabilir) ve yanlış durağı en yakın gösterir.
+Bunun önüne geçmek için:
+
+- Web'de `watchPosition` ile konum akışı dinlenir, en isabetli ölçüm tutulur;
+  ±100 m'ye ulaşılınca beklemek biter, ulaşılamazsa 8 saniye sonra eldeki en iyi
+  ölçüm kullanılır. Önbellekteki eski konum kabul edilmez (`maximumAge: 0`).
+- Mobilde `LocationAccuracy.best` istenir.
+- Ölçüm doğruluğu ekranda yazar. ±200 m'nin üstündeyse kullanıcı uyarılır.
+- Her iki istemcide de **en yakın dört durak** listelenir; GPS şaşarsa kullanıcı
+  doğru durağı kendisi seçebilir. Tarife için harita SDK'sı veya API anahtarı
 kullanılmaz — tek bir bağlantı açılır, navigasyonu Google üstlenir.
 
 İzin reddedilirse uygulama normal çalışmaya devam eder; yalnızca en yakın durak

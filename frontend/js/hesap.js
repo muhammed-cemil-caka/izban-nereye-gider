@@ -104,6 +104,23 @@ function enYakinDurak(duraklar, konum) {
   return enIyi;
 }
 
+/**
+ * Konuma en yakın durakları sıralı döndürür.
+ * GPS her zaman isabetli olmadığı için tek bir sonuç dayatmak yerine
+ * kullanıcıya seçenek sunmakta kullanılır.
+ */
+function enYakinDuraklar(duraklar, konum, adet) {
+  return duraklar
+    .filter(function (durak) {
+      return durak.konum && (durak.konum.enlem || durak.konum.boylam);
+    })
+    .map(function (durak) {
+      return { durak: durak, mesafeM: metreUzaklik(konum, durak.konum) };
+    })
+    .sort(function (a, b) { return a.mesafeM - b.mesafeM; })
+    .slice(0, adet || 3);
+}
+
 /** Durağa yürüyerek yol tarifi için Google Haritalar adresi. */
 function yolTarifiAdresi(durak) {
   return 'https://www.google.com/maps/dir/?api=1' +
@@ -119,6 +136,7 @@ if (typeof module !== 'undefined') {
     metreUzaklik: metreUzaklik,
     mesafeBicimle: mesafeBicimle,
     enYakinDurak: enYakinDurak,
+    enYakinDuraklar: enYakinDuraklar,
     yolTarifiAdresi: yolTarifiAdresi
   };
 }

@@ -7,7 +7,7 @@ const assert = require('assert');
 const { HAT_VERISI, DURAKLAR } = require('../frontend/js/duraklar.js');
 const {
   yolculukHesapla, sureBicimle,
-  metreUzaklik, mesafeBicimle, enYakinDurak, yolTarifiAdresi
+  metreUzaklik, mesafeBicimle, enYakinDurak, enYakinDuraklar, yolTarifiAdresi
 } = require('../frontend/js/hesap.js');
 
 let sayac = 0;
@@ -119,6 +119,31 @@ dogrula('yol tarifi adresi yürüyüş modunda ve doğru hedefte', () => {
   assert.ok(adres.startsWith('https://www.google.com/maps/dir/?api=1'));
   assert.ok(adres.includes('destination=38.43519,27.168837'));
   assert.ok(adres.includes('travelmode=walking'));
+});
+
+dogrula('en yakın duraklar mesafeye göre sıralı', () => {
+  const liste = enYakinDuraklar(KONUMLU, { enlem: 38.4360, boylam: 27.1690 }, 3);
+  assert.strictEqual(liste.length, 3);
+  assert.strictEqual(liste[0].durak.kod, 'halkapinar');
+  for (let i = 1; i < liste.length; i++) {
+    assert.ok(liste[i].mesafeM >= liste[i - 1].mesafeM, 'mesafeler artan olmalı');
+  }
+});
+
+dogrula('istenen adetten fazla durak döndürülmüyor', () => {
+  assert.strictEqual(enYakinDuraklar(DURAKLAR, DURAKLAR[0].konum, 4).length, 4);
+  assert.strictEqual(enYakinDuraklar(KONUMLU, KONUMLU[0].konum, 10).length, 3);
+});
+
+dogrula('Mavişehir yakınından bakınca Mavişehir birinci sırada', () => {
+  // Mavişehir İZBAN istasyonunun ~400 m batısı
+  const liste = enYakinDuraklar(DURAKLAR, { enlem: 38.4822, boylam: 27.0784 }, 3);
+  assert.strictEqual(liste[0].durak.ad, 'Mavişehir', `birinci: ${liste[0].durak.ad}`);
+});
+
+dogrula('Çiğli yakınından bakınca Çiğli birinci sırada', () => {
+  const liste = enYakinDuraklar(DURAKLAR, { enlem: 38.4916, boylam: 27.0640 }, 3);
+  assert.strictEqual(liste[0].durak.ad, 'Çiğli', `birinci: ${liste[0].durak.ad}`);
 });
 
 dogrula('gerçek veride her durak en yakın aday olabiliyor', () => {

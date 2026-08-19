@@ -4,7 +4,13 @@
 // localhost. file:// veya düz http:// üzerinden açıldığında tarayıcı isteği
 // sessizce reddeder, o yüzden durum ayrıca kontrol ediliyor.
 
-var KONUM_ZAMAN_ASIMI_MS = 10000;
+// Tek bir getCurrentPosition çağrısı çoğu zaman ilk gelen kaba konumu döndürür
+// (Wi-Fi/IP tabanlı, kilometrelerce sapabilir). Bunun yerine watchPosition ile
+// konum akışı dinlenip en iyi ölçüm tutuluyor: ya hedef doğruluğa ulaşılır ya da
+// süre dolunca eldeki en iyisi kullanılır.
+var HEDEF_DOGRULUK_M = 100;   // bu doğruluğa ulaşınca beklemeyi bırak
+var TOPLAMA_SURESI_MS = 8000; // daha iyisini beklemek için ayrılan süre
+var BEKCI_SURESI_MS = 15000;  // hiçbir ölçüm gelmezse pes etme süresi
 
 /** Tarayıcı konum desteği ve güvenli bağlam kontrolü. */
 function konumDesteklenirMi() {
@@ -29,35 +35,72 @@ function konumAl() {
   var durum = konumDesteklenirMi();
   if (!durum.destekli) return Promise.reject(new Error(durum.sebep));
 
-  var istek = new Promise(function (coz, reddet) {
-    navigator.geolocation.getCurrentPosition(
+  return new Promise(function (coz, reddet) {
+    var enIyi = null;
+    var izleyici = null;
+    var toplamaSayaci = null;
+    var bekciSayaci = null;
+    var bitti = false;
+
+    function temizle() {
+      if (izleyici !== null) navigator.geolocation.clearWatch(izleyici);
+      clearTimeout(toplamaSayaci);
+      clearTimeout(bekciSayaci);
+    }
+
+    function tamamla() {
+      if (bitti) return;
+      bitti = true;
+      temizle();
+
+      if (enIyi) {
+        coz(enIyi);
+      } else {
+        reddet(new Error(
+          'Konum yanıt vermedi. macOS kullanıyorsan Sistem Ayarları → Gizlilik ve ' +
+          'Güvenlik → Konum Servisleri altında tarayıcına izin verilmiş olmalı.'
+        ));
+      }
+    }
+
+    izleyici = navigator.geolocation.watchPosition(
       function (sonuc) {
-        coz({
+        var olcum = {
           enlem: sonuc.coords.latitude,
           boylam: sonuc.coords.longitude,
           dogrulukM: sonuc.coords.accuracy
-        });
+        };
+
+        // Yalnızca daha isabetli ölçümler eskisinin yerini alır.
+        if (!enIyi || olcum.dogrulukM < enIyi.dogrulukM) enIyi = olcum;
+
+        // Yeterince isabetliyse daha fazla beklemeye gerek yok.
+        if (enIyi.dogrulukM <= HEDEF_DOGRULUK_M) tamamla();
       },
       function (hata) {
+        if (bitti) return;
+        // İzin reddi gibi kalıcı hatalarda beklemenin anlamı yok.
+        bitti = true;
+        temizle();
         reddet(new Error(konumHatasiniAcikla(hata)));
       },
-      { enableHighAccuracy: true, timeout: KONUM_ZAMAN_ASIMI_MS, maximumAge: 60000 }
+      {
+        enableHighAccuracy: true,
+        timeout: BEKCI_SURESI_MS,
+        // Önbellekteki eski (ve genelde kaba) konum kabul edilmez.
+        maximumAge: 0
+      }
     );
-  });
 
-  // Bekçi: tarayıcı bazen hiçbir geri çağrı yapmaz — macOS'ta sistem konum
-  // servisi kapalıyken veya izin penceresi yanıtsız kaldığında olur. O durumda
-  // arayüz sonsuza kadar "alınıyor" durumunda kalmasın.
-  var bekci = new Promise(function (_, reddet) {
-    setTimeout(function () {
-      reddet(new Error(
-        'Konum yanıt vermedi. macOS kullanıyorsan Sistem Ayarları → Gizlilik ve ' +
-        'Güvenlik → Konum Servisleri altında tarayıcına izin verilmiş olmalı.'
-      ));
-    }, KONUM_ZAMAN_ASIMI_MS + 2000);
-  });
+    // Hedef doğruluğa ulaşılmasa da süre dolunca eldeki en iyi ölçüm kullanılır.
+    toplamaSayaci = setTimeout(function () {
+      if (enIyi) tamamla();
+    }, TOPLAMA_SURESI_MS);
 
-  return Promise.race([istek, bekci]);
+    // Tarayıcı hiçbir geri çağrı yapmazsa (macOS'ta sistem konum servisi
+    // kapalıyken oluyor) arayüz sonsuza kadar beklemesin.
+    bekciSayaci = setTimeout(tamamla, BEKCI_SURESI_MS + 2000);
+  });
 }
 
 function konumHatasiniAcikla(hata) {

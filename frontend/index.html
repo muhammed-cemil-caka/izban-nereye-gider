@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
-  <link rel="stylesheet" href="css/stil.css?s=1d889afb">
+  <link rel="stylesheet" href="css/stil.css?s=9e99c103">
 </head>
 <body>
   <header class="ust-bant">
@@ -38,6 +38,8 @@
           <strong id="yakinDurakAd">—</strong>
           <span class="konum-mesafe" id="yakinDurakMesafe">—</span>
         </p>
+        <p class="konum-dogruluk" id="konumDogruluk"></p>
+
         <div class="konum-dugmeler">
           <button type="button" id="binisYapDugmesi" class="dugme dugme--birincil">
             Biniş durağı yap
@@ -45,6 +47,11 @@
           <a id="yolTarifiBaglantisi" class="dugme dugme--ikincil" href="#" target="_blank" rel="noopener noreferrer">
             Yol tarifi al
           </a>
+        </div>
+
+        <div class="konum-alternatif" id="konumAlternatif" hidden>
+          <p class="konum-alternatif-baslik">Yakındaki diğer duraklar:</p>
+          <ul class="konum-alternatif-liste" id="konumAlternatifListe"></ul>
         </div>
       </div>
 
@@ -119,10 +126,10 @@
   </footer>
 
   <script src="js/duraklar.js?s=d90b4a80"></script>
-  <script src="js/hesap.js?s=ab3bd2f0"></script>
-  <script src="js/konum.js?s=5d909332"></script>
+  <script src="js/hesap.js?s=9e61c35d"></script>
+  <script src="js/konum.js?s=984e99a2"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=faab2a19"></script>
+  <script src="js/uygulama.js?s=7db7a8ea"></script>
 </body>
 </html>

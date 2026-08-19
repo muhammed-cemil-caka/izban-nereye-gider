@@ -24,17 +24,25 @@ class YakinDurak {
   /// Verilen konuma en yakın durağı bulur.
   /// Koordinatı olmayan duraklar atlanır; aday yoksa null döner.
   static YakinDurak? bul(List<Durak> duraklar, Konum konum) {
-    YakinDurak? enIyi;
+    final liste = enYakinlar(duraklar, konum, adet: 1);
+    return liste.isEmpty ? null : liste.first;
+  }
 
-    for (final durak in duraklar) {
-      if (!durak.konum.gecerli) continue;
+  /// Konuma en yakın durakları mesafeye göre sıralı döndürür.
+  ///
+  /// GPS her zaman isabetli olmadığı için tek bir sonuç dayatmak yerine
+  /// kullanıcıya seçenek sunmakta kullanılır.
+  static List<YakinDurak> enYakinlar(
+    List<Durak> duraklar,
+    Konum konum, {
+    int adet = 4,
+  }) {
+    final adaylar = duraklar
+        .where((durak) => durak.konum.gecerli)
+        .map((durak) => YakinDurak(durak, konum.metreUzaklik(durak.konum)))
+        .toList()
+      ..sort((a, b) => a.mesafeM.compareTo(b.mesafeM));
 
-      final mesafe = konum.metreUzaklik(durak.konum);
-      if (enIyi == null || mesafe < enIyi.mesafeM) {
-        enIyi = YakinDurak(durak, mesafe);
-      }
-    }
-
-    return enIyi;
+    return adaylar.take(adet).toList();
   }
 }

@@ -83,6 +83,36 @@ void main() {
     });
   });
 
+  group('YakinDurak.enYakinlar', () {
+    test('mesafeye göre sıralı döndürüyor', () {
+      final liste = YakinDurak.enYakinlar(
+        _duraklar,
+        const Konum(enlem: 38.4380, boylam: 27.1695),
+      );
+      expect(liste.first.durak.kod, 'halkapinar');
+      for (var i = 1; i < liste.length; i++) {
+        expect(liste[i].mesafeM, greaterThanOrEqualTo(liste[i - 1].mesafeM));
+      }
+    });
+
+    test('istenen adetten fazla döndürmüyor', () {
+      final liste = YakinDurak.enYakinlar(
+        _duraklar,
+        const Konum(enlem: 38.44, boylam: 27.17),
+        adet: 2,
+      );
+      expect(liste.length, 2);
+    });
+
+    test('koordinatsız duraklar listeye girmiyor', () {
+      final liste = YakinDurak.enYakinlar(
+        [_koordinatsiz, ..._duraklar],
+        const Konum(enlem: 38.44, boylam: 27.17),
+      );
+      expect(liste.any((a) => a.durak.kod == 'yok'), isFalse);
+    });
+  });
+
   group('biçimlendirme ve bağlantı', () {
     test('mesafe metni', () {
       expect(const YakinDurak(_halkapinar, 450).mesafeMetni, '450 m');
