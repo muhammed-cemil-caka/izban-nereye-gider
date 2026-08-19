@@ -268,3 +268,50 @@ function yerAra(sorgu) {
       });
     });
 }
+
+/* ---------- Sürekli takip ---------- */
+//
+// konumIzle() ilk isabetli ölçümde durur; bu, açılışta hızlı sonuç vermek için
+// doğru ama işaretin donmasına yol açıyor. Takip modu daha düşük maliyetle
+// açık kalır ve kullanıcı hareket ettikçe konumu tazeler. Yönlendirme kendi
+// akışını kullandığı için takip o sırada durdurulur.
+
+var TAKIP_ESIGI_M = 20; // bu kadar hareket etmeden arayüz güncellenmez
+
+/**
+ * Konumu düşük maliyetle izlemeye devam eder.
+ * @param {function} olcumGeldi (konum) => void
+ * @returns {function} takibi durduran fonksiyon
+ */
+function konumTakibiBaslat(olcumGeldi) {
+  var durum = konumDesteklenirMi();
+  if (!durum.destekli) return function () {};
+
+  var sonBildirilen = null;
+
+  var izleyici = navigator.geolocation.watchPosition(
+    function (sonuc) {
+      var konum = {
+        enlem: sonuc.coords.latitude,
+        boylam: sonuc.coords.longitude,
+        dogrulukM: sonuc.coords.accuracy
+      };
+
+      // Küçük dalgalanmalarda arayüzü boş yere güncelleme.
+      if (sonBildirilen) {
+        var p = Math.PI / 180;
+        var dx = (konum.boylam - sonBildirilen.boylam) * 111320 * Math.cos(konum.enlem * p);
+        var dy = (konum.enlem - sonBildirilen.enlem) * 110574;
+        if (Math.sqrt(dx * dx + dy * dy) < TAKIP_ESIGI_M) return;
+      }
+
+      sonBildirilen = konum;
+      olcumGeldi(konum);
+    },
+    function () { /* takip sessizce durur, açılıştaki hata zaten gösterildi */ },
+    // Takipte yüksek isabet istenmiyor: pil ömrü, açılış ölçümünden daha önemli.
+    { enableHighAccuracy: false, maximumAge: 10000, timeout: 30000 }
+  );
+
+  return function () { navigator.geolocation.clearWatch(izleyici); };
+}

@@ -161,6 +161,11 @@ Bunun önüne geçmek için:
 - Ölçüm doğruluğu ekranda yazar. ±200 m'nin üstündeyse kullanıcı uyarılır.
 - Her iki istemcide de **en yakın dört durak** listelenir; GPS şaşarsa kullanıcı
   doğru durağı kendisi seçebilir.
+- İlk ölçüm oturduktan sonra **canlı takip** devreye girer: harita işareti
+  kullanıcıyla birlikte hareket eder ve en yakın durak sürekli tazelenir.
+  Takip düşük isabet/yüksek eşikle çalışır (20 m'den küçük hareketler yok
+  sayılır), pil ömrü gözetilir. Kullanıcı konumunu elle belirlerse takip durur —
+  yoksa GPS seçimi hemen ezerdi.
 - Webde ayrıca **elle düzeltme** vardır: kullanıcı durak, mahalle veya cadde adı
   arayıp konumunu kendisi belirleyebilir. Durak araması yerel veriyle anında
   çalışır (Türkçe karakter yazmaya gerek yok), yer araması Nominatim'e gider.

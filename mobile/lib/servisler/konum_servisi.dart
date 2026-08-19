@@ -69,6 +69,22 @@ class KonumServisi {
     }
   }
 
+  /// Konumu düşük maliyetle izlemeye devam eder.
+  ///
+  /// [konumAl] tek seferlik ölçüm verir; bu, açılışta hızlı sonuç için doğru
+  /// ama harita işaretinin donmasına yol açıyor. Takip açık kalınca işaret
+  /// kullanıcıyla birlikte hareket eder. Yönlendirme kendi akışını kullandığı
+  /// için takip o sırada durdurulmalıdır.
+  Stream<Konum> konumTakibi() {
+    return Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        // Takipte yüksek isabet istenmiyor: pil ömrü daha önemli.
+        accuracy: LocationAccuracy.medium,
+        distanceFilter: 20,
+      ),
+    ).map((yer) => Konum(enlem: yer.latitude, boylam: yer.longitude));
+  }
+
   /// Uygulama ayarlarını açar (izin kalıcı reddedildiğinde).
   Future<void> ayarlariAc() => Geolocator.openAppSettings();
 }

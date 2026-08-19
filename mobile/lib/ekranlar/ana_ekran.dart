@@ -39,6 +39,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   bool _rotaAraniyor = false;
   String? _rotaHatasi;
 
+  StreamSubscription? _takipAboneligi;
   StreamSubscription? _yonlendirmeAboneligi;
   YonlendirmeDurumu? _yonlendirmeDurumu;
   String? _yonlendirmeUyarisi;
@@ -70,6 +71,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
     switch (sonuc) {
       case KonumBulundu(:final konum, :final dogrulukM):
+        _takibiBaslat();
         final duraklar = await _duraklarGelecegi;
         if (!mounted) return;
         final adaylar = YakinDurak.enYakinlar(duraklar, konum);
@@ -95,6 +97,29 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
   /// Yürüyüş rotasını hesaplayıp haritada gösterir.
   /// Google Haritalar'a yönlendirilmiyor: rota uygulamanın kendi haritasında.
+  /// Harita işareti kullanıcıyla birlikte hareket etsin diye takibi açar.
+  void _takibiBaslat() {
+    _takipAboneligi?.cancel();
+    _takipAboneligi = _konumServisi.konumTakibi().listen((konum) async {
+      // Yönlendirme kendi akışını kullanıyor; takip araya girmesin.
+      if (_yonlendirmeAboneligi != null || !mounted) return;
+
+      final duraklar = await _duraklarGelecegi;
+      if (!mounted) return;
+      final adaylar = YakinDurak.enYakinlar(duraklar, konum);
+      setState(() {
+        _kullaniciKonumu = konum;
+        _yakinAdaylar = adaylar;
+        _yakinDurak = adaylar.isEmpty ? null : adaylar.first;
+      });
+    }, onError: (_) { /* takip sessizce durur */ });
+  }
+
+  void _takibiKapat() {
+    _takipAboneligi?.cancel();
+    _takipAboneligi = null;
+  }
+
   Future<void> _yolTarifiniGoster(YakinDurak yakin) async {
     final konum = _kullaniciKonumu;
     if (konum == null) return;
@@ -190,6 +215,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
   @override
   void dispose() {
+    _takipAboneligi?.cancel();
     _yonlendirmeAboneligi?.cancel();
     super.dispose();
   }
@@ -287,7 +313,9 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                   }
                 }),
                 konumTasindi: (konum) {
-                  // Sürükleme, GPS şaştığında yeri elle düzeltmenin en doğrudan yolu.
+                  // Sürükleme, GPS şaştığında yeri elle düzeltmenin en doğrudan
+                  // yolu; takip devam ederse seçimi hemen ezer.
+                  _takibiKapat();
                   final adaylar = YakinDurak.enYakinlar(duraklar, konum);
                   setState(() {
                     _kullaniciKonumu = konum;

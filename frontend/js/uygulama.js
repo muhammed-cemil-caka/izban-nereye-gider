@@ -338,6 +338,7 @@
 
     // İzleme sürdüğü sürece konum iyileşmeye devam edebilir.
     if (!kesinMi) metin += ' · iyileştiriliyor…';
+    else if (takibiDurdur) metin += ' · canlı takip açık';
 
     oge.konumDogruluk.textContent = metin;
   }
@@ -385,6 +386,24 @@
 
   var sonDogruluk = { dogrulukM: 0, enYakinMesafe: 0 };
   var izlemeyiDurdur = null;
+  var takibiDurdur = null;
+
+  /** Konum işareti kullanıcıyla birlikte hareket etsin diye takibi açar. */
+  function takibiBaslat() {
+    if (takibiDurdur) takibiDurdur();
+    if (typeof konumTakibiBaslat !== 'function') return;
+
+    takibiDurdur = konumTakibiBaslat(function (konum) {
+      // Yönlendirme kendi akışını kullanıyor; takip araya girmesin.
+      if (yonlendirmeOturumu) return;
+      konumuIsle(konum, true);
+    });
+  }
+
+  function takibiKapat() {
+    if (takibiDurdur) takibiDurdur();
+    takibiDurdur = null;
+  }
 
   /** Kullanıcının elle girdiği konumu saklar; her açılışta yeniden girilmesin. */
   function elleKonumuKaydet(konum, etiket) {
@@ -449,7 +468,11 @@
     konumDurumunuYaz('Konumun alınıyor…', 'bekliyor');
 
     izlemeyiDurdur = konumIzle(
-      function (konum, kesinMi) { konumuIsle(konum, kesinMi); },
+      function (konum, kesinMi) {
+        konumuIsle(konum, kesinMi);
+        // İlk ölçüm oturduktan sonra işaret donmasın diye takip devreye girer.
+        if (kesinMi) takibiBaslat();
+      },
       function (mesaj) {
         // İzin reddi dahil her durumda site çalışmaya devam eder.
         konumDurumunuYaz(mesaj, 'hata');
@@ -500,6 +523,7 @@
       aramaSatiriEkle(durak.ad + ' · ' + durak.ilce, function () {
         // "Buradayım" demek yerine doğrudan durağı seçmek daha net.
         if (izlemeyiDurdur) izlemeyiDurdur();
+        takibiKapat();
         konumuIsle({
           enlem: durak.konum.enlem,
           boylam: durak.konum.boylam,
@@ -522,6 +546,7 @@
       aramaSatiriEkle(yer.ad, function () {
         // Elle girilen konum tarayıcıdan daha güvenilir sayılır: izleme durur.
         if (izlemeyiDurdur) izlemeyiDurdur();
+        takibiKapat();
         konumuIsle({ enlem: yer.enlem, boylam: yer.boylam, dogrulukM: null }, true);
         elleKonumuKaydet(yer, yer.ad);
         aramayiKapat();
@@ -648,6 +673,8 @@
     yonlendirmeOturumu = null;
     oge.yonlendirmePaneli.hidden = true;
     if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+    // Yönlendirme bittiğinde işaret yine canlı kalsın.
+    if (!elleKonumuOku()) takibiBaslat();
   }
 
   /* ---------- Harita ---------- */
@@ -670,6 +697,7 @@
       function konumSuruklendi(konum) {
         // Sürükleme, masaüstünde şaşan tarayıcı konumunu düzeltmenin en doğrudan yolu.
         if (izlemeyiDurdur) izlemeyiDurdur();
+        takibiKapat();
         konumuIsle({ enlem: konum.enlem, boylam: konum.boylam, dogrulukM: null }, true);
         elleKonumuKaydet(konum, 'haritadan seçtiğin nokta');
       }
