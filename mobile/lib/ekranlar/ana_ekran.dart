@@ -4,7 +4,9 @@ import '../modeller/yakin_durak.dart';
 import '../modeller/yolculuk.dart';
 import '../servisler/durak_servisi.dart';
 import '../servisler/konum_servisi.dart';
+import 'dart:async';
 import '../servisler/rota_servisi.dart';
+import '../servisler/yonlendirme_servisi.dart';
 import 'harita_karti.dart';
 
 class AnaEkran extends StatefulWidget {
@@ -36,6 +38,11 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   Durak? _rotaHedefi;
   bool _rotaAraniyor = false;
   String? _rotaHatasi;
+
+  StreamSubscription? _yonlendirmeAboneligi;
+  YonlendirmeDurumu? _yonlendirmeDurumu;
+  String? _yonlendirmeUyarisi;
+  bool _varildi = false;
   String? _konumHatasi;
   bool _konumAyarlariGerekli = false;
   bool _konumAraniyor = false;
@@ -114,11 +121,86 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     }
   }
 
+  void _yonlendirmeyiBaslat() {
+    final rota = _yuruyusRotasi;
+    if (rota == null) return;
+
+    _yonlendirmeAboneligi?.cancel();
+    setState(() {
+      _varildi = false;
+      _yonlendirmeUyarisi = null;
+      _yonlendirmeDurumu = null;
+    });
+
+    _yonlendirmeAboneligi = YonlendirmeServisi.baslat(
+      rota: rota,
+      durumDegisti: (durum) {
+        if (!mounted) return;
+        setState(() {
+          _yonlendirmeDurumu = durum;
+          _kullaniciKonumu = durum.konum;
+          _yonlendirmeUyarisi = durum.dogrulukM > 100
+              ? 'Konum ±${durum.dogrulukM.round()} m — yönlendirme şaşabilir.'
+              : null;
+        });
+      },
+      rotadanCikildi: (konum) async {
+        if (!mounted) return;
+        setState(() {
+          _kullaniciKonumu = konum;
+          _yonlendirmeUyarisi = 'Rotadan çıktın, yeniden hesaplanıyor…';
+        });
+
+        final hedef = _rotaHedefi;
+        if (hedef == null) return;
+        try {
+          final yeni = await const RotaServisi().rotaAl(konum, hedef.konum);
+          if (!mounted) return;
+          setState(() => _yuruyusRotasi = yeni);
+          _yonlendirmeyiBaslat();
+        } catch (_) {
+          if (!mounted) return;
+          setState(() => _yonlendirmeUyarisi = 'Yeni rota alınamadı.');
+          _yonlendirmeyiBitir();
+        }
+      },
+      varildi: () {
+        if (!mounted) return;
+        setState(() => _varildi = true);
+        _yonlendirmeyiBitir(varisSonrasi: true);
+      },
+      hataOldu: (_) {
+        if (!mounted) return;
+        setState(() => _yonlendirmeUyarisi = 'Konum alınamadı, yönlendirme durdu.');
+        _yonlendirmeyiBitir();
+      },
+    );
+  }
+
+  void _yonlendirmeyiBitir({bool varisSonrasi = false}) {
+    _yonlendirmeAboneligi?.cancel();
+    _yonlendirmeAboneligi = null;
+    if (!varisSonrasi && mounted) {
+      setState(() {
+        _yonlendirmeDurumu = null;
+        _yonlendirmeUyarisi = null;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _yonlendirmeAboneligi?.cancel();
+    super.dispose();
+  }
+
   void _rotayiTemizle() {
+    _yonlendirmeyiBitir();
     setState(() {
       _yuruyusRotasi = null;
       _rotaHedefi = null;
       _rotaHatasi = null;
+      _varildi = false;
     });
   }
 
@@ -216,6 +298,20 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                   });
                 },
               ),
+              if (_yonlendirmeDurumu != null || _varildi) ...[
+                const SizedBox(height: 16),
+                _YonlendirmePaneli(
+                  rota: _yuruyusRotasi,
+                  hedef: _rotaHedefi,
+                  durum: _yonlendirmeDurumu,
+                  uyari: _yonlendirmeUyarisi,
+                  varildi: _varildi,
+                  bitir: () {
+                    setState(() => _varildi = false);
+                    _yonlendirmeyiBitir();
+                  },
+                ),
+              ],
               if (_rotaAraniyor || _rotaHatasi != null || _yuruyusRotasi != null) ...[
                 const SizedBox(height: 16),
                 _RotaKarti(
@@ -224,6 +320,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                   araniyor: _rotaAraniyor,
                   hata: _rotaHatasi,
                   temizle: _rotayiTemizle,
+                  basla: _yonlendirmeDurumu == null ? _yonlendirmeyiBaslat : null,
                 ),
               ],
               const SizedBox(height: 16),
@@ -664,12 +761,16 @@ class _RotaKarti extends StatelessWidget {
   final String? hata;
   final VoidCallback temizle;
 
+  /// Yönlendirme sürüyorsa null verilir; düğme gösterilmez.
+  final VoidCallback? basla;
+
   const _RotaKarti({
     required this.rota,
     required this.hedef,
     required this.araniyor,
     required this.hata,
     required this.temizle,
+    required this.basla,
   });
 
   @override
@@ -718,6 +819,14 @@ class _RotaKarti extends StatelessWidget {
                     style: tema.textTheme.titleSmall,
                   ),
                 ),
+                if (basla != null)
+                  FilledButton(
+                    onPressed: basla,
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text('Başla'),
+                  ),
                 IconButton(
                   onPressed: temizle,
                   icon: const Icon(Icons.close, size: 20),
@@ -749,6 +858,112 @@ class _RotaKarti extends StatelessWidget {
                     ],
                   ),
                 )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Yönlendirme sırasında sıradaki manevrayı ve kalan mesafeyi gösterir.
+class _YonlendirmePaneli extends StatelessWidget {
+  final YuruyusRotasi? rota;
+  final Durak? hedef;
+  final YonlendirmeDurumu? durum;
+  final String? uyari;
+  final bool varildi;
+  final VoidCallback bitir;
+
+  const _YonlendirmePaneli({
+    required this.rota,
+    required this.hedef,
+    required this.durum,
+    required this.uyari,
+    required this.varildi,
+    required this.bitir,
+  });
+
+  static String _mesafe(double metre) => metre < 1000
+      ? '${metre.round()} m'
+      : '${(metre / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final renkler = tema.colorScheme;
+
+    final manevra = varildi
+        ? '${hedef?.ad ?? ""} durağına vardın.'
+        : (rota != null && durum != null &&
+                durum!.ilerleme.adimIndeksi < rota!.adimlar.length
+            ? rota!.adimlar[durum!.ilerleme.adimIndeksi].metin
+            : 'Devam et');
+
+    return Card(
+      color: renkler.primary,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    manevra,
+                    style: tema.textTheme.titleMedium?.copyWith(
+                      color: renkler.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  varildi ? '✓' : _mesafe(durum?.ilerleme.sonrakiManevraM ?? 0),
+                  style: tema.textTheme.headlineSmall?.copyWith(
+                    color: renkler.onPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Divider(color: renkler.onPrimary.withValues(alpha: .25), height: 1),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    varildi
+                        ? 'Yolculuk başlasın.'
+                        : 'Kalan: ${_mesafe(durum?.ilerleme.kalanM ?? 0)}',
+                    style: tema.textTheme.bodySmall
+                        ?.copyWith(color: renkler.onPrimary.withValues(alpha: .9)),
+                  ),
+                ),
+                TextButton(
+                  onPressed: bitir,
+                  style: TextButton.styleFrom(foregroundColor: renkler.onPrimary),
+                  child: const Text('Bitir'),
+                ),
+              ],
+            ),
+            if (uyari != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: renkler.onPrimary.withValues(alpha: .18),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  uyari!,
+                  style: tema.textTheme.bodySmall
+                      ?.copyWith(color: renkler.onPrimary, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ],
         ),
       ),

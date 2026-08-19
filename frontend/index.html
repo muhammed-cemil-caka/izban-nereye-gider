@@ -6,7 +6,7 @@
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/stil.css?s=d5e39e4d">
+  <link rel="stylesheet" href="css/stil.css?s=9c5afd39">
 </head>
 <body>
   <header class="ust-bant">
@@ -102,12 +102,31 @@
         <h2 id="haritaBaslik" class="kart-baslik">Harita</h2>
         <p class="harita-ipucu">Durağa tıkla · konum işaretini sürükleyerek yerini düzelt</p>
       </div>
+      <div class="yonlendirme" id="yonlendirmePaneli" hidden>
+        <div class="yonlendirme-ust">
+          <p class="yonlendirme-manevra" id="yonlendirmeManevra">—</p>
+          <span class="yonlendirme-mesafe" id="yonlendirmeMesafe">—</span>
+        </div>
+        <div class="yonlendirme-alt">
+          <span class="yonlendirme-kalan" id="yonlendirmeKalan">—</span>
+          <label class="yonlendirme-ses">
+            <input type="checkbox" id="yonlendirmeSes" checked>
+            Sesli
+          </label>
+          <button type="button" id="yonlendirmeBitir" class="dugme dugme--ikincil">Bitir</button>
+        </div>
+        <p class="yonlendirme-uyari" id="yonlendirmeUyari" hidden></p>
+      </div>
+
       <div id="harita" class="harita"></div>
 
       <div class="rota-sonuc" id="rotaSonucu" hidden>
         <div class="rota-ozet">
           <strong id="rotaBaslik">—</strong>
           <span class="rota-olcu" id="rotaOlcu">—</span>
+          <button type="button" id="yonlendirmeBaslat" class="dugme dugme--birincil dugme--kucuk">
+            Başla
+          </button>
           <button type="button" id="rotaTemizle" class="rota-kapat" aria-label="Yol tarifini kaldır">×</button>
         </div>
         <ol class="rota-adimlar" id="rotaAdimlar"></ol>
@@ -162,8 +181,9 @@
   <script src="js/konum.js?s=7f036328"></script>
   <script src="js/harita.js?s=62199806"></script>
   <script src="js/rota.js?s=59961fe7"></script>
+  <script src="js/yonlendirme.js?s=ed94d0d2"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=4de51966"></script>
+  <script src="js/uygulama.js?s=3a544718"></script>
 </body>
 </html>

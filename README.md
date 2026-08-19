@@ -216,6 +216,26 @@ kullanıcı düğmeye bastığında çekilir, kendiliğinden değil.
 
 Kod: `frontend/js/rota.js` · `mobile/lib/servisler/rota_servisi.dart`
 
+### Adım adım yönlendirme
+
+Rota çizildikten sonra **Başla** ile yönlendirme başlar. Uygulama konumu sürekli
+dinler ve:
+
+- Kullanıcıyı rota çizgisine izdüşürerek nerede olduğunu bulur
+- Sıradaki manevrayı ve ona kalan mesafeyi gösterir
+- Kalan toplam mesafeyi ve süreyi günceller
+- Haritayı kullanıcıyla birlikte kaydırır
+- Rotadan **45 m** uzaklaşıp bu üç ölçüm sürerse rotayı yeniden hesaplar
+  (tek bir kötü ölçüm yeniden hesaplamayı tetiklemez)
+- Hedefe **25 m** kalınca varış bildirir
+
+Webde ayrıca sesli yönlendirme vardır (tarayıcının kendi konuşma sentezi,
+`tr-TR`); açıp kapatılabilir. Mobilde henüz ses yok.
+
+Navigasyon SDK'sı kullanılmıyor — gereken her şey elde: OSRM rota geometrisi,
+adımlar ve cihazın konum akışı. Geometri saf fonksiyonlarda tutulur ve
+testlidir: `frontend/js/yonlendirme.js` · `mobile/lib/servisler/yonlendirme_servisi.dart`
+
 ### Döşeme ve yönlendirme sunucusu uyarısı
 
 `tile.openstreetmap.org` bağışlarla dönen bir altyapıdır ve

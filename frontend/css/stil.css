@@ -376,3 +376,32 @@ button.satir-baglanti {
   border: none; background: none; padding: 0;
   cursor: pointer; text-align: left;
 }
+
+/* Yönlendirme (adım adım takip) */
+.yonlendirme {
+  margin-bottom: .9rem;
+  padding: .9rem 1rem;
+  border-radius: 12px;
+  background: var(--vurgu);
+  color: var(--vurgu-yazi);
+}
+.yonlendirme-ust { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+.yonlendirme-manevra { margin: 0; font-size: 1.08rem; font-weight: 700; line-height: 1.3; }
+.yonlendirme-mesafe { flex: none; font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; }
+
+.yonlendirme-alt {
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  margin-top: .7rem; padding-top: .7rem;
+  border-top: 1px solid color-mix(in srgb, var(--vurgu-yazi) 25%, transparent);
+}
+.yonlendirme-kalan { font-size: .88rem; opacity: .9; }
+.yonlendirme-ses { display: flex; align-items: center; gap: .35rem; font-size: .85rem; cursor: pointer; }
+.yonlendirme-alt .dugme { margin-left: auto; padding: .4rem .8rem; font-size: .85rem; }
+
+.yonlendirme-uyari {
+  margin: .6rem 0 0; font-size: .85rem; font-weight: 600;
+  padding: .4rem .6rem; border-radius: 8px;
+  background: color-mix(in srgb, var(--vurgu-yazi) 18%, transparent);
+}
+
+.dugme--kucuk { padding: .35rem .7rem; font-size: .82rem; }

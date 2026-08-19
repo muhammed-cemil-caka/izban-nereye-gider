@@ -41,6 +41,14 @@
     rotaAdimlar: document.getElementById('rotaAdimlar'),
     rotaTemizle: document.getElementById('rotaTemizle'),
     rotaDurum: document.getElementById('rotaDurum'),
+    yonlendirmeBaslat: document.getElementById('yonlendirmeBaslat'),
+    yonlendirmePaneli: document.getElementById('yonlendirmePaneli'),
+    yonlendirmeManevra: document.getElementById('yonlendirmeManevra'),
+    yonlendirmeMesafe: document.getElementById('yonlendirmeMesafe'),
+    yonlendirmeKalan: document.getElementById('yonlendirmeKalan'),
+    yonlendirmeSes: document.getElementById('yonlendirmeSes'),
+    yonlendirmeBitir: document.getElementById('yonlendirmeBitir'),
+    yonlendirmeUyari: document.getElementById('yonlendirmeUyari'),
     konumTekrar: document.getElementById('konumTekrarDugmesi'),
     binisYolTarifi: document.getElementById('binisYolTarifi'),
     konumDogruluk: document.getElementById('konumDogruluk'),
@@ -210,10 +218,34 @@
   }
 
   function rotayiTemizle() {
+    yonlendirmeyiBitir();
+    sonRota = null;
+    sonRotaHedefi = null;
     oge.rotaSonucu.hidden = true;
     oge.rotaAdimlar.textContent = '';
     rotaDurumuYaz('');
     if (harita) harita.yuruyusRotasiniTemizle();
+  }
+
+  function rotaSonucunuYaz(rota, durak) {
+    oge.rotaBaslik.textContent = durak.ad + ' durağına yürüyüş';
+    oge.rotaOlcu.textContent =
+      mesafeBicimle(rota.mesafeM) + ' · ' + yuruyusSuresiBicimle(rota.sureSn);
+
+    oge.rotaAdimlar.textContent = '';
+    rota.adimlar.forEach(function (adim) {
+      var satir = document.createElement('li');
+      satir.textContent = adim.metin;
+
+      var mesafe = document.createElement('span');
+      mesafe.className = 'rota-adim-mesafe';
+      mesafe.textContent = mesafeBicimle(adim.mesafeM);
+      satir.appendChild(mesafe);
+
+      oge.rotaAdimlar.appendChild(satir);
+    });
+
+    oge.rotaSonucu.hidden = false;
   }
 
   /** Kullanıcının konumundan verilen durağa yürüyüş rotası çizer. */
@@ -230,25 +262,9 @@
     yuruyusRotasiAl(sonKonum, durak.konum)
       .then(function (rota) {
         if (harita) harita.yuruyusRotasiniCiz(rota.noktalar);
-
-        oge.rotaBaslik.textContent = durak.ad + ' durağına yürüyüş';
-        oge.rotaOlcu.textContent =
-          mesafeBicimle(rota.mesafeM) + ' · ' + yuruyusSuresiBicimle(rota.sureSn);
-
-        oge.rotaAdimlar.textContent = '';
-        rota.adimlar.forEach(function (adim) {
-          var satir = document.createElement('li');
-          satir.textContent = adim.metin;
-
-          var mesafe = document.createElement('span');
-          mesafe.className = 'rota-adim-mesafe';
-          mesafe.textContent = mesafeBicimle(adim.mesafeM);
-          satir.appendChild(mesafe);
-
-          oge.rotaAdimlar.appendChild(satir);
-        });
-
-        oge.rotaSonucu.hidden = false;
+        sonRota = rota;
+        sonRotaHedefi = durak;
+        rotaSonucunuYaz(rota, durak);
         rotaDurumuYaz('');
       })
       .catch(function (sorun) {
@@ -546,6 +562,94 @@
     });
   }
 
+  /* ---------- Yönlendirme ---------- */
+
+  var yonlendirmeOturumu = null;
+  var sonRota = null;
+  var sonRotaHedefi = null;
+
+  function yonlendirmeUyarisiYaz(metin) {
+    oge.yonlendirmeUyari.textContent = metin;
+    oge.yonlendirmeUyari.hidden = !metin;
+  }
+
+  function yonlendirmeyiBaslat() {
+    if (!sonRota || !sonRotaHedefi) return;
+    if (typeof yonlendirmeBaslat !== 'function') return;
+    if (yonlendirmeOturumu) yonlendirmeOturumu.durdur();
+
+    oge.yonlendirmePaneli.hidden = false;
+    oge.yonlendirmeManevra.textContent = sonRota.adimlar[0]
+      ? sonRota.adimlar[0].metin
+      : 'Yola çık';
+    oge.yonlendirmeMesafe.textContent = '—';
+    oge.yonlendirmeKalan.textContent =
+      mesafeBicimle(sonRota.mesafeM) + ' · ' + yuruyusSuresiBicimle(sonRota.sureSn);
+    yonlendirmeUyarisiYaz('');
+
+    yonlendirmeOturumu = yonlendirmeBaslat({
+      rota: sonRota,
+      sesliMi: oge.yonlendirmeSes.checked,
+
+      durumDegisti: function (durum) {
+        var adim = sonRota.adimlar[durum.ilerleme.adimIndeksi];
+        oge.yonlendirmeManevra.textContent = adim ? adim.metin : 'Devam et';
+        oge.yonlendirmeMesafe.textContent = mesafeBicimle(durum.ilerleme.sonrakiManevraM);
+        oge.yonlendirmeKalan.textContent =
+          'Kalan: ' + mesafeBicimle(durum.ilerleme.kalanM) +
+          ' · ' + yuruyusSuresiBicimle(durum.ilerleme.kalanM / 1.35); // ~4,9 km/sa
+
+        yonlendirmeUyarisiYaz(
+          durum.konum.dogrulukM > 100
+            ? 'Konum ±' + Math.round(durum.konum.dogrulukM) + ' m — yönlendirme şaşabilir.'
+            : ''
+        );
+
+        if (harita) {
+          harita.konumuGoster(durum.konum);
+          harita.konumaOdaklan(durum.konum, 17);
+        }
+      },
+
+      yenidenHesapla: function (konum) {
+        // Rotadan çıkıldı: yeni konumdan aynı hedefe rota istenir.
+        yonlendirmeUyarisiYaz('Rotadan çıktın, yeniden hesaplanıyor…');
+        sonKonum = { enlem: konum.enlem, boylam: konum.boylam };
+
+        yuruyusRotasiAl(sonKonum, sonRotaHedefi.konum)
+          .then(function (yeni) {
+            sonRota = yeni;
+            if (harita) harita.yuruyusRotasiniCiz(yeni.noktalar);
+            rotaSonucunuYaz(yeni, sonRotaHedefi);
+            yonlendirmeyiBaslat();
+          })
+          .catch(function () {
+            yonlendirmeUyarisiYaz('Yeni rota alınamadı, yönlendirme durduruldu.');
+            yonlendirmeyiBitir();
+          });
+      },
+
+      bitti: function (sebep) {
+        if (sebep === 'varildi') {
+          oge.yonlendirmeManevra.textContent = sonRotaHedefi.ad + ' durağına vardın.';
+          oge.yonlendirmeMesafe.textContent = '✓';
+          oge.yonlendirmeKalan.textContent = 'Yolculuk başlasın.';
+          yonlendirmeUyarisiYaz('');
+        } else if (sebep === 'hata') {
+          yonlendirmeUyarisiYaz('Konum alınamadı, yönlendirme durduruldu.');
+        }
+        yonlendirmeOturumu = null;
+      }
+    });
+  }
+
+  function yonlendirmeyiBitir() {
+    if (yonlendirmeOturumu) yonlendirmeOturumu.durdur();
+    yonlendirmeOturumu = null;
+    oge.yonlendirmePaneli.hidden = true;
+    if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  }
+
   /* ---------- Harita ---------- */
 
   function haritayiKur() {
@@ -627,6 +731,8 @@
     });
 
     oge.rotaTemizle.addEventListener('click', rotayiTemizle);
+    oge.yonlendirmeBaslat.addEventListener('click', yonlendirmeyiBaslat);
+    oge.yonlendirmeBitir.addEventListener('click', yonlendirmeyiBitir);
 
     aramayiBagla();
 

@@ -32,6 +32,7 @@ python3 araclar/gelistirme-sunucusu.py 5174
 | `js/konum.js` | Tarayıcı konum servisi sarmalayıcısı (bekçi zamanlayıcı dahil) |
 | `js/harita.js` | Leaflet haritası: hat, duraklar, güzergâh, sürüklenebilir konum |
 | `js/rota.js` | OSRM yürüyüş rotası ve manevraların Türkçeleştirilmesi |
+| `js/yonlendirme.js` | Adım adım takip: izdüşüm, ilerleme, sapma, sesli yönlendirme |
 | `vendor/leaflet/` | Leaflet 1.9.4 (BSD-2-Clause), CDN yerine depoda |
 | `js/firebase-ayar.js` | Firebase proje bilgileri (gizli değil, bilerek depoda) |
 | `js/firebase-veri.js` | Firestore REST okuma katmanı |

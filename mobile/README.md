@@ -43,6 +43,7 @@ dart analyze
 | `lib/modeller/yakin_durak.dart` | En yakın durak ve yol tarifi bağlantısı |
 | `lib/ekranlar/harita_karti.dart` | flutter_map haritası: hat, duraklar, güzergâh, yürüyüş rotası |
 | `lib/servisler/rota_servisi.dart` | OSRM yürüyüş rotası ve Türkçe adım metinleri |
+| `lib/servisler/yonlendirme_servisi.dart` | Adım adım takip: izdüşüm, ilerleme, sapma |
 | `lib/firebase_ayari.dart` | Proje kimliği ve API anahtarı (gizli değil) |
 | `lib/ekranlar/ana_ekran.dart` | Arayüz |
 | `assets/duraklar.json` | **Otomatik üretilir** — `node araclar/veri-dagit.js` |

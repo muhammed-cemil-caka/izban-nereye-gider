@@ -11,6 +11,9 @@ const {
   durakAra, aramaIcinSadelestir
 } = require('../frontend/js/hesap.js');
 const { manevrayiTurkcelestir, yuruyusSuresiBicimle } = require('../frontend/js/rota.js');
+const {
+  rotayaIzdusur, adimSinirlariniKur, rotaIlerlemesi
+} = require('../frontend/js/yonlendirme.js');
 
 let sayac = 0;
 function dogrula(baslik, fn) { fn(); sayac++; console.log('  ✓ ' + baslik); }
@@ -179,6 +182,85 @@ dogrula('yürüyüş süresi biçimlendirme', () => {
   assert.strictEqual(yuruyusSuresiBicimle(20), '1 dk');
   assert.strictEqual(yuruyusSuresiBicimle(3600), '1 sa');
   assert.strictEqual(yuruyusSuresiBicimle(4500), '1 sa 15 dk');
+});
+
+console.log('\nYönlendirme geometrisi');
+
+// Doğu yönünde uzanan düz bir rota: 38.4800 enleminde, ~1 km.
+// 27.0000 → 27.0115 boylamı, 38.48'de yaklaşık 1000 m eder.
+const DUZ_ROTA = {
+  noktalar: [[38.48, 27.0], [38.48, 27.00575], [38.48, 27.0115]],
+  mesafeM: 1000,
+  adimlar: [
+    { metin: 'Yola çık', mesafeM: 500 },
+    { metin: 'Sağa dön', mesafeM: 400 },
+    { metin: 'Vardın', mesafeM: 100 }
+  ]
+};
+const DUZ_SINIRLAR = adimSinirlariniKur(DUZ_ROTA.adimlar);
+
+dogrula('adım sınırları kümülatif', () => {
+  assert.deepStrictEqual(DUZ_SINIRLAR, [500, 900, 1000]);
+});
+
+dogrula('rota üzerindeki nokta sıfıra yakın sapma veriyor', () => {
+  const iz = rotayaIzdusur({ enlem: 38.48, boylam: 27.00575 }, DUZ_ROTA.noktalar);
+  assert.ok(iz.sapmaM < 1, `sapma: ${iz.sapmaM.toFixed(2)} m`);
+  // Rotanın ortası: ~500 m kat edilmiş olmalı
+  assert.ok(Math.abs(iz.katEdilenM - 500) < 25, `kat edilen: ${iz.katEdilenM.toFixed(0)} m`);
+});
+
+dogrula('rotadan uzaklaşan nokta sapma veriyor', () => {
+  // Kuzeye ~100 m kayık
+  const iz = rotayaIzdusur({ enlem: 38.4809, boylam: 27.00575 }, DUZ_ROTA.noktalar);
+  assert.ok(iz.sapmaM > 80 && iz.sapmaM < 120, `sapma: ${iz.sapmaM.toFixed(0)} m`);
+});
+
+dogrula('rota başındaki nokta sıfır ilerleme veriyor', () => {
+  const iz = rotayaIzdusur({ enlem: 38.48, boylam: 27.0 }, DUZ_ROTA.noktalar);
+  assert.ok(iz.katEdilenM < 5, `kat edilen: ${iz.katEdilenM.toFixed(1)} m`);
+});
+
+dogrula('ilk adımdayken doğru adım ve manevra mesafesi', () => {
+  // ~250 m ilerlemiş
+  const i = rotaIlerlemesi({ enlem: 38.48, boylam: 27.002875 }, DUZ_ROTA, DUZ_SINIRLAR);
+  assert.strictEqual(i.adimIndeksi, 0);
+  assert.ok(Math.abs(i.sonrakiManevraM - 250) < 30, `manevraya: ${i.sonrakiManevraM.toFixed(0)} m`);
+  assert.strictEqual(i.vardiMi, false);
+});
+
+dogrula('ikinci adıma geçiş algılanıyor', () => {
+  // ~700 m ilerlemiş → ikinci adım (500-900 arası)
+  const i = rotaIlerlemesi({ enlem: 38.48, boylam: 27.008 }, DUZ_ROTA, DUZ_SINIRLAR);
+  assert.strictEqual(i.adimIndeksi, 1, `adım: ${i.adimIndeksi}, kat edilen: ${i.katEdilenM.toFixed(0)}`);
+});
+
+dogrula('hedefe yaklaşınca varış algılanıyor', () => {
+  const i = rotaIlerlemesi({ enlem: 38.48, boylam: 27.0115 }, DUZ_ROTA, DUZ_SINIRLAR);
+  assert.strictEqual(i.vardiMi, true);
+  assert.ok(i.kalanM < 25);
+});
+
+dogrula('kalan mesafe ilerledikçe azalıyor', () => {
+  const bas = rotaIlerlemesi({ enlem: 38.48, boylam: 27.0 }, DUZ_ROTA, DUZ_SINIRLAR);
+  const orta = rotaIlerlemesi({ enlem: 38.48, boylam: 27.00575 }, DUZ_ROTA, DUZ_SINIRLAR);
+  assert.ok(orta.kalanM < bas.kalanM, 'ortada kalan mesafe daha az olmalı');
+});
+
+dogrula('bozuk rota çökmüyor', () => {
+  const bos = rotayaIzdusur({ enlem: 38.48, boylam: 27.0 }, []);
+  assert.strictEqual(bos.sapmaM, 0);
+  const tek = rotayaIzdusur({ enlem: 38.48, boylam: 27.0 }, [[38.48, 27.0]]);
+  assert.strictEqual(tek.katEdilenM, 0);
+});
+
+dogrula('üst üste binen noktalar sıfıra bölmeye yol açmıyor', () => {
+  const iz = rotayaIzdusur(
+    { enlem: 38.48, boylam: 27.002 },
+    [[38.48, 27.0], [38.48, 27.0], [38.48, 27.0115]]
+  );
+  assert.ok(Number.isFinite(iz.sapmaM), 'sapma sayı olmalı');
+  assert.ok(Number.isFinite(iz.katEdilenM), 'kat edilen sayı olmalı');
 });
 
 console.log('\nDurak arama');
