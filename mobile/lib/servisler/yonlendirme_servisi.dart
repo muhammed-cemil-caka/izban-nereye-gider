@@ -33,7 +33,17 @@ class YonlendirmeDurumu {
   /// Hareket yönü (kuzeyden saat yönünde derece); bilinmiyorsa null.
   final double? aci;
 
-  const YonlendirmeDurumu(this.konum, this.dogrulukM, this.ilerleme, this.aci);
+  /// Anlık hız (m/sn). Kamera kullanıcıyı ortada tuttuğu için ok sabit
+  /// duruyormuş gibi görünüyor; bu değer hareketin algılandığını gösterir.
+  final double hizMs;
+
+  const YonlendirmeDurumu(
+    this.konum,
+    this.dogrulukM,
+    this.ilerleme,
+    this.aci,
+    this.hizMs,
+  );
 }
 
 /// Yürüyüş yönlendirmesi — kullanıcıyı rota üzerinde adım adım takip eder.
@@ -267,7 +277,7 @@ class YonlendirmeServisi {
           return;
         }
 
-        durumDegisti(YonlendirmeDurumu(konum, yer.accuracy, ilerleme, sonAci));
+        durumDegisti(YonlendirmeDurumu(konum, yer.accuracy, ilerleme, sonAci, yer.speed));
       },
       onError: hataOldu,
     );

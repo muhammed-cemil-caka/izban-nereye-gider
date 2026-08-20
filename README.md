@@ -292,6 +292,14 @@ yoksa 5 m'lik eşiğe hiç ulaşılamaz ve küçük adımlar birikmez.
   ve son yeniden hesaplamadan **20 saniye** geçmiş olması gerekir
 - Yeniden hesaplama sırasında **kamera kullanıcıda kalır**; rotayı çerçevelemek
   için uzaklaşmaz, harita boyut değiştirmiş gibi görünmez
+- Rotadan çıkma algılandığında **eski oturum hemen kapatılır**. Yoksa yeni rota
+  beklenirken gelen ölçümler üst üste yeni istekler tetikliyor ve uyarı yanıp
+  sönüyordu
+- Doğruluk uyarısı histerezisli: 100 m'de çıkar, 70 m'nin altına inince
+  kaybolur; tek eşik sınırda gezinirken uyarıyı yanıp söndürüyordu
+- Panelde **"Yürüdüğün: X m · Y km/sa"** gösterilir. Kamera kullanıcıyı ortada
+  tuttuğu için ok sabit duruyormuş gibi görünür; bu iki değer hareketin
+  algılandığının doğrudan kanıtıdır
 - Hedefe **25 m** kalınca varış bildirir
 
 Webde ayrıca sesli yönlendirme vardır (tarayıcının kendi konuşma sentezi,

@@ -54,6 +54,9 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// Arayüz bu bayrağı okur. Aboneliği doğrudan okumak yetmiyordu: abonelik
   /// setState dışında atandığı için harita yön okuna geçmiyordu.
   bool _yonlendirmeAktif = false;
+
+  /// Yeniden hesaplama sürerken ikinci bir istek başlatılmasın.
+  bool _yenidenHesaplaniyor = false;
   /// Yönlendirme paneli bunu dinler; her ölçümde tüm ekran çizilmesin.
   final _yonlendirmeNotifier = ValueNotifier<YonlendirmeDurumu?>(null);
   String? _yonlendirmeUyarisi;
@@ -213,28 +216,53 @@ class _AnaEkranDurumu extends State<AnaEkran> {
         );
         _yonlendirmeNotifier.value = durum;
 
-        final uyari = durum.dogrulukM > 100
-            ? 'Konum ±${durum.dogrulukM.round()} m — yönlendirme şaşabilir.'
-            : null;
-        if (uyari != _yonlendirmeUyarisi) {
+        // Histerezis: uyarı 100 m'de çıkar, 70 m'nin altına inince kaybolur.
+        // Tek bir eşik, doğruluk sınırda gezinirken uyarıyı yanıp söndürüyordu.
+        final gorunuyor = _yonlendirmeUyarisi != null &&
+            _yonlendirmeUyarisi!.startsWith('Konum ±');
+
+        String? uyari;
+        if (durum.dogrulukM > 100 || (gorunuyor && durum.dogrulukM > 70)) {
+          uyari = 'Konum ±${durum.dogrulukM.round()} m — yönlendirme şaşabilir.';
+        }
+
+        // Yeniden hesaplama uyarısı görünüyorsa üstüne yazma.
+        final hesaplaniyor = _yonlendirmeUyarisi != null &&
+            _yonlendirmeUyarisi!.startsWith('Rotadan');
+
+        if (!hesaplaniyor && uyari != _yonlendirmeUyarisi) {
           setState(() => _yonlendirmeUyarisi = uyari);
         }
       },
       rotadanCikildi: (konum) async {
-        if (!mounted) return;
+        if (!mounted || _yenidenHesaplaniyor) return;
+
+        // Eski oturum hemen kapatılmalı. Yoksa yeni rota beklenirken gelen
+        // ölçümler üst üste yeni istekler tetikliyor ve "rotadan çıktın"
+        // uyarısı yanıp sönüyordu.
+        _yenidenHesaplaniyor = true;
+        _yonlendirmeAboneligi?.cancel();
+        _yonlendirmeAboneligi = null;
+
+        final hedef = _rotaHedefi;
+        if (hedef == null) {
+          _yenidenHesaplaniyor = false;
+          return;
+        }
+
         setState(() {
           _kullaniciKonumu = konum;
           _yonlendirmeUyarisi = 'Rotadan çıktın, yeniden hesaplanıyor…';
         });
 
-        final hedef = _rotaHedefi;
-        if (hedef == null) return;
         try {
           final yeni = await const RotaServisi().rotaAl(konum, hedef.konum);
           if (!mounted) return;
           setState(() => _yuruyusRotasi = yeni);
+          _yenidenHesaplaniyor = false;
           _yonlendirmeyiBaslat();
         } catch (_) {
+          _yenidenHesaplaniyor = false;
           if (!mounted) return;
           setState(() => _yonlendirmeUyarisi = 'Yeni rota alınamadı.');
           _yonlendirmeyiBitir();
@@ -1033,6 +1061,18 @@ class _YonlendirmePaneli extends StatelessWidget {
     return kalanDk == 0 ? '$saat sa' : '$saat sa $kalanDk dk';
   }
 
+  /// "Yürüdüğün: 689 m · 4,8 km/sa"
+  ///
+  /// Hız, konumun gerçekten güncellendiğinin en doğrudan göstergesi: kamera
+  /// kullanıcıyı ortada tuttuğu için ok sabit duruyormuş gibi görünüyor.
+  static String _ilerlemeMetni(double katEdilenM, double hizMs) {
+    final yuruyus = 'Yürüdüğün: ${_mesafe(katEdilenM)}';
+    if (hizMs < 0.3) return yuruyus;
+
+    final kmSa = (hizMs * 3.6).toStringAsFixed(1).replaceAll('.', ',');
+    return '$yuruyus · $kmSa km/sa';
+  }
+
   String _kalanMetni(double kalanM) {
     final sure = _kalanSure(rota, kalanM);
     return sure == null
@@ -1112,7 +1152,7 @@ class _YonlendirmePaneli extends StatelessWidget {
               // duruyormuş gibi görünüyor; bu sayı arttıkça konumun gerçekten
               // güncellendiği görülür.
               Text(
-                'Yürüdüğün: ${_mesafe(ilerleme.katEdilenM)}',
+                _ilerlemeMetni(ilerleme.katEdilenM, durum?.hizMs ?? 0),
                 style: tema.textTheme.bodySmall
                     ?.copyWith(color: renkler.onPrimary.withValues(alpha: .75)),
               ),
