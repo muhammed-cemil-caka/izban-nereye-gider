@@ -220,6 +220,11 @@ yeşil / iniş turuncu gösterilir. Durağa tıklamak onu biniş durağı yapar.
 Kullanıcı konumu **sürüklenebilir** bir işaretle gösterilir — masaüstünde şaşan
 tarayıcı konumunu düzeltmenin en doğrudan yolu budur.
 
+Konum iğnesi yalnızca **2 saniye basılı tutunca** sürüklenebilir. Sürekli
+açık olması, haritayı kaydırırken parmağın işarete değmesiyle konumun
+yanlışlıkla değişmesine yol açıyordu. Webde işaret hazır olunca parlar,
+mobilde titreşimle haber verilir.
+
 Konum iğnesinin **ucu** konumu gösterir (`Marker.alignment: topCenter`).
 Varsayılan hizalama işareti noktanın ortasına koyuyor; o zaman uç aşağıda
 kalıyor ve yakınlaştırma değiştikçe kayma büyüyor. Webde Leaflet'in
@@ -331,6 +336,23 @@ Webde ayrıca sesli yönlendirme vardır (tarayıcının kendi konuşma sentezi,
 Navigasyon SDK'sı kullanılmıyor — gereken her şey elde: OSRM rota geometrisi,
 adımlar ve cihazın konum akışı. Geometri saf fonksiyonlarda tutulur ve
 testlidir: `frontend/js/yonlendirme.js` · `mobile/lib/servisler/yonlendirme_servisi.dart`
+
+### Web ve mobil aynı davranışta
+
+Her iki istemcide de: yürüme mesafesine göre en yakın durak, adım adım
+yönlendirme, gidiş yönüne dönen harita, ekranda dik duran yön oku, ilerleme
+çubuğu, kat edilen yolun soluklaşması, 2 saniye basılı tutunca taşınan konum
+iğnesi ve pusula.
+
+Leaflet haritayı döndürmeyi yerleşik desteklemediği için web tarafında
+`leaflet-rotate` eklentisi kullanılır (`frontend/vendor/leaflet/`, MIT).
+İşaret `leaflet-norotate-pane` içinde durduğu için harita dönerken ok
+ekranda dik kalır — mobildeki davranışın aynısı.
+
+Kamera hareketi her iki tarafta da **sürekli takip** ile yumuşatılır: her
+ölçümde yeni animasyon başlatmak hızı sıfırlayıp takılma hissi veriyordu.
+Mobilde `Ticker` ile üstel yumuşatma, webde `requestAnimationFrame` ile
+aynı yaklaşım kullanılır.
 
 ### Döşeme ve yönlendirme sunucusu uyarısı
 
