@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_compass/flutter_compass.dart';
@@ -6,6 +7,25 @@ import 'package:latlong2/latlong.dart';
 import '../modeller/durak.dart';
 import '../modeller/yolculuk.dart';
 import '../servisler/rota_servisi.dart';
+
+/// Haritanın işaret katmanını besleyen konum bilgisi.
+@immutable
+class KonumDurumu {
+  final Konum? konum;
+  final bool yonlendirmede;
+  final double? aci;
+
+  /// Rota üzerinde kat edilen mesafe (metre). Yürünen kısım haritada
+  /// soluklaştırılır; kullanıcı ilerlediğini gözle görsün.
+  final double katEdilenM;
+
+  const KonumDurumu({
+    this.konum,
+    this.yonlendirmede = false,
+    this.aci,
+    this.katEdilenM = 0,
+  });
+}
 
 /// Hattı, durakları ve kullanıcı konumunu gösteren harita.
 ///
@@ -19,12 +39,16 @@ class HaritaKarti extends StatefulWidget {
 
   final List<Durak> duraklar;
   final Yolculuk? yolculuk;
-  final Konum? kullaniciKonumu;
   final YuruyusRotasi? yuruyusRotasi;
 
-  /// Yönlendirme sürüyorsa işaret, hareket yönüne dönen bir oka dönüşür.
-  final bool yonlendirmede;
-  final double? yonAcisi;
+  /// Kullanıcı konumu ve yönü.
+  ///
+  /// Düz değer yerine dinlenebilir veriliyor: konum saniyede birkaç kez
+  /// değişiyor ve bunu setState ile taşımak tüm ekranı, dolayısıyla döşeme
+  /// katmanını yeniden kuruyordu — ekran sürekli yenileniyormuş gibi
+  /// görünüyordu. Böylece yalnızca işaret katmanı yeniden çiziliyor.
+  final ValueListenable<KonumDurumu> konumDurumu;
+
   final ValueChanged<Durak> duragaBasildi;
   final ValueChanged<Konum> konumTasindi;
 
@@ -32,10 +56,8 @@ class HaritaKarti extends StatefulWidget {
     super.key,
     required this.duraklar,
     required this.yolculuk,
-    required this.kullaniciKonumu,
     required this.yuruyusRotasi,
-    required this.yonlendirmede,
-    required this.yonAcisi,
+    required this.konumDurumu,
     required this.duragaBasildi,
     required this.konumTasindi,
   });
@@ -61,6 +83,10 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
 
   AnimationController? _kameraAnimasyonu;
 
+  /// İlk kamera hareketi animasyonsuz olsun: yönlendirme başlar başlamaz
+  /// kullanıcıya doğrudan yakınlaşılır.
+  bool _yonlendirmeBasladi = false;
+
   static const _hatRengi = Color(0xFF7A8798);
   static const _guzergahRengi = Color(0xFF0B5FA5);
   static const _binisRengi = Color(0xFF0B7A63);
@@ -73,46 +99,52 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
       .toList();
 
   @override
+  void initState() {
+    super.initState();
+    widget.konumDurumu.addListener(_konumDegisti);
+  }
+
+  @override
   void didUpdateWidget(HaritaKarti eski) {
     super.didUpdateWidget(eski);
+
+    if (!identical(widget.konumDurumu, eski.konumDurumu)) {
+      eski.konumDurumu.removeListener(_konumDegisti);
+      widget.konumDurumu.addListener(_konumDegisti);
+    }
+
     if (!_haritaHazir) return;
 
     // Yeni yürüyüş rotası geldi: rotanın tamamı ekrana sığsın.
     if (widget.yuruyusRotasi != null &&
         widget.yuruyusRotasi != eski.yuruyusRotasi) {
       _rotayiCercevele();
-      return;
     }
+  }
 
-    // Yönlendirme sürerken kamera kullanıcıyla birlikte gitsin.
-    if (widget.yonlendirmede &&
-        widget.kullaniciKonumu != null &&
-        widget.kullaniciKonumu != eski.kullaniciKonumu) {
-      _kamerayiTasi(
-        LatLng(widget.kullaniciKonumu!.enlem, widget.kullaniciKonumu!.boylam),
-        animasyonlu: eski.yonlendirmede,
-      );
-      return;
-    }
+  /// Konum değişti: yalnızca kamerayı taşı. Widget ağacı yeniden çizilmez;
+  /// işaret katmanı kendi ValueListenableBuilder'ıyla tazelenir.
+  void _konumDegisti() {
+    if (!_haritaHazir) return;
 
-    // Yönlendirme yeni başladı: doğrudan kullanıcıya yakınlaş.
-    if (widget.yonlendirmede && !eski.yonlendirmede && widget.kullaniciKonumu != null) {
-      _kamerayiTasi(
-        LatLng(widget.kullaniciKonumu!.enlem, widget.kullaniciKonumu!.boylam),
-        animasyonlu: false,
-      );
-    }
+    final durum = widget.konumDurumu.value;
+    final konum = durum.konum;
+    if (konum == null || !durum.yonlendirmede) return;
+
+    final hedef = LatLng(konum.enlem, konum.boylam);
+    _kamerayiTasi(hedef, animasyonlu: _yonlendirmeBasladi);
+    _yonlendirmeBasladi = true;
   }
 
   /// Kamerayı hedefe taşır.
   ///
   /// Yönlendirme sırasında her ölçümde doğrudan move çağırmak haritayı
-  /// zıplatıyor ve "kendini yeniliyor" hissi veriyordu. Hareket araya
-  /// yerleştirilerek yumuşatılıyor.
+  /// zıplatıyordu; hareket araya animasyon konarak yumuşatılıyor.
   void _kamerayiTasi(LatLng hedef, {required bool animasyonlu}) {
     _kameraAnimasyonu?.dispose();
     _kameraAnimasyonu = null;
 
+    // Kullanıcı uzaklaştırdıysa yakınlaştırmasını zorla değiştirme.
     final yakinlik = _denetleyici.camera.zoom < _yonlendirmeYakinligi
         ? _yonlendirmeYakinligi
         : _denetleyici.camera.zoom;
@@ -144,10 +176,36 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     denetleyici.forward();
   }
 
-  @override
-  void dispose() {
-    _kameraAnimasyonu?.dispose();
-    super.dispose();
+  /// Rotayı, kat edilen mesafede ikiye böler.
+  static (List<LatLng>, List<LatLng>) _rotayiBol(
+    List<Konum> noktalar,
+    double katEdilenM,
+  ) {
+    final tumu = noktalar.map((k) => LatLng(k.enlem, k.boylam)).toList();
+    if (katEdilenM <= 0 || tumu.length < 2) return (const [], tumu);
+
+    final gecilen = <LatLng>[tumu.first];
+    var toplam = 0.0;
+
+    for (var i = 0; i < noktalar.length - 1; i++) {
+      final parca = noktalar[i].metreUzaklik(noktalar[i + 1]);
+
+      if (toplam + parca >= katEdilenM) {
+        // Bölme noktası parçanın içinde: oranla araya nokta koy.
+        final oran = parca == 0 ? 0.0 : (katEdilenM - toplam) / parca;
+        final bolme = LatLng(
+          noktalar[i].enlem + (noktalar[i + 1].enlem - noktalar[i].enlem) * oran,
+          noktalar[i].boylam + (noktalar[i + 1].boylam - noktalar[i].boylam) * oran,
+        );
+        gecilen.add(bolme);
+        return (gecilen, [bolme, ...tumu.sublist(i + 1)]);
+      }
+
+      toplam += parca;
+      gecilen.add(tumu[i + 1]);
+    }
+
+    return (tumu, const []);
   }
 
   /// Yürüyüş rotasını, kullanıcı ve hedef görünecek şekilde çerçeveler.
@@ -231,19 +289,46 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
                       color: _guzergahRengi,
                       strokeWidth: 5,
                     ),
-                  if (widget.yuruyusRotasi != null)
-                    Polyline(
-                      points: widget.yuruyusRotasi!.noktalar
-                          .map((k) => LatLng(k.enlem, k.boylam))
-                          .toList(),
-                      color: _yuruyusRengi,
-                      strokeWidth: 5,
-                      pattern: StrokePattern.dotted(),
-                    ),
                 ]),
+
+                // Yürüyüş rotası ayrı katmanda: kat edilen kısım soluklaşsın
+                // diye konum değiştikçe yalnızca bu katman yeniden çiziliyor.
+                ValueListenableBuilder<KonumDurumu>(
+                  valueListenable: widget.konumDurumu,
+                  builder: (context, durum, _) {
+                    final rota = widget.yuruyusRotasi;
+                    if (rota == null) return const SizedBox.shrink();
+
+                    final (gecilen, kalan) =
+                        _rotayiBol(rota.noktalar, durum.katEdilenM);
+
+                    return PolylineLayer(polylines: [
+                      if (gecilen.length > 1)
+                        Polyline(
+                          points: gecilen,
+                          color: _yuruyusRengi.withValues(alpha: .28),
+                          strokeWidth: 5,
+                          pattern: StrokePattern.dotted(),
+                        ),
+                      if (kalan.length > 1)
+                        Polyline(
+                          points: kalan,
+                          color: _yuruyusRengi,
+                          strokeWidth: 5,
+                          pattern: StrokePattern.dotted(),
+                        ),
+                    ]);
+                  },
+                ),
                 MarkerLayer(markers: _durakIsaretleri()),
-                if (widget.kullaniciKonumu != null)
-                  MarkerLayer(markers: [_konumIsareti(widget.kullaniciKonumu!)]),
+                ValueListenableBuilder<KonumDurumu>(
+                  valueListenable: widget.konumDurumu,
+                  builder: (context, durum, _) {
+                    final konum = durum.konum;
+                    if (konum == null) return const SizedBox.shrink();
+                    return MarkerLayer(markers: [_konumIsareti(durum, konum)]);
+                  },
+                ),
                 RichAttributionWidget(
                   attributions: [
                     TextSourceAttribution(
@@ -303,13 +388,13 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   /// Normalde sürüklenebilir bir iğne — GPS şaştığında yeri elle düzeltmenin
   /// yolu. Yönlendirme sırasında yön okuna dönüşür ve sürüklenemez olur;
   /// yürürken yanlışlıkla taşınmasın.
-  Marker _konumIsareti(Konum konum) {
-    if (widget.yonlendirmede) {
+  Marker _konumIsareti(KonumDurumu durum, Konum konum) {
+    if (durum.yonlendirmede) {
       return Marker(
         point: LatLng(konum.enlem, konum.boylam),
         width: 38,
         height: 38,
-        child: _YonOku(aci: widget.yonAcisi ?? 0),
+        child: _YonOku(aci: durum.aci ?? 0),
       );
     }
 

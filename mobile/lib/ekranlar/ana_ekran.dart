@@ -26,6 +26,11 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   late final DurakServisi _servis;
   final _kaydirma = ScrollController();
 
+  /// Konum ve yön, setState yerine bu taşıyıcıyla haritaya gidiyor.
+  /// Konum saniyede birkaç kez değişiyor; setState ile taşımak tüm ekranı,
+  /// dolayısıyla haritanın döşeme katmanını yeniden kuruyordu.
+  final _konumDurumu = ValueNotifier<KonumDurumu>(const KonumDurumu());
+
   /// Yol tarifi alınınca haritaya kaydırmak için.
   final _haritaAnahtari = GlobalKey();
   late final Future<List<Durak>> _duraklarGelecegi;
@@ -49,8 +54,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// Arayüz bu bayrağı okur. Aboneliği doğrudan okumak yetmiyordu: abonelik
   /// setState dışında atandığı için harita yön okuna geçmiyordu.
   bool _yonlendirmeAktif = false;
-  double? _baslangicAcisi;
-  YonlendirmeDurumu? _yonlendirmeDurumu;
+  /// Yönlendirme paneli bunu dinler; her ölçümde tüm ekran çizilmesin.
+  final _yonlendirmeNotifier = ValueNotifier<YonlendirmeDurumu?>(null);
   String? _yonlendirmeUyarisi;
   bool _varildi = false;
   String? _konumHatasi;
@@ -88,6 +93,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           _yakinAdaylar = adaylar;
           _yakinDurak = adaylar.isEmpty ? null : adaylar.first;
           _konumDogrulukM = dogrulukM;
+          _konumDurumu.value = KonumDurumu(konum: konum);
           _kullaniciKonumu = konum;
           _konumHatasi = adaylar.isEmpty ? 'Duraklarda koordinat bilgisi yok.' : null;
           _konumAraniyor = false;
@@ -116,6 +122,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
       final duraklar = await _duraklarGelecegi;
       if (!mounted) return;
       final adaylar = YakinDurak.enYakinlar(duraklar, konum);
+      _konumDurumu.value = KonumDurumu(konum: konum);
       setState(() {
         _kullaniciKonumu = konum;
         _yakinAdaylar = adaylar;
@@ -170,12 +177,19 @@ class _AnaEkranDurumu extends State<AnaEkran> {
       ilkAci = YonlendirmeServisi.yonAcisi(rota.noktalar[0], rota.noktalar[1]);
     }
 
+    _yonlendirmeNotifier.value = null;
+
+    // Ok, ilk konum ölçümü gelmeden de rotanın yönüne baksın.
+    _konumDurumu.value = KonumDurumu(
+      konum: _kullaniciKonumu,
+      yonlendirmede: true,
+      aci: ilkAci,
+    );
+
     setState(() {
       _varildi = false;
       _yonlendirmeUyarisi = null;
-      _yonlendirmeDurumu = null;
       _yonlendirmeAktif = true;
-      _baslangicAcisi = ilkAci;
     });
 
     // İki konum akışı aynı anda çalışırsa Android istekleri birleştirip
@@ -184,24 +198,27 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
     _yonlendirmeAboneligi = YonlendirmeServisi.baslat(
       rota: rota,
-      durumDegisti: (durum) async {
+      durumDegisti: (durum) {
         if (!mounted) return;
 
-        // En yakın durak kartı da tazelensin; yoksa yönlendirme "243 m" derken
-        // üstteki kart eski mesafeyi göstermeye devam ediyor.
-        final duraklar = await _duraklarGelecegi;
-        if (!mounted) return;
-        final adaylar = YakinDurak.enYakinlar(duraklar, durum.konum);
+        _kullaniciKonumu = durum.konum;
 
-        setState(() {
-          _yonlendirmeDurumu = durum;
-          _kullaniciKonumu = durum.konum;
-          _yakinAdaylar = adaylar;
-          _yakinDurak = adaylar.isEmpty ? null : adaylar.first;
-          _yonlendirmeUyarisi = durum.dogrulukM > 100
-              ? 'Konum ±${durum.dogrulukM.round()} m — yönlendirme şaşabilir.'
-              : null;
-        });
+        // Harita ve yönlendirme paneli bu taşıyıcıyı dinliyor; setState
+        // çağrılmadığı için ekranın kalanı yeniden çizilmiyor.
+        _konumDurumu.value = KonumDurumu(
+          konum: durum.konum,
+          yonlendirmede: true,
+          aci: durum.aci,
+          katEdilenM: durum.ilerleme.katEdilenM,
+        );
+        _yonlendirmeNotifier.value = durum;
+
+        final uyari = durum.dogrulukM > 100
+            ? 'Konum ±${durum.dogrulukM.round()} m — yönlendirme şaşabilir.'
+            : null;
+        if (uyari != _yonlendirmeUyarisi) {
+          setState(() => _yonlendirmeUyarisi = uyari);
+        }
       },
       rotadanCikildi: (konum) async {
         if (!mounted) return;
@@ -241,13 +258,13 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     _yonlendirmeAboneligi = null;
 
     if (mounted) {
+      // İşaret yön okundan sürüklenebilir iğneye geri dönsün.
+      _konumDurumu.value = KonumDurumu(konum: _kullaniciKonumu);
+      if (!varisSonrasi) _yonlendirmeNotifier.value = null;
+
       setState(() {
         _yonlendirmeAktif = false;
-        _baslangicAcisi = null;
-        if (!varisSonrasi) {
-          _yonlendirmeDurumu = null;
-          _yonlendirmeUyarisi = null;
-        }
+        if (!varisSonrasi) _yonlendirmeUyarisi = null;
       });
     }
   }
@@ -255,6 +272,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   @override
   void dispose() {
     _kaydirma.dispose();
+    _konumDurumu.dispose();
+    _yonlendirmeNotifier.dispose();
     _takipAboneligi?.cancel();
     _yonlendirmeAboneligi?.cancel();
     super.dispose();
@@ -360,13 +379,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 key: _haritaAnahtari,
                 duraklar: duraklar,
                 yolculuk: yolculuk,
-                kullaniciKonumu: _kullaniciKonumu,
                 yuruyusRotasi: _yuruyusRotasi,
-                yonlendirmede: _yonlendirmeAktif,
-                // Hareket yönü; manyetometre okun kendi içinde dinleniyor.
-                // Böylece telefon çevrildiğinde tüm ekran değil yalnızca ok
-                // yeniden çiziliyor, harita kendini yenilemiyor.
-                yonAcisi: _yonlendirmeDurumu?.aci ?? _baslangicAcisi,
+                konumDurumu: _konumDurumu,
                 duragaBasildi: (durak) => setState(() {
                   _binisKod = durak.kod;
                   if (_inisKod == _binisKod) {
@@ -381,6 +395,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                   // yolu; takip devam ederse seçimi hemen ezer.
                   _takibiKapat();
                   final adaylar = YakinDurak.enYakinlar(duraklar, konum);
+                  _konumDurumu.value = KonumDurumu(konum: konum);
                   setState(() {
                     _kullaniciKonumu = konum;
                     _yakinAdaylar = adaylar;
@@ -390,20 +405,28 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                   });
                 },
               ),
-              if (_yonlendirmeDurumu != null || _varildi) ...[
-                const SizedBox(height: 16),
-                _YonlendirmePaneli(
-                  rota: _yuruyusRotasi,
-                  hedef: _rotaHedefi,
-                  durum: _yonlendirmeDurumu,
-                  uyari: _yonlendirmeUyarisi,
-                  varildi: _varildi,
-                  bitir: () {
-                    setState(() => _varildi = false);
-                    _yonlendirmeyiBitir();
-                  },
-                ),
-              ],
+              // Panel taşıyıcıyı dinliyor: her konum ölçümünde yalnızca bu
+              // kart yeniden çiziliyor, harita dokunulmadan kalıyor.
+              ValueListenableBuilder<YonlendirmeDurumu?>(
+                valueListenable: _yonlendirmeNotifier,
+                builder: (context, durum, _) {
+                  if (durum == null && !_varildi) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: _YonlendirmePaneli(
+                      rota: _yuruyusRotasi,
+                      hedef: _rotaHedefi,
+                      durum: durum,
+                      uyari: _yonlendirmeUyarisi,
+                      varildi: _varildi,
+                      bitir: () {
+                        setState(() => _varildi = false);
+                        _yonlendirmeyiBitir();
+                      },
+                    ),
+                  );
+                },
+              ),
               if (_rotaAraniyor || _rotaHatasi != null || _yuruyusRotasi != null) ...[
                 const SizedBox(height: 16),
                 _RotaKarti(
