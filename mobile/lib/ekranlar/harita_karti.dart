@@ -87,6 +87,14 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   /// kullanıcıya doğrudan yakınlaşılır.
   bool _yonlendirmeBasladi = false;
 
+  /// Kameranın en son taşındığı nokta.
+  Konum? _kameraHedefi;
+
+  /// GPS, kullanıcı dururken bile birkaç metre oynar. Her ölçümde kamerayı
+  /// taşımak haritayı sürekli ileri geri kaydırıyor ("ekran gidip geliyor").
+  /// Bu eşiğin altındaki oynamalar yok sayılır.
+  static const _kameraEsigiM = 12.0;
+
   static const _hatRengi = Color(0xFF7A8798);
   static const _guzergahRengi = Color(0xFF0B5FA5);
   static const _binisRengi = Color(0xFF0B7A63);
@@ -129,10 +137,27 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
 
     final durum = widget.konumDurumu.value;
     final konum = durum.konum;
-    if (konum == null || !durum.yonlendirmede) return;
 
-    final hedef = LatLng(konum.enlem, konum.boylam);
-    _kamerayiTasi(hedef, animasyonlu: _yonlendirmeBasladi);
+    if (!durum.yonlendirmede) {
+      _yonlendirmeBasladi = false;
+      _kameraHedefi = null;
+      return;
+    }
+    if (konum == null) return;
+
+    // Gürültüyü ele: kullanıcı gerçekten ilerlemediyse kamera oynamasın.
+    final onceki = _kameraHedefi;
+    if (_yonlendirmeBasladi &&
+        onceki != null &&
+        onceki.metreUzaklik(konum) < _kameraEsigiM) {
+      return;
+    }
+
+    _kameraHedefi = konum;
+    _kamerayiTasi(
+      LatLng(konum.enlem, konum.boylam),
+      animasyonlu: _yonlendirmeBasladi,
+    );
     _yonlendirmeBasladi = true;
   }
 

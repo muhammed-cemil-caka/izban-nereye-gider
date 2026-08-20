@@ -263,9 +263,19 @@ harita widget'ı sabit kalıyor, yalnızca işaret katmanı, rota katmanı ve
 yönlendirme paneli kendi `ValueListenableBuilder`'larıyla tazeleniyor. Kamera
 hareketi de imperatif olarak yapılıyor, yeniden çizim gerektirmiyor.
 
+**GPS gürültüsü:** cihaz dururken bile konum birkaç metre oynar. Her ölçümde
+kamerayı taşımak haritayı sürekli ileri geri kaydırıyordu. Kamera yalnızca
+kullanıcı son hedeften **12 m**'den fazla uzaklaşınca taşınıyor.
+
+**Sabit panel yüksekliği:** yönlendirme talimatı bazen bir, bazen iki satır
+oluyordu; kartın boyu değiştikçe altındaki her şey oynuyordu. Talimat alanı
+iki satırlık sabit yükseklikte.
+
 **İlerleme görünürlüğü:** kamera kullanıcıyı ortada tuttuğu için ok sabit
 duruyormuş gibi görünüyordu. Yürüyüş rotasının kat edilen kısmı artık
-soluklaştırılıyor; kalan kısım canlı renkte kalıyor.
+soluklaştırılıyor; kalan kısım canlı renkte kalıyor. Panelde ayrıca
+"Yürüdüğün: X m" gösteriliyor — bu sayının artması konumun güncellendiğinin
+doğrudan kanıtı.
 
 **Kalan süre:** sabit yürüyüş hızı varsayılmıyor; servisin o rota için
 öngördüğü tempo (`sureSn / mesafeM`) kalan mesafeye uygulanıyor.

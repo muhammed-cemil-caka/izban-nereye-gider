@@ -1045,6 +1045,10 @@ class _YonlendirmePaneli extends StatelessWidget {
     final tema = Theme.of(context);
     final renkler = tema.colorScheme;
 
+    // Yerel değişkene alınıyor: alan üzerinden null denetimi Dart'ta
+    // yükseltilemiyor (public property promotion yok).
+    final ilerleme = durum?.ilerleme;
+
     final manevra = varildi
         ? '${hedef?.ad ?? ""} durağına vardın.'
         : (rota != null && durum != null &&
@@ -1059,49 +1063,60 @@ class _YonlendirmePaneli extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    manevra,
-                    style: tema.textTheme.titleMedium?.copyWith(
-                      color: renkler.onPrimary,
-                      fontWeight: FontWeight.bold,
+            // Talimat alanı iki satırlık sabit yükseklikte tutuluyor.
+            // Değişken yükseklik, talimat kısaldıkça/uzadıkça kartın boyunu
+            // değiştiriyor ve altındaki her şeyi oynatıyordu — ekran
+            // "gidip geliyor" gibi görünüyordu.
+            SizedBox(
+              height: 62,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      manevra,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: tema.textTheme.titleMedium?.copyWith(
+                        color: renkler.onPrimary,
+                        fontWeight: FontWeight.bold,
+                        height: 1.25,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  varildi ? '✓' : _mesafe(durum?.ilerleme.sonrakiManevraM ?? 0),
-                  style: tema.textTheme.headlineSmall?.copyWith(
-                    color: renkler.onPrimary,
-                    fontWeight: FontWeight.w800,
+                  const SizedBox(width: 12),
+                  Text(
+                    varildi ? '✓' : _mesafe(durum?.ilerleme.sonrakiManevraM ?? 0),
+                    style: tema.textTheme.headlineSmall?.copyWith(
+                      color: renkler.onPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Divider(color: renkler.onPrimary.withValues(alpha: .25), height: 1),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    varildi
-                        ? 'Yolculuk başlasın.'
-                        : _kalanMetni(durum?.ilerleme.kalanM ?? 0),
-                    style: tema.textTheme.bodySmall
-                        ?.copyWith(color: renkler.onPrimary.withValues(alpha: .9)),
-                  ),
-                ),
-                TextButton(
-                  onPressed: bitir,
-                  style: TextButton.styleFrom(foregroundColor: renkler.onPrimary),
-                  child: const Text('Bitir'),
-                ),
-              ],
+            const SizedBox(height: 8),
+            // Bitir düğmesi buradan kaldırıldı; alttaki rota kartında zaten var.
+            Text(
+              varildi
+                  ? 'Yolculuk başlasın.'
+                  : _kalanMetni(durum?.ilerleme.kalanM ?? 0),
+              style: tema.textTheme.bodySmall
+                  ?.copyWith(color: renkler.onPrimary.withValues(alpha: .9)),
             ),
+            if (!varildi && ilerleme != null) ...[
+              const SizedBox(height: 2),
+              // Yürünen mesafe: kamera kullanıcıyı ortada tuttuğu için ok sabit
+              // duruyormuş gibi görünüyor; bu sayı arttıkça konumun gerçekten
+              // güncellendiği görülür.
+              Text(
+                'Yürüdüğün: ${_mesafe(ilerleme.katEdilenM)}',
+                style: tema.textTheme.bodySmall
+                    ?.copyWith(color: renkler.onPrimary.withValues(alpha: .75)),
+              ),
+            ],
             if (uyari != null) ...[
               const SizedBox(height: 8),
               Container(
