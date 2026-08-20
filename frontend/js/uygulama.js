@@ -50,6 +50,9 @@
     yonlendirmeBitir: document.getElementById('yonlendirmeBitir'),
     yonlendirmeUyari: document.getElementById('yonlendirmeUyari'),
     konumTekrar: document.getElementById('konumTekrarDugmesi'),
+    konumTani: document.getElementById('konumTani'),
+    konumTaniListe: document.getElementById('konumTaniListe'),
+    konumTaniOneri: document.getElementById('konumTaniOneri'),
     binisYolTarifi: document.getElementById('binisYolTarifi'),
     konumDogruluk: document.getElementById('konumDogruluk'),
     konumAlternatif: document.getElementById('konumAlternatif'),
@@ -282,6 +285,29 @@
 
   var yakinDurak = null;
 
+  /** Konum alınamadığında sebebi ölçüp yazar; tahmin yürütmeye gerek kalmasın. */
+  function taniyiGoster() {
+    if (typeof konumTanisi !== 'function') return;
+
+    konumTanisi().then(function (tani) {
+      oge.konumTaniListe.textContent = '';
+
+      tani.satirlar.forEach(function (satir) {
+        var ad = document.createElement('dt');
+        ad.textContent = satir.ad;
+        oge.konumTaniListe.appendChild(ad);
+
+        var deger = document.createElement('dd');
+        deger.textContent = satir.deger;
+        deger.setAttribute('data-iyi', satir.iyi ? 'evet' : 'hayir');
+        oge.konumTaniListe.appendChild(deger);
+      });
+
+      oge.konumTaniOneri.textContent = tani.oneri;
+      oge.konumTani.hidden = false;
+    });
+  }
+
   function konumDurumunuYaz(metin, durum) {
     oge.konumMetni.textContent = metin;
     oge.konumKarti.setAttribute('data-durum', durum);
@@ -291,6 +317,13 @@
     // konum kullanılıyorsa (kullanıcı tarayıcı konumuna dönebilmeli).
     oge.konumTekrar.hidden = durum !== 'hata' && !elleKonumuOku();
     oge.konumTekrar.textContent = elleKonumuOku() ? 'Konumumu yeniden bul' : 'Konumumu bul';
+
+    // Tanı yalnızca gerçekten sorun varken görünsün.
+    if (durum === 'hata') {
+      taniyiGoster();
+    } else {
+      oge.konumTani.hidden = true;
+    }
   }
 
   // Bu değerin üstündeki doğruluklarda en yakın durak yanılabilir; kullanıcı uyarılır.

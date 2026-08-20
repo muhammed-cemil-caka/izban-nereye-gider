@@ -2,22 +2,29 @@
 """
 Geliştirme sunucusu — frontend/ klasörünü yayınlar.
 
-    python3 araclar/gelistirme-sunucusu.py [port]
+    python3 araclar/gelistirme-sunucusu.py [port] [--https]
 
 Basit `python3 -m http.server` yerine bu kullanılır: o sunucu önbellek başlığı
 göndermediği için tarayıcı düzenlenen dosyaların eski sürümünü tutuyor ve
 yapılan değişiklik sayfaya yansımıyor. Burada her yanıta no-store ekleniyor.
+
+--https: kendinden imzalı sertifikayla HTTPS sunar. Konum servisi yalnızca
+güvenli bağlamda çalışır; http://localhost çoğu tarayıcıda güvenli sayılır ama
+Safari'de ve telefondan yerel ağ adresiyle bağlanırken HTTPS gerekir.
+Sertifika yoksa kendiliğinden üretilir (openssl ile).
 """
 import functools
 import http.server
 import pathlib
 import socket
 import socketserver
+import ssl
 import subprocess
 import sys
 
 VARSAYILAN_PORT = 5173
 KOK = pathlib.Path(__file__).resolve().parent.parent / "frontend"
+SERTIFIKA_KLASORU = pathlib.Path(__file__).resolve().parent.parent / ".sertifika"
 
 
 class OnbelleksizIsleyici(http.server.SimpleHTTPRequestHandler):
@@ -76,8 +83,65 @@ def port_dolu_uyarisi(port):
         print(f"  python3 araclar/gelistirme-sunucusu.py {bos}\n")
 
 
+def yerel_adres():
+    """Telefondan bağlanmak için Mac'in yerel ağ adresi."""
+    for arayuz in ("en0", "en1"):
+        try:
+            adres = subprocess.run(
+                ["ipconfig", "getifaddr", arayuz],
+                capture_output=True, text=True, timeout=3,
+            ).stdout.strip()
+            if adres:
+                return adres
+        except Exception:
+            pass
+    return None
+
+
+def sertifika_uret(sertifika, anahtar):
+    """Kendinden imzalı sertifika üretir; localhost ve yerel ağ adresini kapsar."""
+    adlar = ["DNS:localhost", "IP:127.0.0.1"]
+    yerel = yerel_adres()
+    if yerel:
+        adlar.append(f"IP:{yerel}")
+
+    SERTIFIKA_KLASORU.mkdir(exist_ok=True)
+    print("Kendinden imzalı sertifika üretiliyor…", flush=True)
+
+    sonuc = subprocess.run(
+        [
+            "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", str(anahtar), "-out", str(sertifika),
+            "-days", "365", "-subj", "/CN=localhost",
+            "-addext", "subjectAltName=" + ",".join(adlar),
+        ],
+        capture_output=True, text=True,
+    )
+    if sonuc.returncode != 0:
+        print("Sertifika üretilemedi:", sonuc.stderr.strip()[:300], flush=True)
+        return False
+    return True
+
+
+def https_baglami():
+    """HTTPS bağlamı hazırlar; sertifika yoksa üretir."""
+    sertifika = SERTIFIKA_KLASORU / "sertifika.pem"
+    anahtar = SERTIFIKA_KLASORU / "anahtar.pem"
+
+    if not (sertifika.exists() and anahtar.exists()):
+        if not sertifika_uret(sertifika, anahtar):
+            return None
+
+    baglam = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    baglam.load_cert_chain(certfile=str(sertifika), keyfile=str(anahtar))
+    return baglam
+
+
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else VARSAYILAN_PORT
+    arguman = [a for a in sys.argv[1:] if not a.startswith("--")]
+    https_mi = "--https" in sys.argv
+
+    port = int(arguman[0]) if arguman else VARSAYILAN_PORT
     isleyici = functools.partial(OnbelleksizIsleyici, directory=str(KOK))
 
     try:
@@ -89,10 +153,27 @@ def main():
             return 1
         raise
 
+    if https_mi:
+        baglam = https_baglami()
+        if baglam is None:
+            sunucu.server_close()
+            return 1
+        sunucu.socket = baglam.wrap_socket(sunucu.socket, server_side=True)
+
+    protokol = "https" if https_mi else "http"
+
     with sunucu:
         # flush: çıktı bir dosyaya yönlendirildiğinde tamponda kalmasın.
-        print(f"İZBAN geliştirme sunucusu: http://localhost:{port}", flush=True)
-        print(f"Klasör: {KOK}", flush=True)
+        print(f"İZBAN geliştirme sunucusu: {protokol}://localhost:{port}", flush=True)
+        yerel = yerel_adres()
+        if yerel:
+            print(f"Telefondan:                 {protokol}://{yerel}:{port}", flush=True)
+        if https_mi:
+            print("\nSertifika kendinden imzalı: tarayıcı bir kez uyarı gösterir.",
+                  flush=True)
+            print("'Gelişmiş' → 'Yine de devam et' dediğinde konum servisi çalışır.",
+                  flush=True)
+        print(f"\nKlasör: {KOK}", flush=True)
         print("Durdurmak için Ctrl+C", flush=True)
         try:
             sunucu.serve_forever()

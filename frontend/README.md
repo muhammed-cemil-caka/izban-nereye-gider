@@ -18,6 +18,21 @@ terminalde çalışıyor olabilir. Yan yana çalıştırmak için port verilebil
 python3 araclar/gelistirme-sunucusu.py 5174
 ```
 
+### HTTPS
+
+Konum servisi güvenli bağlam ister. `http://localhost` çoğu tarayıcıda güvenli
+sayılır, ama **Safari'de** ve **telefondan yerel ağ adresiyle** bağlanırken
+HTTPS gerekir:
+
+```bash
+python3 araclar/gelistirme-sunucusu.py --https
+```
+
+Kendinden imzalı sertifika ilk çalıştırmada üretilir (`.sertifika/`, depoya
+girmez) ve hem `localhost` hem Mac'in yerel ağ adresini kapsar — telefondan da
+aynı sertifikayla bağlanılır. Tarayıcı bir kez uyarı gösterir; "Gelişmiş → Yine
+de devam et" dendikten sonra konum çalışır.
+
 <http://localhost:5173>
 
 ## Dosyalar

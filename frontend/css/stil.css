@@ -405,3 +405,27 @@ button.satir-baglanti {
 }
 
 .dugme--kucuk { padding: .35rem .7rem; font-size: .82rem; }
+
+/* Konum tanısı */
+.konum-tani { margin-top: .8rem; }
+.konum-tani > summary {
+  cursor: pointer; font-size: .82rem; font-weight: 600; color: var(--vurgu);
+  list-style: none;
+}
+.konum-tani > summary::-webkit-details-marker { display: none; }
+.konum-tani > summary::before { content: "? "; }
+.konum-tani > summary:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+
+.konum-tani-liste {
+  margin: .7rem 0 0; padding: .7rem .8rem;
+  border: 1px solid var(--cizgi); border-radius: 10px;
+  background: var(--zemin);
+  display: grid; grid-template-columns: auto 1fr; gap: .3rem .8rem;
+  font-size: .84rem;
+}
+.konum-tani-liste dt { color: var(--yazi-soluk); }
+.konum-tani-liste dd { margin: 0; font-weight: 600; word-break: break-all; }
+.konum-tani-liste dd[data-iyi="hayir"] { color: var(--hata); }
+.konum-tani-liste dd[data-iyi="evet"] { color: var(--kuzey); }
+
+.konum-tani-oneri { margin: .7rem 0 0; font-size: .84rem; line-height: 1.5; }
