@@ -301,3 +301,61 @@ function konumTakibiBaslat(olcumGeldi) {
 
   return function () { navigator.geolocation.clearWatch(izleyici); };
 }
+
+/* ---------- Pusula ---------- */
+//
+// Telefon çevrildiğinde harita da dönsün diye cihaz yönü dinlenir. iOS 13+
+// izin ister; izin verilmezse hareket yönüne düşülür (mobildeki davranışın
+// aynısı).
+
+/**
+ * Pusulayı dinler.
+ * @param {function} aciGeldi (derece) => void
+ * @returns {function} dinlemeyi durduran fonksiyon
+ */
+function pusulayiDinle(aciGeldi) {
+  var sonAci = null;
+
+  function isle(olay) {
+    var aci = null;
+
+    // iOS kendi mutlak başlığını verir; diğerleri alpha üzerinden.
+    if (typeof olay.webkitCompassHeading === 'number') {
+      aci = olay.webkitCompassHeading;
+    } else if (olay.absolute && typeof olay.alpha === 'number') {
+      aci = 360 - olay.alpha;
+    }
+
+    if (aci === null || isNaN(aci)) return;
+    aci = (aci + 360) % 360;
+
+    // Küçük sapmalarda haber verme; ok ve harita titremesin.
+    if (sonAci !== null) {
+      var fark = (aci - sonAci + 540) % 360 - 180;
+      if (Math.abs(fark) < 4) return;
+    }
+
+    sonAci = aci;
+    aciGeldi(aci);
+  }
+
+  var olayAdi = 'ondeviceorientationabsolute' in window
+    ? 'deviceorientationabsolute'
+    : 'deviceorientation';
+
+  function bagla() {
+    window.addEventListener(olayAdi, isle);
+  }
+
+  // iOS 13+ açık izin istiyor; kullanıcı etkileşimi olmadan reddedilebilir.
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(function (sonuc) { if (sonuc === 'granted') bagla(); })
+      .catch(function () { /* izin yok: hareket yönü kullanılır */ });
+  } else {
+    bagla();
+  }
+
+  return function () { window.removeEventListener(olayAdi, isle); };
+}

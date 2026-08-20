@@ -18,3 +18,13 @@ done
 
 Döşemeler (tile) OpenStreetMap'ten gelir ve ODbL lisanslıdır; haritada
 "© OpenStreetMap katkıcıları" ibaresi bulunmak zorundadır.
+
+## leaflet-rotate 0.2.8
+
+Haritayı gidiş yönüne çevirmek için (Leaflet bunu yerleşik desteklemiyor).
+MIT lisanslı — <https://github.com/Raruto/leaflet-rotate>
+
+```bash
+curl -sfL "https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js" \
+  -o leaflet-rotate.js
+```

@@ -537,8 +537,25 @@
       });
   }
 
+  // Yürüme sıralamasının hesaplandığı konum ve tazeleme eşiği.
+  // Takip her ölçümde listeyi kuş uçuşuyla yeniden kurarsa yürüme sıralaması
+  // siliniyordu; kullanıcı kayda değer mesafe yürümedikçe liste korunur.
+  var sonYuruyusKonumu = null;
+  var YURUYUS_TAZELEME_M = 150;
+
   /** Bir konumdan aday listesini kurup arayüzü tazeler. */
   function konumuIsle(konum, kesinMi) {
+    var uzaklik = sonYuruyusKonumu
+      ? metreUzaklik(konum, sonYuruyusKonumu)
+      : Infinity;
+
+    // Liste yerinde duruyorsa yalnızca konumu ve haritayı tazele.
+    if (tumAdaylar.length && uzaklik < YURUYUS_TAZELEME_M) {
+      sonKonum = { enlem: konum.enlem, boylam: konum.boylam };
+      if (harita) harita.konumuGoster(konum);
+      return;
+    }
+
     var adaylar = enYakinDuraklar(aktifDuraklar, konum, 4);
     if (!adaylar.length) {
       konumDurumunuYaz('Duraklarda koordinat bilgisi yok.', 'hata');
@@ -553,6 +570,7 @@
 
     // Kuş uçuşu sıralama anında gösterilir; yürüme mesafesi gelince düzeltilir.
     if (kesinMi && !yonlendirmeOturumu) {
+      sonYuruyusKonumu = { enlem: konum.enlem, boylam: konum.boylam };
       adaylariYuruyuseGoreSirala(sonKonum, adaylar);
     }
   }
@@ -707,6 +725,8 @@
   // Bilinen son yön. Yeni ölçümde açı hesaplanamazsa (henüz yeterli hareket
   // yok) ok kuzeye sıçramasın diye eski açı korunur.
   var sonYonAcisi = 0;
+  var pusulayiDurdur = null;
+  var pusulaAcisi = null;
 
   function yonlendirmeUyarisiYaz(metin) {
     oge.yonlendirmeUyari.textContent = metin;
@@ -745,7 +765,17 @@
       }
       harita.konumuGoster(sonKonum, { yonlendirme: true, aci: baslangicAcisi });
       harita.konumaOdaklan(sonKonum, 17);
+      harita.haritayiYoneCevir(baslangicAcisi);
       sonYonAcisi = baslangicAcisi;
+    }
+
+    // Telefon çevrildiğinde harita da dönsün (mobildeki davranış).
+    if (typeof pusulayiDinle === 'function') {
+      if (pusulayiDurdur) pusulayiDurdur();
+      pusulayiDurdur = pusulayiDinle(function (aci) {
+        pusulaAcisi = aci;
+        if (harita) harita.haritayiYoneCevir(aci);
+      });
     }
 
     yonlendirmeOturumu = yonlendirmeBaslat({
@@ -783,8 +813,11 @@
         if (typeof durum.aci === 'number') sonYonAcisi = durum.aci;
 
         if (harita) {
-          harita.konumuGoster(durum.konum, { yonlendirme: true, aci: sonYonAcisi });
+          // Ok ekranda dik durur; dönen haritadır (mobildeki gibi).
+          harita.konumuGoster(durum.konum, { yonlendirme: true, aci: 0 });
           harita.konumaOdaklan(durum.konum, 17);
+          // Pusula varsa telefonun baktığı yön, yoksa hareket yönü.
+          harita.haritayiYoneCevir(pusulaAcisi !== null ? pusulaAcisi : sonYonAcisi);
         }
       },
 
@@ -825,6 +858,11 @@
     yonlendirmeOturumu = null;
     oge.yonlendirmePaneli.hidden = true;
     if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+
+    if (pusulayiDurdur) pusulayiDurdur();
+    pusulayiDurdur = null;
+    pusulaAcisi = null;
+    if (harita) harita.haritayiKuzeyeAl();
 
     // İşaret yön okundan sürüklenebilir iğneye geri dönsün.
     if (harita && sonKonum) harita.konumuGoster(sonKonum);

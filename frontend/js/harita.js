@@ -25,7 +25,13 @@ var YURUYUS_RENGI = '#b3541e';
 function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   var harita = L.map(elemanKimligi, {
     zoomControl: true,
-    attributionControl: true
+    attributionControl: true,
+    // leaflet-rotate: haritayı gidiş yönüne çevirebilmek için.
+    // Leaflet bunu yerleşik desteklemiyor.
+    rotate: true,
+    bearing: 0,
+    touchRotate: false,
+    shiftKeyRotate: false
   });
 
   // Katman eklemeden önce bir görünüm ayarlanmalı: görünümsüz haritada Leaflet
@@ -144,6 +150,45 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     }
   }
 
+  var basiliTutmaSayaci = null;
+
+  /**
+   * İşareti 2 saniye basılı tutunca sürüklenebilir yapar.
+   *
+   * Sürüklemenin sürekli açık olması, haritayı kaydırırken parmağın işarete
+   * değmesiyle konumun yanlışlıkla değişmesine yol açıyordu.
+   */
+  function basiliTutmayiBagla(isaret) {
+    var eleman = isaret.getElement();
+    if (!eleman) return;
+
+    function baslat(olay) {
+      if (olay.button === 2) return; // sağ tık
+
+      clearTimeout(basiliTutmaSayaci);
+      basiliTutmaSayaci = setTimeout(function () {
+        isaret.dragging.enable();
+        eleman.classList.add('konum-isareti--hazir');
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, 2000);
+    }
+
+    function iptal() {
+      clearTimeout(basiliTutmaSayaci);
+      basiliTutmaSayaci = null;
+    }
+
+    eleman.addEventListener('pointerdown', baslat);
+    eleman.addEventListener('pointerup', iptal);
+    eleman.addEventListener('pointercancel', iptal);
+    eleman.addEventListener('pointerleave', iptal);
+  }
+
+  function isaretiSakinlestir() {
+    var eleman = konumIsareti && konumIsareti.getElement();
+    if (eleman) eleman.classList.remove('konum-isareti--hazir');
+  }
+
   /**
    * Yönlendirme sırasında kullanılan yön oku. Normal iğne yerine, hareket
    * yönüne dönen bir ok gösterilir — kullanıcı nereye baktığını görsün.
@@ -184,20 +229,28 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
 
     if (!konumIsareti) {
       konumIsareti = L.marker([konum.enlem, konum.boylam], {
-        draggable: !yonlendirmede,
+        // Sürükleme kapalı başlar; 2 saniye basılı tutunca açılır. Sürekli
+        // açık olması, haritayı kaydırırken yanlışlıkla taşımaya yol açıyordu.
+        draggable: false,
         autoPan: !yonlendirmede,
         icon: yonlendirmede ? yonOkuSimgesi(aci) : new L.Icon.Default(),
-        title: yonlendirmede ? 'Konumun' : 'Konumun — sürükleyerek düzeltebilirsin'
+        title: yonlendirmede
+          ? 'Konumun'
+          : 'Konumun — yerini düzeltmek için 2 saniye basılı tut'
       }).addTo(harita);
 
       konumIsareti.bindTooltip(
-        yonlendirmede ? 'Buradasın' : 'Buradasın · sürükleyebilirsin',
+        yonlendirmede ? 'Buradasın' : 'Buradasın · düzeltmek için 2 sn basılı tut',
         { direction: 'top' }
       );
 
       if (!yonlendirmede) {
+        basiliTutmayiBagla(konumIsareti);
+
         konumIsareti.on('dragend', function () {
           var yer = konumIsareti.getLatLng();
+          konumIsareti.dragging.disable();
+          isaretiSakinlestir();
           konumSuruklendi({ enlem: yer.lat, boylam: yer.lng });
         });
       }
@@ -238,12 +291,93 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     }
   }
 
+  /* ---------- Yön ---------- */
+
+  var hedefAci = null;
+  var mevcutAci = null;
+  var takipKaresi = null;
+  var DONUS_ESIGI_DERECE = 8;
+  var DONUS_HIZI = 4.0;
+
+  /**
+   * Haritayı gidiş yönüne çevirir: kullanıcının baktığı yön yukarı bakar.
+   * Mobildeki davranışın aynısı.
+   */
+  function haritayiYoneCevir(aci) {
+    if (typeof aci !== 'number' || !harita.setBearing) return;
+
+    if (mevcutAci !== null) {
+      var fark = (aci - hedefAci + 540) % 360 - 180;
+      if (hedefAci !== null && Math.abs(fark) < DONUS_ESIGI_DERECE) return;
+    }
+
+    hedefAci = aci;
+    if (mevcutAci === null) {
+      mevcutAci = aci;
+      harita.setBearing(-aci);
+      return;
+    }
+    donusuCalistir();
+  }
+
+  /** Üstel yumuşatma: hedef değişse de dönüş hızı korunur, takılma olmaz. */
+  function donusuCalistir() {
+    if (takipKaresi !== null) return;
+
+    var sonZaman = null;
+
+    function kare(zaman) {
+      var dt = sonZaman === null ? 1 / 60 : (zaman - sonZaman) / 1000;
+      sonZaman = zaman;
+
+      var fark = (hedefAci - mevcutAci + 540) % 360 - 180;
+      var k = 1 - Math.exp(-DONUS_HIZI * dt);
+      mevcutAci = (mevcutAci + fark * k + 360) % 360;
+      harita.setBearing(-mevcutAci);
+
+      if (Math.abs(fark) > 0.3) {
+        takipKaresi = requestAnimationFrame(kare);
+      } else {
+        takipKaresi = null;
+      }
+    }
+
+    takipKaresi = requestAnimationFrame(kare);
+  }
+
+  function haritayiKuzeyeAl() {
+    if (takipKaresi !== null) cancelAnimationFrame(takipKaresi);
+    takipKaresi = null;
+    hedefAci = null;
+    mevcutAci = null;
+    if (harita.setBearing) harita.setBearing(0);
+  }
+
   function guzergahaOdaklan() {
     if (guzergahCizgisi) sinirlaraOturt(guzergahCizgisi.getBounds(), [32, 32]);
   }
 
+  // Kullanıcı uzaklaştırdıysa yakınlaştırmasını zorla değiştirme.
+  var KAMERA_ESIGI_M = 8;
+  var sonKameraHedefi = null;
+
   function konumaOdaklan(konum, yakinlik) {
-    harita.setView([konum.enlem, konum.boylam], yakinlik || 14);
+    // GPS dururken bile birkaç metre oynuyor; her ölçümde kamerayı taşımak
+    // haritayı sürekli ileri geri kaydırıyor (mobildeki eşik ile aynı).
+    if (sonKameraHedefi &&
+        metreUzaklik(konum, sonKameraHedefi) < KAMERA_ESIGI_M) {
+      return;
+    }
+    sonKameraHedefi = { enlem: konum.enlem, boylam: konum.boylam };
+
+    var hedefYakinlik = yakinlik || 14;
+    if (harita.getZoom() > hedefYakinlik) hedefYakinlik = harita.getZoom();
+
+    harita.setView([konum.enlem, konum.boylam], hedefYakinlik, {
+      animate: true,
+      duration: 1.2,
+      easeLinearity: 0.2
+    });
   }
 
   /** Kap boyutu değiştiğinde çağrılmalı. */
@@ -265,6 +399,8 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   setTimeout(bekleyeniUygula, 0);
 
   return {
+    haritayiYoneCevir: haritayiYoneCevir,
+    haritayiKuzeyeAl: haritayiKuzeyeAl,
     yuruyusRotasiniCiz: yuruyusRotasiniCiz,
     yuruyusRotasiniTemizle: yuruyusRotasiniTemizle,
     duraklariCiz: duraklariCiz,

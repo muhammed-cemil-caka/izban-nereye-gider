@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show Ticker;
 import 'dart:async';
+import 'dart:math' as matematik;
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -81,7 +83,20 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
 
   static const _yonlendirmeYakinligi = 17.0;
 
-  AnimationController? _kameraAnimasyonu;
+  /// Sürekli takip: kamera her karede hedefe doğru yaklaşır.
+  ///
+  /// Her ölçümde yeni bir animasyon başlatmak, hız sıfırlandığı için takılma
+  /// hissi veriyordu. Üstel yumuşatma hedef değişse bile hızı korur.
+  Ticker? _takipTikeri;
+  LatLng? _kameraHedefNoktasi;
+  LatLng? _kameraKonumu;
+  double? _hedefAci;
+  double? _mevcutAci;
+  Duration _sonKare = Duration.zero;
+
+  /// Saniyede kapatılan mesafe oranı. Büyük değer daha hızlı yakalar.
+  static const _takipHizi = 3.2;
+  static const _donusHizi = 4.0;
 
   /// İlk kamera hareketi animasyonsuz olsun: yönlendirme başlar başlamaz
   /// kullanıcıya doğrudan yakınlaşılır.
@@ -99,10 +114,6 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   /// döndürülürse baş döndürücü olur.
   static const _donusEsigiDerece = 8.0;
 
-  AnimationController? _donusAnimasyonu;
-
-  /// Haritanın en son çevrildiği açı.
-  double? _sonHaritaAcisi;
 
   /// Pusula yalnızca haritayı döndürmek için dinleniyor. Döndürme imperatif
   /// yapıldığı için setState çağrılmıyor, ekran yeniden çizilmiyor.
@@ -204,98 +215,109 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   void _haritayiYoneCevir(double? aci) {
     if (aci == null) return;
 
-    final onceki = _sonHaritaAcisi;
+    final onceki = _hedefAci;
     if (onceki != null) {
-      // En kısa açı farkı (-180..180)
-      var fark = (aci - onceki + 540) % 360 - 180;
+      final fark = (aci - onceki + 540) % 360 - 180;
       if (fark.abs() < _donusEsigiDerece) return;
     }
 
-    // Doğrudan rotate çağırmak haritayı takılarak döndürüyordu; dönüş en kısa
-    // yönden ve araya animasyon konarak yapılıyor.
-    final baslangic = onceki ?? aci;
-    var fark = (aci - baslangic + 540) % 360 - 180;
-
-    _sonHaritaAcisi = aci;
-    _donusAnimasyonu?.dispose();
-
-    if (onceki == null) {
-      _denetleyici.rotate(-aci);
-      _donusAnimasyonu = null;
-      return;
-    }
-
-    final denetleyici = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    final egri = CurvedAnimation(parent: denetleyici, curve: Curves.easeOutCubic);
-
-    denetleyici.addListener(() {
-      _denetleyici.rotate(-(baslangic + fark * egri.value));
-    });
-
-    _donusAnimasyonu = denetleyici;
-    denetleyici.forward();
+    _hedefAci = aci;
+    _mevcutAci ??= aci;
+    _takibiCalistir();
   }
 
   @override
   void dispose() {
     _pusula?.cancel();
     widget.konumDurumu.removeListener(_konumDegisti);
-    _kameraAnimasyonu?.dispose();
-    _donusAnimasyonu?.dispose();
+    _takibiDurdur();
     super.dispose();
   }
 
   /// Yönlendirme bitince harita kuzey yukarı konumuna döner.
   void _haritayiKuzeyeAl() {
-    _donusAnimasyonu?.dispose();
-    _donusAnimasyonu = null;
-    _sonHaritaAcisi = null;
+    _hedefAci = null;
+    _mevcutAci = null;
     if (_haritaHazir) _denetleyici.rotate(0);
   }
 
-  /// Kamerayı hedefe taşır.
-  ///
-  /// Yönlendirme sırasında her ölçümde doğrudan move çağırmak haritayı
-  /// zıplatıyordu; hareket araya animasyon konarak yumuşatılıyor.
+  /// Kamerayı hedefe taşır. Sürekli takip tikerini besler.
   void _kamerayiTasi(LatLng hedef, {required bool animasyonlu}) {
-    _kameraAnimasyonu?.dispose();
-    _kameraAnimasyonu = null;
-
-    // Kullanıcı uzaklaştırdıysa yakınlaştırmasını zorla değiştirme.
-    final yakinlik = _denetleyici.camera.zoom < _yonlendirmeYakinligi
-        ? _yonlendirmeYakinligi
-        : _denetleyici.camera.zoom;
+    _kameraHedefNoktasi = hedef;
 
     if (!animasyonlu) {
-      _denetleyici.move(hedef, yakinlik);
+      _kameraKonumu = hedef;
+      _denetleyici.move(hedef, _yakinlik());
       return;
     }
 
-    final baslangic = _denetleyici.camera.center;
-    final denetleyici = AnimationController(
-      vsync: this,
-      // Daha uzun ve sona doğru yavaşlayan eğri: kamera kayar gibi hareket
-      // etsin, adım adım atlamasın.
-      duration: const Duration(milliseconds: 1400),
-    );
-    final egri = CurvedAnimation(parent: denetleyici, curve: Curves.easeOutCubic);
+    _takibiCalistir();
+  }
 
-    denetleyici.addListener(() {
-      final t = egri.value;
-      _denetleyici.move(
-        LatLng(
-          baslangic.latitude + (hedef.latitude - baslangic.latitude) * t,
-          baslangic.longitude + (hedef.longitude - baslangic.longitude) * t,
-        ),
-        yakinlik,
+  double _yakinlik() {
+    // Kullanıcı uzaklaştırdıysa yakınlaştırmasını zorla değiştirme.
+    final mevcut = _denetleyici.camera.zoom;
+    return mevcut < _yonlendirmeYakinligi ? _yonlendirmeYakinligi : mevcut;
+  }
+
+  void _takibiCalistir() {
+    if (_takipTikeri != null) return;
+
+    _sonKare = Duration.zero;
+    _takipTikeri = createTicker(_kare)..start();
+  }
+
+  void _takibiDurdur() {
+    _takipTikeri?.dispose();
+    _takipTikeri = null;
+  }
+
+  /// Her karede kamerayı ve açıyı hedefe doğru üstel olarak yaklaştırır.
+  void _kare(Duration gecen) {
+    if (!_haritaHazir) return;
+
+    final dt = _sonKare == Duration.zero
+        ? 1 / 60
+        : (gecen - _sonKare).inMicroseconds / 1e6;
+    _sonKare = gecen;
+
+    var isVar = false;
+
+    final hedef = _kameraHedefNoktasi;
+    if (hedef != null) {
+      final mevcut = _kameraKonumu ?? _denetleyici.camera.center;
+      // Üstel yumuşatma: kalan mesafenin sabit oranı her saniye kapatılır.
+      final k = 1 - matematik.exp(-_takipHizi * dt);
+      final yeni = LatLng(
+        mevcut.latitude + (hedef.latitude - mevcut.latitude) * k,
+        mevcut.longitude + (hedef.longitude - mevcut.longitude) * k,
       );
-    });
 
-    _kameraAnimasyonu = denetleyici;
-    denetleyici.forward();
+      _kameraKonumu = yeni;
+      _denetleyici.move(yeni, _yakinlik());
+
+      // Hedefe yeterince yaklaşınca (yaklaşık 1 m) iş biter.
+      if ((hedef.latitude - yeni.latitude).abs() > 1e-5 ||
+          (hedef.longitude - yeni.longitude).abs() > 1e-5) {
+        isVar = true;
+      }
+    }
+
+    final hedefAci = _hedefAci;
+    if (hedefAci != null) {
+      final mevcutAci = _mevcutAci ?? hedefAci;
+      // En kısa yön (-180..180)
+      final fark = (hedefAci - mevcutAci + 540) % 360 - 180;
+      final k = 1 - matematik.exp(-_donusHizi * dt);
+      final yeniAci = (mevcutAci + fark * k + 360) % 360;
+
+      _mevcutAci = yeniAci;
+      _denetleyici.rotate(-yeniAci);
+
+      if (fark.abs() > 0.3) isVar = true;
+    }
+
+    if (!isVar) _takibiDurdur();
   }
 
   /// Rotayı, kat edilen mesafede ikiye böler.
@@ -365,7 +387,7 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
                 Text('HARİTA', style: tema.textTheme.labelMedium),
                 const SizedBox(height: 2),
                 Text(
-                  'Durağa dokun · konum işaretini basılı tutup sürükle',
+                  'Durağa dokun · konumu düzeltmek için işarete 2 sn basılı tut',
                   style: tema.textTheme.bodySmall,
                 ),
               ],
@@ -534,11 +556,17 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
       // ortasına koyuyor; o zaman uç aşağıda kalıyor ve yakınlaştırma
       // değiştikçe kayma büyüyor.
       alignment: Alignment.topCenter,
-      child: Draggable<bool>(
-        feedback: const Icon(Icons.place, size: 44, color: _guzergahRengi),
+      // 2 saniye basılı tutmadan taşınamaz: haritayı kaydırırken parmak
+      // işarete değince yanlışlıkla yer değiştiriyordu.
+      child: LongPressDraggable<bool>(
+        delay: const Duration(seconds: 2),
+        feedback: const Icon(Icons.place, size: 52, color: _guzergahRengi),
         childWhenDragging: const SizedBox.shrink(),
         onDragEnd: (ayrinti) => _isaretiTasi(ayrinti.offset),
-        child: const Icon(Icons.place, size: 44, color: _guzergahRengi),
+        child: Tooltip(
+          message: 'Yerini düzeltmek için 2 saniye basılı tut',
+          child: const Icon(Icons.place, size: 44, color: _guzergahRengi),
+        ),
       ),
     );
   }
@@ -549,8 +577,8 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     if (kutu == null) return;
 
     // Draggable global koordinat verir; ikonun sol üstü değil UCU esas alınır.
-    // Uç, 44x44'lük kutunun alt ortası.
-    final yerel = kutu.globalToLocal(ekranNoktasi + const Offset(22, 42));
+    // Sürüklerken ikon 52 piksel gösteriliyor, uç alt ortada.
+    final yerel = kutu.globalToLocal(ekranNoktasi + const Offset(26, 50));
     final nokta = _denetleyici.camera.screenOffsetToLatLng(yerel);
     widget.konumTasindi(Konum(enlem: nokta.latitude, boylam: nokta.longitude));
   }

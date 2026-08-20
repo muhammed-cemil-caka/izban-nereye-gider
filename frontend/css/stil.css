@@ -442,3 +442,10 @@ button.satir-baglanti {
 .yonlendirme-toplam strong { font-size: 1.05rem; font-weight: 800; }
 .yonlendirme-bolu { opacity: .6; }
 .yonlendirme-toplam-etiket { font-size: .78rem; opacity: .85; margin-left: .2rem; }
+
+/* Konum işareti sürüklemeye hazır olduğunda görünür geri bildirim.
+   Leaflet işareti transform ile konumlandırdığı için ölçek animasyonu
+   kullanılmaz — konumu bozardı. */
+.konum-isareti--hazir {
+  filter: drop-shadow(0 0 8px var(--vurgu)) brightness(1.15);
+}

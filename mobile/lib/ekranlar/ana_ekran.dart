@@ -57,6 +57,12 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
   /// Yeniden hesaplama sürerken ikinci bir istek başlatılmasın.
   bool _yenidenHesaplaniyor = false;
+
+  /// Yürüme sıralamasının hesaplandığı konum. Takip her ölçümde listeyi kuş
+  /// uçuşuyla yeniden kurarsa yürüme sıralaması siliniyordu; kullanıcı kayda
+  /// değer mesafe yürümedikçe liste korunur.
+  Konum? _sonYuruyusKonumu;
+  static const _yuruyusTazelemeM = 150.0;
   /// Yönlendirme paneli bunu dinler; her ölçümde tüm ekran çizilmesin.
   final _yonlendirmeNotifier = ValueNotifier<YonlendirmeDurumu?>(null);
   String? _yonlendirmeUyarisi;
@@ -103,6 +109,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
         });
 
         // Kuş uçuşu sıralama anında gösterilir; yürüme mesafesi gelince düzelir.
+        _sonYuruyusKonumu = konum;
         _adaylariYuruyuseGoreSirala(konum, adaylar);
 
       case KonumHatasi(:final mesaj, :final ayarlarGerekli):
@@ -159,15 +166,27 @@ class _AnaEkranDurumu extends State<AnaEkran> {
       // Yönlendirme kendi akışını kullanıyor; takip araya girmesin.
       if (_yonlendirmeAktif || !mounted) return;
 
+      _konumDurumu.value = KonumDurumu(konum: konum);
+      _kullaniciKonumu = konum;
+
+      // Liste yerinde duruyorsa yeniden hesaplama: yürüme sıralaması korunur.
+      final onceki = _sonYuruyusKonumu;
+      if (_yakinAdaylar.isNotEmpty &&
+          onceki != null &&
+          onceki.metreUzaklik(konum) < _yuruyusTazelemeM) {
+        return;
+      }
+
       final duraklar = await _duraklarGelecegi;
       if (!mounted) return;
       final adaylar = YakinDurak.enYakinlar(duraklar, konum);
-      _konumDurumu.value = KonumDurumu(konum: konum);
       setState(() {
-        _kullaniciKonumu = konum;
         _yakinAdaylar = adaylar;
         _yakinDurak = adaylar.isEmpty ? null : adaylar.first;
       });
+
+      _sonYuruyusKonumu = konum;
+      _adaylariYuruyuseGoreSirala(konum, adaylar);
     }, onError: (_) { /* takip sessizce durur */ });
   }
 
