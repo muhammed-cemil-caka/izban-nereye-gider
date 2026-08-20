@@ -10,6 +10,24 @@ var SAPMA_SAYISI = 3;          // üst üste bu kadar ölçümde sapma varsa yen
 var VARIS_ESIGI_M = 25;        // hedefe bu kadar yaklaşınca varılmış sayılır
 var SESLI_TEKRAR_ESIGI_M = 30; // aynı manevrayı tekrar seslendirmemek için
 
+/**
+ * İki nokta arasındaki yön açısını hesaplar (kuzeyden saat yönünde derece).
+ * Cihaz kendi başlığını vermediğinde (masaüstünde genelde vermez) hareket
+ * yönü ardışık ölçümlerden çıkarılır.
+ */
+function yonAcisi(baslangic, bitis) {
+  var p = Math.PI / 180;
+  var enlem1 = baslangic.enlem * p;
+  var enlem2 = bitis.enlem * p;
+  var dBoylam = (bitis.boylam - baslangic.boylam) * p;
+
+  var y = Math.sin(dBoylam) * Math.cos(enlem2);
+  var x = Math.cos(enlem1) * Math.sin(enlem2) -
+          Math.sin(enlem1) * Math.cos(enlem2) * Math.cos(dBoylam);
+
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
 /** Coğrafi konumu, referans noktaya göre metre cinsinden düzleme taşır. */
 function metreyeTasi(konum, referans) {
   var p = Math.PI / 180;
@@ -123,6 +141,8 @@ function yonlendirmeBaslat(secenekler) {
   var izleyici = null;
   var sapmaSayaci = 0;
   var sonSeslendirilenAdim = -1;
+  var oncekiKonum = null;
+  var sonAci = null;
   var bitti = false;
 
   function durdur(sebep) {
@@ -151,6 +171,18 @@ function yonlendirmeBaslat(secenekler) {
         boylam: sonuc.coords.longitude,
         dogrulukM: sonuc.coords.accuracy
       };
+
+      // Yön: cihaz veriyorsa onu kullan, yoksa ardışık ölçümlerden çıkar.
+      // Çok küçük hareketlerde açı gürültülü olur, eski açı korunur.
+      if (typeof sonuc.coords.heading === 'number' && !isNaN(sonuc.coords.heading)) {
+        sonAci = sonuc.coords.heading;
+      } else if (oncekiKonum) {
+        var p = Math.PI / 180;
+        var dx = (konum.boylam - oncekiKonum.boylam) * 111320 * Math.cos(konum.enlem * p);
+        var dy = (konum.enlem - oncekiKonum.enlem) * 110574;
+        if (Math.sqrt(dx * dx + dy * dy) >= 5) sonAci = yonAcisi(oncekiKonum, konum);
+      }
+      oncekiKonum = { enlem: konum.enlem, boylam: konum.boylam };
 
       var ilerleme = rotaIlerlemesi(konum, rota, adimSinirlari);
 
@@ -181,7 +213,7 @@ function yonlendirmeBaslat(secenekler) {
       }
 
       if (secenekler.durumDegisti) {
-        secenekler.durumDegisti({ konum: konum, ilerleme: ilerleme });
+        secenekler.durumDegisti({ konum: konum, ilerleme: ilerleme, aci: sonAci });
       }
     },
     function (hata) {
@@ -196,6 +228,7 @@ function yonlendirmeBaslat(secenekler) {
 if (typeof module !== 'undefined') {
   module.exports = {
     rotayaIzdusur: rotayaIzdusur,
+    yonAcisi: yonAcisi,
     adimSinirlariniKur: adimSinirlariniKur,
     rotaIlerlemesi: rotaIlerlemesi
   };

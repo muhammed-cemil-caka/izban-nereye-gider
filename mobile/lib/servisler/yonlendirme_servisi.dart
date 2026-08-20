@@ -29,7 +29,10 @@ class YonlendirmeDurumu {
   final double dogrulukM;
   final RotaIlerlemesi ilerleme;
 
-  const YonlendirmeDurumu(this.konum, this.dogrulukM, this.ilerleme);
+  /// Hareket yönü (kuzeyden saat yönünde derece); bilinmiyorsa null.
+  final double? aci;
+
+  const YonlendirmeDurumu(this.konum, this.dogrulukM, this.ilerleme, this.aci);
 }
 
 /// Yürüyüş yönlendirmesi — kullanıcıyı rota üzerinde adım adım takip eder.
@@ -42,6 +45,20 @@ class YonlendirmeServisi {
   static const sapmaEsigiM = 45.0;
   static const sapmaSayisi = 3;
   static const varisEsigiM = 25.0;
+
+  /// İki nokta arasındaki yön açısı (kuzeyden saat yönünde derece).
+  static double yonAcisi(Konum baslangic, Konum bitis) {
+    const p = matematik.pi / 180;
+    final enlem1 = baslangic.enlem * p;
+    final enlem2 = bitis.enlem * p;
+    final dBoylam = (bitis.boylam - baslangic.boylam) * p;
+
+    final y = matematik.sin(dBoylam) * matematik.cos(enlem2);
+    final x = matematik.cos(enlem1) * matematik.sin(enlem2) -
+        matematik.sin(enlem1) * matematik.cos(enlem2) * matematik.cos(dBoylam);
+
+    return (matematik.atan2(y, x) * 180 / matematik.pi + 360) % 360;
+  }
 
   /// Coğrafi konumu referansa göre metre düzlemine taşır.
   static ({double x, double y}) _metreyeTasi(Konum konum, Konum referans) {
@@ -148,6 +165,8 @@ class YonlendirmeServisi {
   }) {
     final sinirlar = adimSinirlariniKur(rota.adimlar);
     var sapmaSayaci = 0;
+    Konum? oncekiKonum;
+    double? sonAci;
 
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -157,6 +176,17 @@ class YonlendirmeServisi {
     ).listen(
       (yer) {
         final konum = Konum(enlem: yer.latitude, boylam: yer.longitude);
+
+        // Yön: cihaz veriyorsa onu kullan, yoksa ardışık ölçümlerden çıkar.
+        // Çok küçük hareketlerde açı gürültülü olur, eski açı korunur.
+        final onceki = oncekiKonum;
+        if (yer.heading != 0 || yer.speed > 0.5) {
+          sonAci = yer.heading;
+        } else if (onceki != null && onceki.metreUzaklik(konum) >= 5) {
+          sonAci = yonAcisi(onceki, konum);
+        }
+        oncekiKonum = konum;
+
         final ilerleme = ilerlemeHesapla(konum, rota, sinirlar);
 
         // Tek bir kötü ölçüm yeniden hesaplamayı tetiklemesin.
@@ -176,7 +206,7 @@ class YonlendirmeServisi {
           return;
         }
 
-        durumDegisti(YonlendirmeDurumu(konum, yer.accuracy, ilerleme));
+        durumDegisti(YonlendirmeDurumu(konum, yer.accuracy, ilerleme, sonAci));
       },
       onError: hataOldu,
     );

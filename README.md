@@ -235,6 +235,10 @@ dinler ve:
 - Sıradaki manevrayı ve ona kalan mesafeyi gösterir
 - Kalan toplam mesafeyi ve süreyi günceller
 - Haritayı kullanıcıyla birlikte kaydırır
+- **Konum işareti yön okuna dönüşür** ve hareket yönüne göre döner; yönlendirme
+  bitince sürüklenebilir iğneye geri döner. Yön, cihaz veriyorsa cihazın
+  başlığından, vermiyorsa ardışık ölçümlerden hesaplanır (5 m'den küçük
+  hareketlerde eski açı korunur, ok titremesin)
 - Rotadan **45 m** uzaklaşıp bu üç ölçüm sürerse rotayı yeniden hesaplar
   (tek bir kötü ölçüm yeniden hesaplamayı tetiklemez)
 - Hedefe **25 m** kalınca varış bildirir

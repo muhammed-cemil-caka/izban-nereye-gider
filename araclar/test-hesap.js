@@ -12,7 +12,7 @@ const {
 } = require('../frontend/js/hesap.js');
 const { manevrayiTurkcelestir, yuruyusSuresiBicimle } = require('../frontend/js/rota.js');
 const {
-  rotayaIzdusur, adimSinirlariniKur, rotaIlerlemesi
+  rotayaIzdusur, adimSinirlariniKur, rotaIlerlemesi, yonAcisi
 } = require('../frontend/js/yonlendirme.js');
 
 let sayac = 0;
@@ -245,6 +245,23 @@ dogrula('kalan mesafe ilerledikçe azalıyor', () => {
   const bas = rotaIlerlemesi({ enlem: 38.48, boylam: 27.0 }, DUZ_ROTA, DUZ_SINIRLAR);
   const orta = rotaIlerlemesi({ enlem: 38.48, boylam: 27.00575 }, DUZ_ROTA, DUZ_SINIRLAR);
   assert.ok(orta.kalanM < bas.kalanM, 'ortada kalan mesafe daha az olmalı');
+});
+
+dogrula('yön açısı ana yönlerde doğru', () => {
+  var merkez = { enlem: 38.48, boylam: 27.0 };
+  // Kuzey 0°, doğu 90°, güney 180°, batı 270°
+  assert.ok(Math.abs(yonAcisi(merkez, { enlem: 38.49, boylam: 27.0 }) - 0) < 1, 'kuzey');
+  assert.ok(Math.abs(yonAcisi(merkez, { enlem: 38.48, boylam: 27.01 }) - 90) < 1, 'doğu');
+  assert.ok(Math.abs(yonAcisi(merkez, { enlem: 38.47, boylam: 27.0 }) - 180) < 1, 'güney');
+  assert.ok(Math.abs(yonAcisi(merkez, { enlem: 38.48, boylam: 26.99 }) - 270) < 1, 'batı');
+});
+
+dogrula('yön açısı 0-360 aralığında kalıyor', () => {
+  var merkez = { enlem: 38.48, boylam: 27.0 };
+  [[38.49, 26.99], [38.47, 27.01], [38.485, 27.005]].forEach(function (n) {
+    var aci = yonAcisi(merkez, { enlem: n[0], boylam: n[1] });
+    assert.ok(aci >= 0 && aci < 360, `aralık dışı: ${aci}`);
+  });
 });
 
 dogrula('bozuk rota çökmüyor', () => {

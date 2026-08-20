@@ -405,3 +405,16 @@ button.satir-baglanti {
 }
 
 .dugme--kucuk { padding: .35rem .7rem; font-size: .82rem; }
+
+/* Yönlendirme sırasındaki yön oku */
+.konum-oku { background: none; border: none; }
+.konum-oku-govde {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--vurgu);
+  color: var(--vurgu-yazi);
+  border: 3px solid var(--zemin-kart);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+  transition: transform .25s ease;
+}

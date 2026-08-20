@@ -75,6 +75,7 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   var guzergahCizgisi = null;
   var durakKatmani = L.layerGroup().addTo(harita);
   var konumIsareti = null;
+  var konumIsaretiYonlendirmede = false;
   var yuruyusCizgisi = null;
   var durakIsaretleri = {};
 
@@ -144,25 +145,73 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   }
 
   /**
-   * Kullanıcı konumunu sürüklenebilir bir işaretle gösterir.
-   * Sürükleme, masaüstünde şaşan tarayıcı konumunu elle düzeltmenin en pratik yolu.
+   * Yönlendirme sırasında kullanılan yön oku. Normal iğne yerine, hareket
+   * yönüne dönen bir ok gösterilir — kullanıcı nereye baktığını görsün.
    */
-  function konumuGoster(konum) {
+  function yonOkuSimgesi(aci) {
+    return L.divIcon({
+      className: 'konum-oku',
+      iconSize: [34, 34],
+      iconAnchor: [17, 17],
+      html:
+        '<div class="konum-oku-govde" style="transform: rotate(' + (aci || 0) + 'deg)">' +
+        '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">' +
+        '<path d="M12 2 L19 21 L12 16.5 L5 21 Z" fill="currentColor"/>' +
+        '</svg></div>'
+    });
+  }
+
+  /**
+   * Kullanıcı konumunu gösterir.
+   *
+   * Normalde sürüklenebilir bir iğnedir — masaüstünde şaşan tarayıcı konumunu
+   * elle düzeltmenin en pratik yolu. Yönlendirme sırasında yön okuna dönüşür ve
+   * sürüklenemez olur; yürürken yanlışlıkla taşınmasın.
+   *
+   * @param {object} konum
+   * @param {object} [secenekler] {yonlendirme: boolean, aci: number}
+   */
+  function konumuGoster(konum, secenekler) {
+    var yonlendirmede = Boolean(secenekler && secenekler.yonlendirme);
+    var aci = secenekler && typeof secenekler.aci === 'number' ? secenekler.aci : 0;
+
+    // Mod değiştiyse işaret baştan kurulur: Leaflet'te bir işaretin
+    // sürüklenebilirliği ve simgesi sonradan güvenle değiştirilemiyor.
+    if (konumIsareti && konumIsaretiYonlendirmede !== yonlendirmede) {
+      harita.removeLayer(konumIsareti);
+      konumIsareti = null;
+    }
+
     if (!konumIsareti) {
       konumIsareti = L.marker([konum.enlem, konum.boylam], {
-        draggable: true,
-        autoPan: true,
-        title: 'Konumun — sürükleyerek düzeltebilirsin'
+        draggable: !yonlendirmede,
+        autoPan: !yonlendirmede,
+        icon: yonlendirmede ? yonOkuSimgesi(aci) : new L.Icon.Default(),
+        title: yonlendirmede ? 'Konumun' : 'Konumun — sürükleyerek düzeltebilirsin'
       }).addTo(harita);
 
-      konumIsareti.bindTooltip('Buradasın · sürükleyebilirsin', { direction: 'top' });
+      konumIsareti.bindTooltip(
+        yonlendirmede ? 'Buradasın' : 'Buradasın · sürükleyebilirsin',
+        { direction: 'top' }
+      );
 
-      konumIsareti.on('dragend', function () {
-        var yer = konumIsareti.getLatLng();
-        konumSuruklendi({ enlem: yer.lat, boylam: yer.lng });
-      });
+      if (!yonlendirmede) {
+        konumIsareti.on('dragend', function () {
+          var yer = konumIsareti.getLatLng();
+          konumSuruklendi({ enlem: yer.lat, boylam: yer.lng });
+        });
+      }
+
+      konumIsaretiYonlendirmede = yonlendirmede;
     } else {
       konumIsareti.setLatLng([konum.enlem, konum.boylam]);
+
+      // Okun yönünü döndürmek için simgeyi yeniden kurmaya gerek yok.
+      if (yonlendirmede) {
+        var govde = konumIsareti.getElement() &&
+                    konumIsareti.getElement().querySelector('.konum-oku-govde');
+        if (govde) govde.style.transform = 'rotate(' + aci + 'deg)';
+      }
     }
   }
 

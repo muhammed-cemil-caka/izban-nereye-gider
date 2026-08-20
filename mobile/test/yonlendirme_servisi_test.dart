@@ -67,6 +67,33 @@ void main() {
     });
   });
 
+  group('yön açısı', () {
+    const merkez = Konum(enlem: 38.48, boylam: 27.0);
+
+    test('ana yönlerde doğru', () {
+      expect(YonlendirmeServisi.yonAcisi(merkez, const Konum(enlem: 38.49, boylam: 27.0)),
+          closeTo(0, 1));
+      expect(YonlendirmeServisi.yonAcisi(merkez, const Konum(enlem: 38.48, boylam: 27.01)),
+          closeTo(90, 1));
+      expect(YonlendirmeServisi.yonAcisi(merkez, const Konum(enlem: 38.47, boylam: 27.0)),
+          closeTo(180, 1));
+      expect(YonlendirmeServisi.yonAcisi(merkez, const Konum(enlem: 38.48, boylam: 26.99)),
+          closeTo(270, 1));
+    });
+
+    test('0-360 aralığında kalıyor', () {
+      for (final hedef in const [
+        Konum(enlem: 38.49, boylam: 26.99),
+        Konum(enlem: 38.47, boylam: 27.01),
+        Konum(enlem: 38.485, boylam: 27.005),
+      ]) {
+        final aci = YonlendirmeServisi.yonAcisi(merkez, hedef);
+        expect(aci, greaterThanOrEqualTo(0));
+        expect(aci, lessThan(360));
+      }
+    });
+  });
+
   group('ilerleme', () {
     test('ilk adımdayken doğru adım ve manevra mesafesi', () {
       final i = YonlendirmeServisi.ilerlemeHesapla(

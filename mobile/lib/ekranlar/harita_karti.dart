@@ -19,6 +19,10 @@ class HaritaKarti extends StatefulWidget {
   final Yolculuk? yolculuk;
   final Konum? kullaniciKonumu;
   final YuruyusRotasi? yuruyusRotasi;
+
+  /// Yönlendirme sürüyorsa işaret, hareket yönüne dönen bir oka dönüşür.
+  final bool yonlendirmede;
+  final double? yonAcisi;
   final ValueChanged<Durak> duragaBasildi;
   final ValueChanged<Konum> konumTasindi;
 
@@ -28,6 +32,8 @@ class HaritaKarti extends StatefulWidget {
     required this.yolculuk,
     required this.kullaniciKonumu,
     required this.yuruyusRotasi,
+    required this.yonlendirmede,
+    required this.yonAcisi,
     required this.duragaBasildi,
     required this.konumTasindi,
   });
@@ -177,8 +183,21 @@ class _HaritaKartiDurumu extends State<HaritaKarti> {
     }).toList();
   }
 
-  /// Sürüklenebilir konum işareti: GPS şaştığında yeri elle düzeltmenin yolu.
+  /// Konum işareti.
+  ///
+  /// Normalde sürüklenebilir bir iğne — GPS şaştığında yeri elle düzeltmenin
+  /// yolu. Yönlendirme sırasında yön okuna dönüşür ve sürüklenemez olur;
+  /// yürürken yanlışlıkla taşınmasın.
   Marker _konumIsareti(Konum konum) {
+    if (widget.yonlendirmede) {
+      return Marker(
+        point: LatLng(konum.enlem, konum.boylam),
+        width: 38,
+        height: 38,
+        child: _YonOku(aci: widget.yonAcisi ?? 0),
+      );
+    }
+
     return Marker(
       point: LatLng(konum.enlem, konum.boylam),
       width: 44,
@@ -201,5 +220,33 @@ class _HaritaKartiDurumu extends State<HaritaKarti> {
     final yerel = kutu.globalToLocal(ekranNoktasi + const Offset(22, 44));
     final nokta = _denetleyici.camera.screenOffsetToLatLng(yerel);
     widget.konumTasindi(Konum(enlem: nokta.latitude, boylam: nokta.longitude));
+  }
+}
+
+/// Yönlendirme sırasında hareket yönünü gösteren ok.
+class _YonOku extends StatelessWidget {
+  final double aci;
+
+  const _YonOku({required this.aci});
+
+  @override
+  Widget build(BuildContext context) {
+    final renkler = Theme.of(context).colorScheme;
+
+    return AnimatedRotation(
+      turns: aci / 360,
+      duration: const Duration(milliseconds: 250),
+      child: Container(
+        decoration: BoxDecoration(
+          color: renkler.primary,
+          shape: BoxShape.circle,
+          border: Border.all(color: renkler.surface, width: 3),
+          boxShadow: const [
+            BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Icon(Icons.navigation, size: 20, color: renkler.onPrimary),
+      ),
+    );
   }
 }

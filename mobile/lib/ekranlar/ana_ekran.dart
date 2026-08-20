@@ -303,6 +303,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 yolculuk: yolculuk,
                 kullaniciKonumu: _kullaniciKonumu,
                 yuruyusRotasi: _yuruyusRotasi,
+                yonlendirmede: _yonlendirmeAboneligi != null,
+                yonAcisi: _yonlendirmeDurumu?.aci,
                 duragaBasildi: (durak) => setState(() {
                   _binisKod = durak.kod;
                   if (_inisKod == _binisKod) {

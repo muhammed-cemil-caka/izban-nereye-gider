@@ -632,7 +632,7 @@
         );
 
         if (harita) {
-          harita.konumuGoster(durum.konum);
+          harita.konumuGoster(durum.konum, { yonlendirme: true, aci: durum.aci });
           harita.konumaOdaklan(durum.konum, 17);
         }
       },
@@ -674,6 +674,10 @@
     yonlendirmeOturumu = null;
     oge.yonlendirmePaneli.hidden = true;
     if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+
+    // İşaret yön okundan sürüklenebilir iğneye geri dönsün.
+    if (harita && sonKonum) harita.konumuGoster(sonKonum);
+
     // Yönlendirme bittiğinde işaret yine canlı kalsın.
     if (!elleKonumuOku()) takibiBaslat();
   }
