@@ -226,11 +226,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           uyari = 'Konum ±${durum.dogrulukM.round()} m — yönlendirme şaşabilir.';
         }
 
-        // Yeniden hesaplama uyarısı görünüyorsa üstüne yazma.
-        final hesaplaniyor = _yonlendirmeUyarisi != null &&
-            _yonlendirmeUyarisi!.startsWith('Rotadan');
-
-        if (!hesaplaniyor && uyari != _yonlendirmeUyarisi) {
+        if (uyari != _yonlendirmeUyarisi) {
           setState(() => _yonlendirmeUyarisi = uyari);
         }
       },
@@ -250,10 +246,9 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           return;
         }
 
-        setState(() {
-          _kullaniciKonumu = konum;
-          _yonlendirmeUyarisi = 'Rotadan çıktın, yeniden hesaplanıyor…';
-        });
+        // Uyarı basılmıyor: Google Haritalar gibi sessizce yeniden hesaplanıyor.
+        // Uyarı, kısa süre sonra kaybolduğu için ekranda yanıp sönüyordu.
+        _kullaniciKonumu = konum;
 
         try {
           final yeni = await const RotaServisi().rotaAl(konum, hedef.konum);

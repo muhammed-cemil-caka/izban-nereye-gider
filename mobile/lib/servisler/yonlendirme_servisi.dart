@@ -58,11 +58,15 @@ class YonlendirmeServisi {
   /// Şehirde GPS ±20-30 m şaşabiliyor; sabit ve dar bir eşik, kullanıcı rota
   /// üzerinde yürürken bile "rotadan çıktın" demeye yol açıyordu. Eşik ölçüm
   /// doğruluğuna göre genişletiliyor.
-  static const sapmaTabanEsigiM = 60.0;
+  static const sapmaTabanEsigiM = 75.0;
   static const sapmaDogrulukCarpani = 3.0;
 
   /// Sapmanın kaç ölçüm üst üste sürmesi gerektiği.
   static const sapmaSayisi = 5;
+
+  /// Sapma, tek ölçümle değil son ölçümlerin ortalamasıyla değerlendirilir.
+  /// Tek bir kötü GPS ölçümü (şehirde sık) yeniden hesaplama tetiklemesin.
+  static const sapmaPencereBoyu = 5;
 
   /// İki yeniden hesaplama arasındaki en kısa süre. Yoksa kötü sinyalde
   /// uygulama sürekli rota isteyip duruyor.
@@ -219,6 +223,7 @@ class YonlendirmeServisi {
   }) {
     final sinirlar = adimSinirlariniKur(rota.adimlar);
     var sapmaSayaci = 0;
+    final sonSapmalar = <double>[];
     DateTime? sonYenidenHesap;
     Konum? oncekiKonum;
     double? sonAci;
@@ -255,7 +260,13 @@ class YonlendirmeServisi {
           yer.accuracy * sapmaDogrulukCarpani,
         );
 
-        if (ilerleme.sapmaM > esik) {
+        // Son ölçümlerin ortalaması: ani sıçramalar tek başına karar vermesin.
+        sonSapmalar.add(ilerleme.sapmaM);
+        if (sonSapmalar.length > sapmaPencereBoyu) sonSapmalar.removeAt(0);
+        final ortalamaSapma =
+            sonSapmalar.reduce((a, b) => a + b) / sonSapmalar.length;
+
+        if (ortalamaSapma > esik && sonSapmalar.length >= sapmaPencereBoyu) {
           sapmaSayaci++;
 
           final simdi = DateTime.now();
@@ -264,6 +275,7 @@ class YonlendirmeServisi {
 
           if (sapmaSayaci >= sapmaSayisi && !beklemede) {
             sapmaSayaci = 0;
+            sonSapmalar.clear();
             sonYenidenHesap = simdi;
             rotadanCikildi(konum);
             return;

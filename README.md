@@ -295,6 +295,14 @@ yoksa 5 m'lik eşiğe hiç ulaşılamaz ve küçük adımlar birikmez.
 - Rotadan çıkma algılandığında **eski oturum hemen kapatılır**. Yoksa yeni rota
   beklenirken gelen ölçümler üst üste yeni istekler tetikliyor ve uyarı yanıp
   sönüyordu
+- Sapma **tek ölçümle değil son beş ölçümün ortalamasıyla** değerlendirilir;
+  şehirde sık görülen tek bir kötü ölçüm yeniden hesaplama tetiklemez
+- Yeniden hesaplama **sessizdir**: uyarı basılmaz. Kısa süre sonra kaybolan
+  uyarı ekranda yanıp sönüyordu; Google Haritalar da sessizce yeniden hesaplar
+- Harita **gidiş yönüne çevrilir**: kullanıcının baktığı yön yukarı bakar, ok
+  ekranda sabit dik durur (`Marker(rotate: true)`). Yön için önce pusula,
+  yoksa hareket yönü kullanılır; 10°'den küçük oynamalarda harita döndürülmez.
+  Yönlendirme bitince harita kuzey yukarı konumuna döner
 - Doğruluk uyarısı histerezisli: 100 m'de çıkar, 70 m'nin altına inince
   kaybolur; tek eşik sınırda gezinirken uyarıyı yanıp söndürüyordu
 - Panelde **"Yürüdüğün: X m · Y km/sa"** gösterilir. Kamera kullanıcıyı ortada

@@ -95,6 +95,18 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   /// Bu eşiğin altındaki oynamalar yok sayılır.
   static const _kameraEsigiM = 12.0;
 
+  /// Haritayı gidiş yönüne çevirme eşiği. Küçük açı oynamalarında harita
+  /// döndürülürse baş döndürücü olur.
+  static const _donusEsigiDerece = 10.0;
+
+  /// Haritanın en son çevrildiği açı.
+  double? _sonHaritaAcisi;
+
+  /// Pusula yalnızca haritayı döndürmek için dinleniyor. Döndürme imperatif
+  /// yapıldığı için setState çağrılmıyor, ekran yeniden çizilmiyor.
+  StreamSubscription? _pusula;
+  double? _pusulaAcisi;
+
   static const _hatRengi = Color(0xFF7A8798);
   static const _guzergahRengi = Color(0xFF0B5FA5);
   static const _binisRengi = Color(0xFF0B7A63);
@@ -110,6 +122,20 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   void initState() {
     super.initState();
     widget.konumDurumu.addListener(_konumDegisti);
+
+    final akis = FlutterCompass.events;
+    if (akis != null) {
+      _pusula = akis.listen((olay) {
+        final aci = olay.heading;
+        if (aci == null) return;
+        _pusulaAcisi = (aci + 360) % 360;
+
+        // Yalnızca yönlendirme sürerken haritayı çevir.
+        if (widget.konumDurumu.value.yonlendirmede) {
+          _haritayiYoneCevir(_pusulaAcisi);
+        }
+      }, onError: (_) { /* pusula yoksa hareket yönü kullanılır */ });
+    }
   }
 
   @override
@@ -146,6 +172,7 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     if (!durum.yonlendirmede) {
       _yonlendirmeBasladi = false;
       _kameraHedefi = null;
+      _haritayiKuzeyeAl();
       return;
     }
     if (konum == null) return;
@@ -164,6 +191,41 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
       animasyonlu: _yonlendirmeBasladi,
     );
     _yonlendirmeBasladi = true;
+    // Pusula varsa telefonun baktığı yön, yoksa hareket yönü.
+    _haritayiYoneCevir(_pusulaAcisi ?? durum.aci);
+  }
+
+  /// Haritayı gidiş yönüne çevirir: kullanıcının baktığı yön yukarı bakar.
+  ///
+  /// Google Haritalar'ın navigasyon modundaki davranışı. Ok sabit yukarı
+  /// bakar, dönen haritadır — yön duygusu böyle çok daha net.
+  void _haritayiYoneCevir(double? aci) {
+    if (aci == null) return;
+
+    final onceki = _sonHaritaAcisi;
+    if (onceki != null) {
+      // En kısa açı farkı (-180..180)
+      var fark = (aci - onceki + 540) % 360 - 180;
+      if (fark.abs() < _donusEsigiDerece) return;
+    }
+
+    _sonHaritaAcisi = aci;
+    // Harita, gidiş yönü yukarı bakacak şekilde ters yöne çevrilir.
+    _denetleyici.rotate(-aci);
+  }
+
+  @override
+  void dispose() {
+    _pusula?.cancel();
+    widget.konumDurumu.removeListener(_konumDegisti);
+    _kameraAnimasyonu?.dispose();
+    super.dispose();
+  }
+
+  /// Yönlendirme bitince harita kuzey yukarı konumuna döner.
+  void _haritayiKuzeyeAl() {
+    _sonHaritaAcisi = null;
+    if (_haritaHazir) _denetleyici.rotate(0);
   }
 
   /// Kamerayı hedefe taşır.
@@ -427,7 +489,10 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
         point: LatLng(konum.enlem, konum.boylam),
         width: 38,
         height: 38,
-        child: _YonOku(aci: durum.aci ?? 0),
+        // rotate: harita döndüğünde ok ekranda dik kalsın. Gidiş yönü zaten
+        // yukarı baktığı için ok da hep yukarıyı gösterir.
+        rotate: true,
+        child: const _YonOku(),
       );
     }
 
@@ -456,68 +521,27 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   }
 }
 
-/// Yönlendirme sırasında yönü gösteren ok.
+/// Yönlendirme sırasında konumu gösteren ok.
 ///
-/// Pusulayı kendi içinde dinler: telefon çevrildiğinde yalnızca bu widget
-/// yeniden çizilir, harita ve sayfanın kalanı etkilenmez. Cihazda manyetometre
-/// yoksa dışarıdan gelen hareket yönü kullanılır.
-class _YonOku extends StatefulWidget {
-  final double aci;
-
-  const _YonOku({required this.aci});
-
-  @override
-  State<_YonOku> createState() => _YonOkuDurumu();
-}
-
-class _YonOkuDurumu extends State<_YonOku> {
-  StreamSubscription? _pusula;
-  double? _pusulaAcisi;
-
-  @override
-  void initState() {
-    super.initState();
-
-    final akis = FlutterCompass.events;
-    if (akis == null) return;
-
-    _pusula = akis.listen((olay) {
-      final aci = olay.heading;
-      if (aci == null || !mounted) return;
-
-      // Küçük sapmalarda yeniden çizme; ok titremesin, pil yanmasın.
-      final onceki = _pusulaAcisi;
-      if (onceki != null && (aci - onceki).abs() < 4) return;
-
-      setState(() => _pusulaAcisi = (aci + 360) % 360);
-    }, onError: (_) { /* pusula yoksa sessizce geç */ });
-  }
-
-  @override
-  void dispose() {
-    _pusula?.cancel();
-    super.dispose();
-  }
+/// Ok dönmez: harita gidiş yönüne çevrildiği için ekranda hep yukarı bakar.
+/// Google Haritalar'ın navigasyon modundaki davranış budur.
+class _YonOku extends StatelessWidget {
+  const _YonOku();
 
   @override
   Widget build(BuildContext context) {
     final renkler = Theme.of(context).colorScheme;
-    final aci = _pusulaAcisi ?? widget.aci;
 
-    return AnimatedRotation(
-      turns: aci / 360,
-      duration: const Duration(milliseconds: 250),
-      child: Container(
-        decoration: BoxDecoration(
-          color: renkler.primary,
-          shape: BoxShape.circle,
-          border: Border.all(color: renkler.surface, width: 3),
-          boxShadow: const [
-            BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
-          ],
-        ),
-        child: Icon(Icons.navigation, size: 20, color: renkler.onPrimary),
+    return Container(
+      decoration: BoxDecoration(
+        color: renkler.primary,
+        shape: BoxShape.circle,
+        border: Border.all(color: renkler.surface, width: 3),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+        ],
       ),
+      child: Icon(Icons.navigation, size: 20, color: renkler.onPrimary),
     );
   }
 }
