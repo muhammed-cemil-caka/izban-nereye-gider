@@ -43,8 +43,21 @@ class YonlendirmeDurumu {
 /// bulmak, sıradaki manevraya kalan mesafeyi hesaplamak ve rotadan çıkıldığını
 /// fark etmek.
 class YonlendirmeServisi {
-  static const sapmaEsigiM = 45.0;
-  static const sapmaSayisi = 3;
+  /// Rotadan çıkma eşiği için taban değer.
+  ///
+  /// Şehirde GPS ±20-30 m şaşabiliyor; sabit ve dar bir eşik, kullanıcı rota
+  /// üzerinde yürürken bile "rotadan çıktın" demeye yol açıyordu. Eşik ölçüm
+  /// doğruluğuna göre genişletiliyor.
+  static const sapmaTabanEsigiM = 60.0;
+  static const sapmaDogrulukCarpani = 3.0;
+
+  /// Sapmanın kaç ölçüm üst üste sürmesi gerektiği.
+  static const sapmaSayisi = 5;
+
+  /// İki yeniden hesaplama arasındaki en kısa süre. Yoksa kötü sinyalde
+  /// uygulama sürekli rota isteyip duruyor.
+  static const yenidenHesapAraligi = Duration(seconds: 20);
+
   static const varisEsigiM = 25.0;
 
   /// İki nokta arasındaki yön açısı (kuzeyden saat yönünde derece).
@@ -196,6 +209,7 @@ class YonlendirmeServisi {
   }) {
     final sinirlar = adimSinirlariniKur(rota.adimlar);
     var sapmaSayaci = 0;
+    DateTime? sonYenidenHesap;
     Konum? oncekiKonum;
     double? sonAci;
 
@@ -224,11 +238,23 @@ class YonlendirmeServisi {
 
         final ilerleme = ilerlemeHesapla(konum, rota, sinirlar);
 
-        // Tek bir kötü ölçüm yeniden hesaplamayı tetiklemesin.
-        if (ilerleme.sapmaM > sapmaEsigiM) {
+        // Eşik ölçüm doğruluğuna göre genişler: ±25 m'lik bir ölçümde 45 m
+        // sapma gürültünün içinde kalır, gerçek bir rota terk değildir.
+        final esik = matematik.max(
+          sapmaTabanEsigiM,
+          yer.accuracy * sapmaDogrulukCarpani,
+        );
+
+        if (ilerleme.sapmaM > esik) {
           sapmaSayaci++;
-          if (sapmaSayaci >= sapmaSayisi) {
+
+          final simdi = DateTime.now();
+          final beklemede = sonYenidenHesap != null &&
+              simdi.difference(sonYenidenHesap!) < yenidenHesapAraligi;
+
+          if (sapmaSayaci >= sapmaSayisi && !beklemede) {
             sapmaSayaci = 0;
+            sonYenidenHesap = simdi;
             rotadanCikildi(konum);
             return;
           }

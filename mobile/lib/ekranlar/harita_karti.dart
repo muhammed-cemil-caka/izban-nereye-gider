@@ -124,8 +124,13 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     if (!_haritaHazir) return;
 
     // Yeni yürüyüş rotası geldi: rotanın tamamı ekrana sığsın.
+    //
+    // Yönlendirme sürerken bu YAPILMAZ: rotadan çıkılıp yeniden hesaplandığında
+    // kamera tüm rotayı çerçevelemek için uzaklaşıyor ve harita boyut
+    // değiştirmiş gibi görünüyordu. Yürürken kamera kullanıcıda kalır.
     if (widget.yuruyusRotasi != null &&
-        widget.yuruyusRotasi != eski.yuruyusRotasi) {
+        widget.yuruyusRotasi != eski.yuruyusRotasi &&
+        !widget.konumDurumu.value.yonlendirmede) {
       _rotayiCercevele();
     }
   }
@@ -288,7 +293,10 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
                 onMapReady: () {
                   _haritaHazir = true;
                   // Kart, rota hazırken kurulmuş olabilir.
-                  if (widget.yuruyusRotasi != null) _rotayiCercevele();
+                  if (widget.yuruyusRotasi != null &&
+                      !widget.konumDurumu.value.yonlendirmede) {
+                    _rotayiCercevele();
+                  }
                 },
                 // Haritayı sürüklerken sayfanın kaymaması için dönüşler sınırlı.
                 interactionOptions: const InteractionOptions(

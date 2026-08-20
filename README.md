@@ -285,8 +285,13 @@ başlığı yalnızca açıkça geçerliyse (0'dan büyük ve hareket varken). B
 Android cihaz "bilinmiyor" yerine 0 döndürüyor; buna güvenmek oku sürekli
 kuzeye çeviriyordu. Önceki konum yalnızca açı hesaplandığında güncellenir,
 yoksa 5 m'lik eşiğe hiç ulaşılamaz ve küçük adımlar birikmez.
-- Rotadan **45 m** uzaklaşıp bu üç ölçüm sürerse rotayı yeniden hesaplar
-  (tek bir kötü ölçüm yeniden hesaplamayı tetiklemez)
+- Rotadan uzaklaşınca rotayı yeniden hesaplar. Eşik sabit değil, **ölçüm
+  doğruluğuna göre genişler** (`max(60 m, doğruluk × 3)`): şehirde GPS ±20-30 m
+  şaşabildiği için dar bir eşik, kullanıcı rota üzerinde yürürken bile
+  "rotadan çıktın" demeye yol açıyordu. Sapmanın **beş ölçüm** üst üste sürmesi
+  ve son yeniden hesaplamadan **20 saniye** geçmiş olması gerekir
+- Yeniden hesaplama sırasında **kamera kullanıcıda kalır**; rotayı çerçevelemek
+  için uzaklaşmaz, harita boyut değiştirmiş gibi görünmez
 - Hedefe **25 m** kalınca varış bildirir
 
 Webde ayrıca sesli yönlendirme vardır (tarayıcının kendi konuşma sentezi,
