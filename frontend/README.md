@@ -30,8 +30,16 @@ python3 araclar/gelistirme-sunucusu.py --https
 
 Kendinden imzalı sertifika ilk çalıştırmada üretilir (`.sertifika/`, depoya
 girmez) ve hem `localhost` hem Mac'in yerel ağ adresini kapsar — telefondan da
-aynı sertifikayla bağlanılır. Tarayıcı bir kez uyarı gösterir; "Gelişmiş → Yine
-de devam et" dendikten sonra konum çalışır.
+aynı sertifikayla bağlanılır.
+
+Sertifikayı bir yetkili imzalamadığı için Chrome ilk açılışta **"Bağlantınız
+gizli değil"** (`ERR_CERT_AUTHORITY_INVALID`) der. Bu beklenen davranıştır:
+**Gelişmiş → "localhost'a devam et (güvenli değil)"**. Bir kez yapıldığında
+Chrome hatırlar.
+
+**Chrome'da HTTPS gerekmez** — `http://localhost` zaten güvenli bağlam sayılır
+ve konum verir. `--https` yalnızca Safari için ve telefondan yerel ağ adresiyle
+bağlanırken gereklidir.
 
 <http://localhost:5173>
 

@@ -169,10 +169,16 @@ def main():
         if yerel:
             print(f"Telefondan:                 {protokol}://{yerel}:{port}", flush=True)
         if https_mi:
-            print("\nSertifika kendinden imzalı: tarayıcı bir kez uyarı gösterir.",
+            print("", flush=True)
+            print("!! Chrome ilk açılışta 'Bağlantınız gizli değil' diyecek.", flush=True)
+            print("   Sertifikayı biz ürettiğimiz için normaldir (ERR_CERT_AUTHORITY_INVALID).",
                   flush=True)
-            print("'Gelişmiş' → 'Yine de devam et' dediğinde konum servisi çalışır.",
+            print("   Geçmek için: Gelişmiş → 'localhost'a devam et (güvenli değil)'",
                   flush=True)
+            print("", flush=True)
+            print("   Not: Chrome'da HTTPS gerekmez; http://localhost zaten güvenli", flush=True)
+            print("   bağlam sayılır ve konum verir. --https yalnızca Safari için ve", flush=True)
+            print("   telefondan yerel ağ adresiyle bağlanırken gerekli.", flush=True)
         print(f"\nKlasör: {KOK}", flush=True)
         print("Durdurmak için Ctrl+C", flush=True)
         try:
