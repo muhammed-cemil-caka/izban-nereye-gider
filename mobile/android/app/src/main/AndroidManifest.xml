@@ -1,5 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-        <!-- En yakın durağı bulmak için konum izni -->
+        <!-- Harita döşemeleri, Firestore ve rota servisi için ağ erişimi.
+         Flutter bu izni yalnızca debug/profile manifestlerine ekler; release
+         derlemesinde burada olmazsa uygulama internete hiç çıkamaz. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- En yakın durağı bulmak için konum izni -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
