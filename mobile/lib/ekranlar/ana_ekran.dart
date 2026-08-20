@@ -41,6 +41,11 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
   StreamSubscription? _takipAboneligi;
   StreamSubscription? _yonlendirmeAboneligi;
+
+  /// Arayüz bu bayrağı okur. Aboneliği doğrudan okumak yetmiyordu: abonelik
+  /// setState dışında atandığı için harita yön okuna geçmiyordu.
+  bool _yonlendirmeAktif = false;
+  double? _baslangicAcisi;
   YonlendirmeDurumu? _yonlendirmeDurumu;
   String? _yonlendirmeUyarisi;
   bool _varildi = false;
@@ -102,7 +107,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     _takipAboneligi?.cancel();
     _takipAboneligi = _konumServisi.konumTakibi().listen((konum) async {
       // Yönlendirme kendi akışını kullanıyor; takip araya girmesin.
-      if (_yonlendirmeAboneligi != null || !mounted) return;
+      if (_yonlendirmeAktif || !mounted) return;
 
       final duraklar = await _duraklarGelecegi;
       if (!mounted) return;
@@ -151,10 +156,21 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     if (rota == null) return;
 
     _yonlendirmeAboneligi?.cancel();
+
+    // İlk açı: rotanın ilk parçasının yönü. Kullanıcı yürümeye başlayınca
+    // gerçek hareket yönüyle değişir. Böylece "Başla"ya basıldığı anda ok
+    // doğru yöne bakar; yeni bir konum ölçümü beklenmez.
+    double? ilkAci;
+    if (rota.noktalar.length > 1) {
+      ilkAci = YonlendirmeServisi.yonAcisi(rota.noktalar[0], rota.noktalar[1]);
+    }
+
     setState(() {
       _varildi = false;
       _yonlendirmeUyarisi = null;
       _yonlendirmeDurumu = null;
+      _yonlendirmeAktif = true;
+      _baslangicAcisi = ilkAci;
     });
 
     _yonlendirmeAboneligi = YonlendirmeServisi.baslat(
@@ -205,10 +221,15 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   void _yonlendirmeyiBitir({bool varisSonrasi = false}) {
     _yonlendirmeAboneligi?.cancel();
     _yonlendirmeAboneligi = null;
-    if (!varisSonrasi && mounted) {
+
+    if (mounted) {
       setState(() {
-        _yonlendirmeDurumu = null;
-        _yonlendirmeUyarisi = null;
+        _yonlendirmeAktif = false;
+        _baslangicAcisi = null;
+        if (!varisSonrasi) {
+          _yonlendirmeDurumu = null;
+          _yonlendirmeUyarisi = null;
+        }
       });
     }
   }
@@ -303,8 +324,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 yolculuk: yolculuk,
                 kullaniciKonumu: _kullaniciKonumu,
                 yuruyusRotasi: _yuruyusRotasi,
-                yonlendirmede: _yonlendirmeAboneligi != null,
-                yonAcisi: _yonlendirmeDurumu?.aci,
+                yonlendirmede: _yonlendirmeAktif,
+                yonAcisi: _yonlendirmeDurumu?.aci ?? _baslangicAcisi,
                 duragaBasildi: (durak) => setState(() {
                   _binisKod = durak.kod;
                   if (_inisKod == _binisKod) {

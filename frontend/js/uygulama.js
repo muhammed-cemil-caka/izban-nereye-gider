@@ -613,6 +613,23 @@
       mesafeBicimle(sonRota.mesafeM) + ' · ' + yuruyusSuresiBicimle(sonRota.sureSn);
     yonlendirmeUyarisiYaz('');
 
+    // İşareti hemen yön okuna çevir ve haritayı yakınlaştır. Yeni bir konum
+    // ölçümü beklenirse kullanıcı hareketsizken hiçbir şey değişmiyor gibi
+    // görünüyor — masaüstünde ölçümler seyrek gelir.
+    if (harita && sonKonum) {
+      // İlk açı: rotanın ilk parçasının yönü. Kullanıcı yürümeye başlayınca
+      // gerçek hareket yönüyle değişir.
+      var baslangicAcisi = 0;
+      if (sonRota.noktalar.length > 1 && typeof yonAcisi === 'function') {
+        baslangicAcisi = yonAcisi(
+          { enlem: sonRota.noktalar[0][0], boylam: sonRota.noktalar[0][1] },
+          { enlem: sonRota.noktalar[1][0], boylam: sonRota.noktalar[1][1] }
+        );
+      }
+      harita.konumuGoster(sonKonum, { yonlendirme: true, aci: baslangicAcisi });
+      harita.konumaOdaklan(sonKonum, 17);
+    }
+
     yonlendirmeOturumu = yonlendirmeBaslat({
       rota: sonRota,
       sesliMi: oge.yonlendirmeSes.checked,
