@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../modeller/durak.dart';
@@ -43,7 +45,7 @@ class HaritaKarti extends StatefulWidget {
 }
 
 class _HaritaKartiDurumu extends State<HaritaKarti>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   // Liste kaydırılıp harita ekrandan çıkınca widget yok ediliyor, geri
   // dönüldüğünde initialCameraFit'e sıfırlanıyordu — kullanıcı her seferinde
   // kendini yeniden bulmak zorunda kalıyordu.
@@ -56,6 +58,8 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   bool _haritaHazir = false;
 
   static const _yonlendirmeYakinligi = 17.0;
+
+  AnimationController? _kameraAnimasyonu;
 
   static const _hatRengi = Color(0xFF7A8798);
   static const _guzergahRengi = Color(0xFF0B5FA5);
@@ -84,20 +88,66 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     if (widget.yonlendirmede &&
         widget.kullaniciKonumu != null &&
         widget.kullaniciKonumu != eski.kullaniciKonumu) {
-      _denetleyici.move(
+      _kamerayiTasi(
         LatLng(widget.kullaniciKonumu!.enlem, widget.kullaniciKonumu!.boylam),
-        _yonlendirmeYakinligi,
+        animasyonlu: eski.yonlendirmede,
       );
       return;
     }
 
     // Yönlendirme yeni başladı: doğrudan kullanıcıya yakınlaş.
     if (widget.yonlendirmede && !eski.yonlendirmede && widget.kullaniciKonumu != null) {
-      _denetleyici.move(
+      _kamerayiTasi(
         LatLng(widget.kullaniciKonumu!.enlem, widget.kullaniciKonumu!.boylam),
-        _yonlendirmeYakinligi,
+        animasyonlu: false,
       );
     }
+  }
+
+  /// Kamerayı hedefe taşır.
+  ///
+  /// Yönlendirme sırasında her ölçümde doğrudan move çağırmak haritayı
+  /// zıplatıyor ve "kendini yeniliyor" hissi veriyordu. Hareket araya
+  /// yerleştirilerek yumuşatılıyor.
+  void _kamerayiTasi(LatLng hedef, {required bool animasyonlu}) {
+    _kameraAnimasyonu?.dispose();
+    _kameraAnimasyonu = null;
+
+    final yakinlik = _denetleyici.camera.zoom < _yonlendirmeYakinligi
+        ? _yonlendirmeYakinligi
+        : _denetleyici.camera.zoom;
+
+    if (!animasyonlu) {
+      _denetleyici.move(hedef, yakinlik);
+      return;
+    }
+
+    final baslangic = _denetleyici.camera.center;
+    final denetleyici = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    final egri = CurvedAnimation(parent: denetleyici, curve: Curves.easeInOut);
+
+    denetleyici.addListener(() {
+      final t = egri.value;
+      _denetleyici.move(
+        LatLng(
+          baslangic.latitude + (hedef.latitude - baslangic.latitude) * t,
+          baslangic.longitude + (hedef.longitude - baslangic.longitude) * t,
+        ),
+        yakinlik,
+      );
+    });
+
+    _kameraAnimasyonu = denetleyici;
+    denetleyici.forward();
+  }
+
+  @override
+  void dispose() {
+    _kameraAnimasyonu?.dispose();
+    super.dispose();
   }
 
   /// Yürüyüş rotasını, kullanıcı ve hedef görünecek şekilde çerçeveler.
@@ -288,15 +338,53 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   }
 }
 
-/// Yönlendirme sırasında hareket yönünü gösteren ok.
-class _YonOku extends StatelessWidget {
+/// Yönlendirme sırasında yönü gösteren ok.
+///
+/// Pusulayı kendi içinde dinler: telefon çevrildiğinde yalnızca bu widget
+/// yeniden çizilir, harita ve sayfanın kalanı etkilenmez. Cihazda manyetometre
+/// yoksa dışarıdan gelen hareket yönü kullanılır.
+class _YonOku extends StatefulWidget {
   final double aci;
 
   const _YonOku({required this.aci});
 
   @override
+  State<_YonOku> createState() => _YonOkuDurumu();
+}
+
+class _YonOkuDurumu extends State<_YonOku> {
+  StreamSubscription? _pusula;
+  double? _pusulaAcisi;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final akis = FlutterCompass.events;
+    if (akis == null) return;
+
+    _pusula = akis.listen((olay) {
+      final aci = olay.heading;
+      if (aci == null || !mounted) return;
+
+      // Küçük sapmalarda yeniden çizme; ok titremesin, pil yanmasın.
+      final onceki = _pusulaAcisi;
+      if (onceki != null && (aci - onceki).abs() < 4) return;
+
+      setState(() => _pusulaAcisi = (aci + 360) % 360);
+    }, onError: (_) { /* pusula yoksa sessizce geç */ });
+  }
+
+  @override
+  void dispose() {
+    _pusula?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final renkler = Theme.of(context).colorScheme;
+    final aci = _pusulaAcisi ?? widget.aci;
 
     return AnimatedRotation(
       turns: aci / 360,

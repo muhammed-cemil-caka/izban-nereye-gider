@@ -708,9 +708,15 @@
         var adim = sonRota.adimlar[durum.ilerleme.adimIndeksi];
         oge.yonlendirmeManevra.textContent = adim ? adim.metin : 'Devam et';
         oge.yonlendirmeMesafe.textContent = mesafeBicimle(durum.ilerleme.sonrakiManevraM);
+        // Süre, rotanın kendi temposundan: sabit yürüyüş hızı varsaymak yerine
+        // servisin o rota için öngördüğü tempo kalan mesafeye uygulanıyor.
+        var kalanSaniye = sonRota.mesafeM > 0
+          ? sonRota.sureSn * (durum.ilerleme.kalanM / sonRota.mesafeM)
+          : 0;
+
         oge.yonlendirmeKalan.textContent =
           'Kalan: ' + mesafeBicimle(durum.ilerleme.kalanM) +
-          ' · ' + yuruyusSuresiBicimle(durum.ilerleme.kalanM / 1.35); // ~4,9 km/sa
+          ' · ' + yuruyusSuresiBicimle(kalanSaniye);
 
         yonlendirmeUyarisiYaz(
           durum.konum.dogrulukM > 100

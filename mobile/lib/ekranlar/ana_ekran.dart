@@ -5,7 +5,6 @@ import '../modeller/yolculuk.dart';
 import '../servisler/durak_servisi.dart';
 import '../servisler/konum_servisi.dart';
 import 'dart:async';
-import 'package:flutter_compass/flutter_compass.dart';
 import '../servisler/rota_servisi.dart';
 import '../servisler/yonlendirme_servisi.dart';
 import 'harita_karti.dart';
@@ -51,11 +50,6 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// setState dışında atandığı için harita yön okuna geçmiyordu.
   bool _yonlendirmeAktif = false;
   double? _baslangicAcisi;
-
-  /// Pusula açısı. Kullanıcı yürümeden telefonu çevirdiğinde de ok dönsün diye
-  /// hareket yönünün yanında manyetometre de dinleniyor (Google Haritalar gibi).
-  StreamSubscription? _pusulaAboneligi;
-  double? _pusulaAcisi;
   YonlendirmeDurumu? _yonlendirmeDurumu;
   String? _yonlendirmeUyarisi;
   bool _varildi = false;
@@ -184,8 +178,6 @@ class _AnaEkranDurumu extends State<AnaEkran> {
       _baslangicAcisi = ilkAci;
     });
 
-    _pusulayiBaslat();
-
     // İki konum akışı aynı anda çalışırsa Android istekleri birleştirip
     // seyrekleştiriyor; yönlendirme sırasında takip kapatılır.
     _takibiKapat();
@@ -244,36 +236,9 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     );
   }
 
-  /// Pusulayı dinlemeye başlar. Cihazda manyetometre yoksa akış hiç veri
-  /// üretmez; o durumda hareket yönü kullanılmaya devam eder.
-  void _pusulayiBaslat() {
-    _pusulaAboneligi?.cancel();
-
-    final akis = FlutterCompass.events;
-    if (akis == null) return;
-
-    _pusulaAboneligi = akis.listen((olay) {
-      final aci = olay.heading;
-      if (aci == null || !mounted) return;
-
-      // Küçük sapmalarda yeniden çizim yapma; ok titremesin ve pil yanmasın.
-      final onceki = _pusulaAcisi;
-      if (onceki != null && (aci - onceki).abs() < 3) return;
-
-      setState(() => _pusulaAcisi = (aci + 360) % 360);
-    }, onError: (_) { /* pusula yoksa sessizce geç */ });
-  }
-
-  void _pusulayiKapat() {
-    _pusulaAboneligi?.cancel();
-    _pusulaAboneligi = null;
-    _pusulaAcisi = null;
-  }
-
   void _yonlendirmeyiBitir({bool varisSonrasi = false}) {
     _yonlendirmeAboneligi?.cancel();
     _yonlendirmeAboneligi = null;
-    _pusulayiKapat();
 
     if (mounted) {
       setState(() {
@@ -290,7 +255,6 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   @override
   void dispose() {
     _kaydirma.dispose();
-    _pusulaAboneligi?.cancel();
     _takipAboneligi?.cancel();
     _yonlendirmeAboneligi?.cancel();
     super.dispose();
@@ -399,8 +363,10 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 kullaniciKonumu: _kullaniciKonumu,
                 yuruyusRotasi: _yuruyusRotasi,
                 yonlendirmede: _yonlendirmeAktif,
-                // Pusula varsa telefonun baktığı yön, yoksa hareket yönü.
-                yonAcisi: _pusulaAcisi ?? _yonlendirmeDurumu?.aci ?? _baslangicAcisi,
+                // Hareket yönü; manyetometre okun kendi içinde dinleniyor.
+                // Böylece telefon çevrildiğinde tüm ekran değil yalnızca ok
+                // yeniden çiziliyor, harita kendini yenilemiyor.
+                yonAcisi: _yonlendirmeDurumu?.aci ?? _baslangicAcisi,
                 duragaBasildi: (durak) => setState(() {
                   _binisKod = durak.kod;
                   if (_inisKod == _binisKod) {
@@ -1027,6 +993,30 @@ class _YonlendirmePaneli extends StatelessWidget {
       ? '${metre.round()} m'
       : '${(metre / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
 
+  /// Kalan süreyi rotanın kendi temposundan hesaplar.
+  ///
+  /// Sabit bir yürüyüş hızı varsaymak yerine, servis o rota için ne kadar süre
+  /// öngördüyse (yokuş, yaya geçidi, kavşak dahil) aynı tempo kalan mesafeye
+  /// uygulanıyor.
+  static String? _kalanSure(YuruyusRotasi? rota, double kalanM) {
+    if (rota == null || rota.mesafeM <= 0) return null;
+
+    final saniye = rota.sureSn * (kalanM / rota.mesafeM);
+    final dakika = (saniye / 60).round().clamp(1, 1 << 31);
+
+    if (dakika < 60) return '$dakika dk';
+    final saat = dakika ~/ 60;
+    final kalanDk = dakika % 60;
+    return kalanDk == 0 ? '$saat sa' : '$saat sa $kalanDk dk';
+  }
+
+  String _kalanMetni(double kalanM) {
+    final sure = _kalanSure(rota, kalanM);
+    return sure == null
+        ? 'Kalan: ${_mesafe(kalanM)}'
+        : 'Kalan: ${_mesafe(kalanM)} · $sure';
+  }
+
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
@@ -1077,7 +1067,7 @@ class _YonlendirmePaneli extends StatelessWidget {
                   child: Text(
                     varildi
                         ? 'Yolculuk başlasın.'
-                        : 'Kalan: ${_mesafe(durum?.ilerleme.kalanM ?? 0)}',
+                        : _kalanMetni(durum?.ilerleme.kalanM ?? 0),
                     style: tema.textTheme.bodySmall
                         ?.copyWith(color: renkler.onPrimary.withValues(alpha: .9)),
                   ),

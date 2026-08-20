@@ -248,7 +248,15 @@ kullanılıyor. Ayrıca iki konum akışı aynı anda çalışmıyor: yönlendir
 başlayınca takip kapatılıyor.
 
 **Pusula:** telefon çevrildiğinde ok da dönsün diye manyetometre dinleniyor
-(`flutter_compass`). Pusula yoksa hareket yönüne düşülür.
+(`flutter_compass`). Pusula yoksa hareket yönüne düşülür. Dinleme **okun kendi
+içinde** yapılır: aksi halde her küçük dönüş tüm ekranı yeniden çizdiriyor ve
+harita saniyede birkaç kez kendini yeniliyordu.
+
+**Kamera:** yönlendirme sırasında her ölçümde doğrudan `move` çağırmak haritayı
+zıplatıyordu; hareket araya animasyon konarak yumuşatılıyor.
+
+**Kalan süre:** sabit yürüyüş hızı varsayılmıyor; servisin o rota için
+öngördüğü tempo (`sureSn / mesafeM`) kalan mesafeye uygulanıyor.
 
 Yön hesabı: **önce ardışık ölçümlerden** (her cihazda güvenilir), cihazın kendi
 başlığı yalnızca açıkça geçerliyse (0'dan büyük ve hareket varken). Birçok
