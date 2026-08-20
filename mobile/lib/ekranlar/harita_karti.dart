@@ -93,7 +93,7 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   /// GPS, kullanıcı dururken bile birkaç metre oynar. Her ölçümde kamerayı
   /// taşımak haritayı sürekli ileri geri kaydırıyor ("ekran gidip geliyor").
   /// Bu eşiğin altındaki oynamalar yok sayılır.
-  static const _kameraEsigiM = 12.0;
+  static const _kameraEsigiM = 8.0;
 
   /// Haritayı gidiş yönüne çevirme eşiği. Küçük açı oynamalarında harita
   /// döndürülürse baş döndürücü olur.
@@ -227,9 +227,9 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
 
     final denetleyici = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 800),
     );
-    final egri = CurvedAnimation(parent: denetleyici, curve: Curves.easeOut);
+    final egri = CurvedAnimation(parent: denetleyici, curve: Curves.easeOutCubic);
 
     denetleyici.addListener(() {
       _denetleyici.rotate(-(baslangic + fark * egri.value));
@@ -277,9 +277,11 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     final baslangic = _denetleyici.camera.center;
     final denetleyici = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      // Daha uzun ve sona doğru yavaşlayan eğri: kamera kayar gibi hareket
+      // etsin, adım adım atlamasın.
+      duration: const Duration(milliseconds: 1400),
     );
-    final egri = CurvedAnimation(parent: denetleyici, curve: Curves.easeInOut);
+    final egri = CurvedAnimation(parent: denetleyici, curve: Curves.easeOutCubic);
 
     denetleyici.addListener(() {
       final t = egri.value;
@@ -528,6 +530,10 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
       point: LatLng(konum.enlem, konum.boylam),
       width: 44,
       height: 44,
+      // İğnenin UCU konumu göstermeli. Varsayılan hizalama işareti noktanın
+      // ortasına koyuyor; o zaman uç aşağıda kalıyor ve yakınlaştırma
+      // değiştikçe kayma büyüyor.
+      alignment: Alignment.topCenter,
       child: Draggable<bool>(
         feedback: const Icon(Icons.place, size: 44, color: _guzergahRengi),
         childWhenDragging: const SizedBox.shrink(),
@@ -542,8 +548,9 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     final kutu = context.findRenderObject() as RenderBox?;
     if (kutu == null) return;
 
-    // Draggable global koordinat verir; ikonun sol üstü değil ucu esas alınır.
-    final yerel = kutu.globalToLocal(ekranNoktasi + const Offset(22, 44));
+    // Draggable global koordinat verir; ikonun sol üstü değil UCU esas alınır.
+    // Uç, 44x44'lük kutunun alt ortası.
+    final yerel = kutu.globalToLocal(ekranNoktasi + const Offset(22, 42));
     final nokta = _denetleyici.camera.screenOffsetToLatLng(yerel);
     widget.konumTasindi(Konum(enlem: nokta.latitude, boylam: nokta.longitude));
   }
