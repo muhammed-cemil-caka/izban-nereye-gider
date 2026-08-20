@@ -5,6 +5,7 @@ import '../modeller/yolculuk.dart';
 import '../servisler/durak_servisi.dart';
 import '../servisler/konum_servisi.dart';
 import 'dart:async';
+import 'package:flutter_compass/flutter_compass.dart';
 import '../servisler/rota_servisi.dart';
 import '../servisler/yonlendirme_servisi.dart';
 import 'harita_karti.dart';
@@ -50,6 +51,11 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// setState dışında atandığı için harita yön okuna geçmiyordu.
   bool _yonlendirmeAktif = false;
   double? _baslangicAcisi;
+
+  /// Pusula açısı. Kullanıcı yürümeden telefonu çevirdiğinde de ok dönsün diye
+  /// hareket yönünün yanında manyetometre de dinleniyor (Google Haritalar gibi).
+  StreamSubscription? _pusulaAboneligi;
+  double? _pusulaAcisi;
   YonlendirmeDurumu? _yonlendirmeDurumu;
   String? _yonlendirmeUyarisi;
   bool _varildi = false;
@@ -178,13 +184,28 @@ class _AnaEkranDurumu extends State<AnaEkran> {
       _baslangicAcisi = ilkAci;
     });
 
+    _pusulayiBaslat();
+
+    // İki konum akışı aynı anda çalışırsa Android istekleri birleştirip
+    // seyrekleştiriyor; yönlendirme sırasında takip kapatılır.
+    _takibiKapat();
+
     _yonlendirmeAboneligi = YonlendirmeServisi.baslat(
       rota: rota,
-      durumDegisti: (durum) {
+      durumDegisti: (durum) async {
         if (!mounted) return;
+
+        // En yakın durak kartı da tazelensin; yoksa yönlendirme "243 m" derken
+        // üstteki kart eski mesafeyi göstermeye devam ediyor.
+        final duraklar = await _duraklarGelecegi;
+        if (!mounted) return;
+        final adaylar = YakinDurak.enYakinlar(duraklar, durum.konum);
+
         setState(() {
           _yonlendirmeDurumu = durum;
           _kullaniciKonumu = durum.konum;
+          _yakinAdaylar = adaylar;
+          _yakinDurak = adaylar.isEmpty ? null : adaylar.first;
           _yonlendirmeUyarisi = durum.dogrulukM > 100
               ? 'Konum ±${durum.dogrulukM.round()} m — yönlendirme şaşabilir.'
               : null;
@@ -223,9 +244,36 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     );
   }
 
+  /// Pusulayı dinlemeye başlar. Cihazda manyetometre yoksa akış hiç veri
+  /// üretmez; o durumda hareket yönü kullanılmaya devam eder.
+  void _pusulayiBaslat() {
+    _pusulaAboneligi?.cancel();
+
+    final akis = FlutterCompass.events;
+    if (akis == null) return;
+
+    _pusulaAboneligi = akis.listen((olay) {
+      final aci = olay.heading;
+      if (aci == null || !mounted) return;
+
+      // Küçük sapmalarda yeniden çizim yapma; ok titremesin ve pil yanmasın.
+      final onceki = _pusulaAcisi;
+      if (onceki != null && (aci - onceki).abs() < 3) return;
+
+      setState(() => _pusulaAcisi = (aci + 360) % 360);
+    }, onError: (_) { /* pusula yoksa sessizce geç */ });
+  }
+
+  void _pusulayiKapat() {
+    _pusulaAboneligi?.cancel();
+    _pusulaAboneligi = null;
+    _pusulaAcisi = null;
+  }
+
   void _yonlendirmeyiBitir({bool varisSonrasi = false}) {
     _yonlendirmeAboneligi?.cancel();
     _yonlendirmeAboneligi = null;
+    _pusulayiKapat();
 
     if (mounted) {
       setState(() {
@@ -242,6 +290,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   @override
   void dispose() {
     _kaydirma.dispose();
+    _pusulaAboneligi?.cancel();
     _takipAboneligi?.cancel();
     _yonlendirmeAboneligi?.cancel();
     super.dispose();
@@ -350,7 +399,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 kullaniciKonumu: _kullaniciKonumu,
                 yuruyusRotasi: _yuruyusRotasi,
                 yonlendirmede: _yonlendirmeAktif,
-                yonAcisi: _yonlendirmeDurumu?.aci ?? _baslangicAcisi,
+                // Pusula varsa telefonun baktığı yön, yoksa hareket yönü.
+                yonAcisi: _pusulaAcisi ?? _yonlendirmeDurumu?.aci ?? _baslangicAcisi,
                 duragaBasildi: (durak) => setState(() {
                   _binisKod = durak.kod;
                   if (_inisKod == _binisKod) {
@@ -396,7 +446,16 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                   araniyor: _rotaAraniyor,
                   hata: _rotaHatasi,
                   temizle: _rotayiTemizle,
-                  basla: _yonlendirmeDurumu == null ? _yonlendirmeyiBaslat : null,
+                  // Düğme, yönlendirme aktifken Bitir'e dönüşür. Daha önce
+                  // _yonlendirmeDurumu'na bakılıyordu ama o yalnızca ilk konum
+                  // ölçümü gelince doluyor; ölçüm gecikince düğme Başla'da
+                  // takılı kalıyordu.
+                  yonlendirmede: _yonlendirmeAktif,
+                  basla: _yonlendirmeyiBaslat,
+                  bitir: () {
+                    setState(() => _varildi = false);
+                    _yonlendirmeyiBitir();
+                  },
                 ),
               ],
               const SizedBox(height: 16),
@@ -837,8 +896,9 @@ class _RotaKarti extends StatelessWidget {
   final String? hata;
   final VoidCallback temizle;
 
-  /// Yönlendirme sürüyorsa null verilir; düğme gösterilmez.
-  final VoidCallback? basla;
+  final bool yonlendirmede;
+  final VoidCallback basla;
+  final VoidCallback bitir;
 
   const _RotaKarti({
     required this.rota,
@@ -846,7 +906,9 @@ class _RotaKarti extends StatelessWidget {
     required this.araniyor,
     required this.hata,
     required this.temizle,
+    required this.yonlendirmede,
     required this.basla,
+    required this.bitir,
   });
 
   @override
@@ -895,14 +957,16 @@ class _RotaKarti extends StatelessWidget {
                     style: tema.textTheme.titleSmall,
                   ),
                 ),
-                if (basla != null)
-                  FilledButton(
-                    onPressed: basla,
-                    style: FilledButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    child: const Text('Başla'),
+                FilledButton(
+                  onPressed: yonlendirmede ? bitir : basla,
+                  style: FilledButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: yonlendirmede
+                        ? Theme.of(context).colorScheme.error
+                        : null,
                   ),
+                  child: Text(yonlendirmede ? 'Bitir' : 'Başla'),
+                ),
                 IconButton(
                   onPressed: temizle,
                   icon: const Icon(Icons.close, size: 20),

@@ -240,6 +240,16 @@ dinler ve:
 - **Konum işareti yön okuna dönüşür** ve hareket yönüne göre döner; yönlendirme
   bitince sürüklenebilir iğneye geri döner.
 
+**Android konum aralığı:** birleşik konum sağlayıcısı, aralık açıkça
+verilmezse güncellemeleri eliyor (`location delivery blocked - too fast/too
+close`) ve yürüyüş hızında imleç hiç kıpırdamıyor. Yönlendirmede
+`AndroidSettings(distanceFilter: 0, intervalDuration: 1 sn)`, takipte 5 sn
+kullanılıyor. Ayrıca iki konum akışı aynı anda çalışmıyor: yönlendirme
+başlayınca takip kapatılıyor.
+
+**Pusula:** telefon çevrildiğinde ok da dönsün diye manyetometre dinleniyor
+(`flutter_compass`). Pusula yoksa hareket yönüne düşülür.
+
 Yön hesabı: **önce ardışık ölçümlerden** (her cihazda güvenilir), cihazın kendi
 başlığı yalnızca açıkça geçerliyse (0'dan büyük ve hareket varken). Birçok
 Android cihaz "bilinmiyor" yerine 0 döndürüyor; buna güvenmek oku sürekli

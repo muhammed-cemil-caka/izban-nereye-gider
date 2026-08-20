@@ -42,7 +42,14 @@ class HaritaKarti extends StatefulWidget {
   State<HaritaKarti> createState() => _HaritaKartiDurumu();
 }
 
-class _HaritaKartiDurumu extends State<HaritaKarti> {
+class _HaritaKartiDurumu extends State<HaritaKarti>
+    with AutomaticKeepAliveClientMixin {
+  // Liste kaydırılıp harita ekrandan çıkınca widget yok ediliyor, geri
+  // dönüldüğünde initialCameraFit'e sıfırlanıyordu — kullanıcı her seferinde
+  // kendini yeniden bulmak zorunda kalıyordu.
+  @override
+  bool get wantKeepAlive => true;
+
   final _denetleyici = MapController();
 
   /// MapController, harita hazır olmadan kullanılamaz.
@@ -110,6 +117,7 @@ class _HaritaKartiDurumu extends State<HaritaKarti> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin gerektiriyor
     final tema = Theme.of(context);
     final noktalar = _hatNoktalari;
     if (noktalar.isEmpty) return const SizedBox.shrink();

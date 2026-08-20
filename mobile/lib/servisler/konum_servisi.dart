@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:geolocator/geolocator.dart';
 import '../modeller/durak.dart';
 
@@ -76,13 +77,22 @@ class KonumServisi {
   /// kullanıcıyla birlikte hareket eder. Yönlendirme kendi akışını kullandığı
   /// için takip o sırada durdurulmalıdır.
   Stream<Konum> konumTakibi() {
-    return Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        // Takipte yüksek isabet istenmiyor: pil ömrü daha önemli.
-        accuracy: LocationAccuracy.medium,
-        distanceFilter: 20,
-      ),
-    ).map((yer) => Konum(enlem: yer.latitude, boylam: yer.longitude));
+    // Android aralık verilmezse güncellemeleri eliyor; takipte seyrek ama
+    // düzenli ölçüm isteniyor.
+    final ayarlar = defaultTargetPlatform == TargetPlatform.android
+        ? AndroidSettings(
+            accuracy: LocationAccuracy.medium,
+            distanceFilter: 20,
+            intervalDuration: const Duration(seconds: 5),
+          )
+        : const LocationSettings(
+            // Takipte yüksek isabet istenmiyor: pil ömrü daha önemli.
+            accuracy: LocationAccuracy.medium,
+            distanceFilter: 20,
+          );
+
+    return Geolocator.getPositionStream(locationSettings: ayarlar)
+        .map((yer) => Konum(enlem: yer.latitude, boylam: yer.longitude));
   }
 
   /// Uygulama ayarlarını açar (izin kalıcı reddedildiğinde).

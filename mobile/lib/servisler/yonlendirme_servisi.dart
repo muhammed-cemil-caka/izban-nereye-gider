@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as matematik;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:geolocator/geolocator.dart';
 import '../modeller/durak.dart';
 import 'rota_servisi.dart';
@@ -152,6 +153,36 @@ class YonlendirmeServisi {
     );
   }
 
+  /// Yönlendirme sırasında kullanılacak konum ayarları.
+  ///
+  /// Android'in birleşik konum sağlayıcısı, aralık açıkça verilmezse
+  /// güncellemeleri eliyor ("location delivery blocked - too fast/too close")
+  /// ve yürüyüş hızında imleç hiç kıpırdamıyordu. Yönlendirmede her ölçüm
+  /// gerekli, bu yüzden mesafe süzgeci sıfır ve aralık kısa tutuluyor.
+  static LocationSettings yonlendirmeAyarlari() {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return AndroidSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+        intervalDuration: const Duration(seconds: 1),
+      );
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return AppleSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+        activityType: ActivityType.fitness,
+        pauseLocationUpdatesAutomatically: false,
+      );
+    }
+
+    return const LocationSettings(
+      accuracy: LocationAccuracy.bestForNavigation,
+      distanceFilter: 0,
+    );
+  }
+
   /// Yönlendirme oturumu başlatır.
   ///
   /// [rotadanCikildi] rotadan çıkıldığında yeni konumla çağrılır; çağıran
@@ -169,10 +200,7 @@ class YonlendirmeServisi {
     double? sonAci;
 
     return Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 5,
-      ),
+      locationSettings: yonlendirmeAyarlari(),
     ).listen(
       (yer) {
         final konum = Konum(enlem: yer.latitude, boylam: yer.longitude);
