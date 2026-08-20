@@ -220,6 +220,11 @@ yeşil / iniş turuncu gösterilir. Durağa tıklamak onu biniş durağı yapar.
 Kullanıcı konumu **sürüklenebilir** bir işaretle gösterilir — masaüstünde şaşan
 tarayıcı konumunu düzeltmenin en doğrudan yolu budur.
 
+Konum iğnesinin **ucu** konumu gösterir (`Marker.alignment: topCenter`).
+Varsayılan hizalama işareti noktanın ortasına koyuyor; o zaman uç aşağıda
+kalıyor ve yakınlaştırma değiştikçe kayma büyüyor. Webde Leaflet'in
+varsayılan `iconAnchor: [12, 41]` değeri zaten ucu işaret ediyor.
+
 ### Yürüyüş yol tarifi
 
 Rota, harici bir harita uygulamasına yönlendirmeden **uygulama içinde** çizilir:
