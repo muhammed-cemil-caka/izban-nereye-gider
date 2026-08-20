@@ -41,6 +41,7 @@
     rotaAdimlar: document.getElementById('rotaAdimlar'),
     rotaTemizle: document.getElementById('rotaTemizle'),
     rotaDurum: document.getElementById('rotaDurum'),
+    haritaKarti: document.querySelector('.harita-karti'),
     yonlendirmeBaslat: document.getElementById('yonlendirmeBaslat'),
     yonlendirmePaneli: document.getElementById('yonlendirmePaneli'),
     yonlendirmeManevra: document.getElementById('yonlendirmeManevra'),
@@ -227,6 +228,69 @@
     if (harita) harita.yuruyusRotasiniTemizle();
   }
 
+  /**
+   * Rota çizilince haritayı görünür alana getirir; kullanıcı aşağı kaydırmak
+   * zorunda kalmasın. Kart konumu, yeni içerik yerleştikten sonra hesaplanır.
+   */
+  /**
+   * Sayfayı verilen noktaya kaydırır.
+   *
+   * Tarayıcının kendi yumuşak kaydırması (scrollIntoView / scroll-behavior)
+   * bazı ortamlarda sessizce hiçbir şey yapmıyor. Bu yüzden animasyon elle
+   * yapılıyor: her yerde çalışır ve hareketi azaltma tercihine uyar.
+   */
+  function sayfayiKaydir(hedef) {
+    hedef = Math.max(0, hedef);
+
+    var azHareket = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var baslangic = window.scrollY;
+    var mesafe = hedef - baslangic;
+
+    if (azHareket || Math.abs(mesafe) < 4) {
+      window.scrollTo(0, hedef);
+      return;
+    }
+
+    var sure = 350;
+    var ilkZaman = null;
+
+    function adim(zaman) {
+      if (ilkZaman === null) ilkZaman = zaman;
+      var oran = Math.min(1, (zaman - ilkZaman) / sure);
+      // easeInOutQuad
+      var yumusak = oran < 0.5
+        ? 2 * oran * oran
+        : 1 - Math.pow(-2 * oran + 2, 2) / 2;
+
+      window.scrollTo(0, baslangic + mesafe * yumusak);
+      if (oran < 1) requestAnimationFrame(adim);
+    }
+
+    requestAnimationFrame(adim);
+  }
+
+  function haritayaKaydir() {
+    if (!oge.haritaKarti) return;
+
+    // Yeni içerik yerleştikten sonra konum hesaplanmalı. setTimeout kullanılıyor
+    // çünkü sekme arka plandayken requestAnimationFrame hiç tetiklenmiyor ve
+    // kaydırma sessizce yapılmamış oluyor.
+    setTimeout(function () {
+      var hedef = Math.max(
+        0,
+        oge.haritaKarti.getBoundingClientRect().top + window.scrollY - 12
+      );
+      sayfayiKaydir(hedef);
+
+      // Animasyon rAF'a dayanıyor; sayfa gizliyken çalışmaz. Konumun yine de
+      // doğru olması için kısa süre sonra denetlenip gerekirse doğrudan gidilir.
+      setTimeout(function () {
+        if (Math.abs(window.scrollY - hedef) > 8) window.scrollTo(0, hedef);
+      }, 500);
+    }, 0);
+  }
+
   function rotaSonucunuYaz(rota, durak) {
     oge.rotaBaslik.textContent = durak.ad + ' durağına yürüyüş';
     oge.rotaOlcu.textContent =
@@ -266,6 +330,7 @@
         sonRotaHedefi = durak;
         rotaSonucunuYaz(rota, durak);
         rotaDurumuYaz('');
+        haritayaKaydir();
       })
       .catch(function (sorun) {
         rotaDurumuYaz(sorun.message, 'hata');
@@ -594,6 +659,10 @@
   var sonRota = null;
   var sonRotaHedefi = null;
 
+  // Bilinen son yön. Yeni ölçümde açı hesaplanamazsa (henüz yeterli hareket
+  // yok) ok kuzeye sıçramasın diye eski açı korunur.
+  var sonYonAcisi = 0;
+
   function yonlendirmeUyarisiYaz(metin) {
     oge.yonlendirmeUyari.textContent = metin;
     oge.yonlendirmeUyari.hidden = !metin;
@@ -628,6 +697,7 @@
       }
       harita.konumuGoster(sonKonum, { yonlendirme: true, aci: baslangicAcisi });
       harita.konumaOdaklan(sonKonum, 17);
+      sonYonAcisi = baslangicAcisi;
     }
 
     yonlendirmeOturumu = yonlendirmeBaslat({
@@ -648,8 +718,10 @@
             : ''
         );
 
+        if (typeof durum.aci === 'number') sonYonAcisi = durum.aci;
+
         if (harita) {
-          harita.konumuGoster(durum.konum, { yonlendirme: true, aci: durum.aci });
+          harita.konumuGoster(durum.konum, { yonlendirme: true, aci: sonYonAcisi });
           harita.konumaOdaklan(durum.konum, 17);
         }
       },

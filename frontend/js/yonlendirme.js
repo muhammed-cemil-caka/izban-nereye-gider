@@ -172,17 +172,27 @@ function yonlendirmeBaslat(secenekler) {
         dogrulukM: sonuc.coords.accuracy
       };
 
-      // Yön: cihaz veriyorsa onu kullan, yoksa ardışık ölçümlerden çıkar.
-      // Çok küçük hareketlerde açı gürültülü olur, eski açı korunur.
-      if (typeof sonuc.coords.heading === 'number' && !isNaN(sonuc.coords.heading)) {
-        sonAci = sonuc.coords.heading;
-      } else if (oncekiKonum) {
+      // Yön önce ardışık ölçümlerden hesaplanır: her cihazda güvenilirdir.
+      // Cihazın kendi başlığı yalnızca açıkça geçerliyse kullanılır — birçok
+      // cihaz "bilinmiyor" yerine 0 döndürüyor ve buna güvenmek oku sürekli
+      // kuzeye çeviriyordu.
+      //
+      // Önceki konum yalnızca yön hesaplandığında güncellenir; yoksa 5 m'lik
+      // eşiğe hiç ulaşılamaz ve küçük adımlar birikmez.
+      if (!oncekiKonum) {
+        oncekiKonum = { enlem: konum.enlem, boylam: konum.boylam };
+      } else {
         var p = Math.PI / 180;
         var dx = (konum.boylam - oncekiKonum.boylam) * 111320 * Math.cos(konum.enlem * p);
         var dy = (konum.enlem - oncekiKonum.enlem) * 110574;
-        if (Math.sqrt(dx * dx + dy * dy) >= 5) sonAci = yonAcisi(oncekiKonum, konum);
+
+        if (Math.sqrt(dx * dx + dy * dy) >= 5) {
+          sonAci = yonAcisi(oncekiKonum, konum);
+          oncekiKonum = { enlem: konum.enlem, boylam: konum.boylam };
+        } else if (sonuc.coords.heading > 0 && sonuc.coords.speed > 0.5) {
+          sonAci = sonuc.coords.heading;
+        }
       }
-      oncekiKonum = { enlem: konum.enlem, boylam: konum.boylam };
 
       var ilerleme = rotaIlerlemesi(konum, rota, adimSinirlari);
 

@@ -24,6 +24,10 @@ class AnaEkran extends StatefulWidget {
 
 class _AnaEkranDurumu extends State<AnaEkran> {
   late final DurakServisi _servis;
+  final _kaydirma = ScrollController();
+
+  /// Yol tarifi alınınca haritaya kaydırmak için.
+  final _haritaAnahtari = GlobalKey();
   late final Future<List<Durak>> _duraklarGelecegi;
 
   String? _binisKod;
@@ -142,6 +146,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
         _rotaHedefi = yakin.durak;
         _rotaAraniyor = false;
       });
+      _haritayaKaydir();
     } catch (sorun) {
       if (!mounted) return;
       setState(() {
@@ -236,9 +241,27 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
   @override
   void dispose() {
+    _kaydirma.dispose();
     _takipAboneligi?.cancel();
     _yonlendirmeAboneligi?.cancel();
     super.dispose();
+  }
+
+  /// Rota çizilince harita ekranın görünür kısmına gelsin; kullanıcı
+  /// aşağı kaydırmak zorunda kalmasın.
+  void _haritayaKaydir() {
+    // Kart yeniden çizilmeden konumu bilinmiyor.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final baglam = _haritaAnahtari.currentContext;
+      if (baglam == null || !mounted) return;
+
+      Scrollable.ensureVisible(
+        baglam,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.05,
+      );
+    });
   }
 
   void _rotayiTemizle() {
@@ -283,6 +306,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           final yolculuk = Yolculuk.hesapla(duraklar, _binisKod!, _inisKod!);
 
           return ListView(
+            controller: _kaydirma,
             padding: const EdgeInsets.all(16),
             children: [
               _KonumKarti(
@@ -320,6 +344,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
               ),
               const SizedBox(height: 16),
               HaritaKarti(
+                key: _haritaAnahtari,
                 duraklar: duraklar,
                 yolculuk: yolculuk,
                 kullaniciKonumu: _kullaniciKonumu,

@@ -45,6 +45,11 @@ class HaritaKarti extends StatefulWidget {
 class _HaritaKartiDurumu extends State<HaritaKarti> {
   final _denetleyici = MapController();
 
+  /// MapController, harita hazır olmadan kullanılamaz.
+  bool _haritaHazir = false;
+
+  static const _yonlendirmeYakinligi = 17.0;
+
   static const _hatRengi = Color(0xFF7A8798);
   static const _guzergahRengi = Color(0xFF0B5FA5);
   static const _binisRengi = Color(0xFF0B7A63);
@@ -55,6 +60,53 @@ class _HaritaKartiDurumu extends State<HaritaKarti> {
       .where((d) => d.konum.gecerli)
       .map((d) => LatLng(d.konum.enlem, d.konum.boylam))
       .toList();
+
+  @override
+  void didUpdateWidget(HaritaKarti eski) {
+    super.didUpdateWidget(eski);
+    if (!_haritaHazir) return;
+
+    // Yeni yürüyüş rotası geldi: rotanın tamamı ekrana sığsın.
+    if (widget.yuruyusRotasi != null &&
+        widget.yuruyusRotasi != eski.yuruyusRotasi) {
+      _rotayiCercevele();
+      return;
+    }
+
+    // Yönlendirme sürerken kamera kullanıcıyla birlikte gitsin.
+    if (widget.yonlendirmede &&
+        widget.kullaniciKonumu != null &&
+        widget.kullaniciKonumu != eski.kullaniciKonumu) {
+      _denetleyici.move(
+        LatLng(widget.kullaniciKonumu!.enlem, widget.kullaniciKonumu!.boylam),
+        _yonlendirmeYakinligi,
+      );
+      return;
+    }
+
+    // Yönlendirme yeni başladı: doğrudan kullanıcıya yakınlaş.
+    if (widget.yonlendirmede && !eski.yonlendirmede && widget.kullaniciKonumu != null) {
+      _denetleyici.move(
+        LatLng(widget.kullaniciKonumu!.enlem, widget.kullaniciKonumu!.boylam),
+        _yonlendirmeYakinligi,
+      );
+    }
+  }
+
+  /// Yürüyüş rotasını, kullanıcı ve hedef görünecek şekilde çerçeveler.
+  void _rotayiCercevele() {
+    final rota = widget.yuruyusRotasi;
+    if (rota == null || rota.noktalar.isEmpty) return;
+
+    _denetleyici.fitCamera(
+      CameraFit.bounds(
+        bounds: LatLngBounds.fromPoints(
+          rota.noktalar.map((k) => LatLng(k.enlem, k.boylam)).toList(),
+        ),
+        padding: const EdgeInsets.all(36),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +144,11 @@ class _HaritaKartiDurumu extends State<HaritaKarti> {
                 ),
                 minZoom: 7,
                 maxZoom: 18,
+                onMapReady: () {
+                  _haritaHazir = true;
+                  // Kart, rota hazırken kurulmuş olabilir.
+                  if (widget.yuruyusRotasi != null) _rotayiCercevele();
+                },
                 // Haritayı sürüklerken sayfanın kaymaması için dönüşler sınırlı.
                 interactionOptions: const InteractionOptions(
                   flags: InteractiveFlag.pinchZoom |

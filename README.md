@@ -234,11 +234,17 @@ dinler ve:
 - Kullanıcıyı rota çizgisine izdüşürerek nerede olduğunu bulur
 - Sıradaki manevrayı ve ona kalan mesafeyi gösterir
 - Kalan toplam mesafeyi ve süreyi günceller
-- Haritayı kullanıcıyla birlikte kaydırır
+- Haritayı kullanıcıyla birlikte kaydırır ve ona yakınlaşır (mobilde de)
+- Yol tarifi alınınca sayfa haritaya kayar ve rota ekrana sığacak şekilde
+  çerçevelenir
 - **Konum işareti yön okuna dönüşür** ve hareket yönüne göre döner; yönlendirme
-  bitince sürüklenebilir iğneye geri döner. Yön, cihaz veriyorsa cihazın
-  başlığından, vermiyorsa ardışık ölçümlerden hesaplanır (5 m'den küçük
-  hareketlerde eski açı korunur, ok titremesin)
+  bitince sürüklenebilir iğneye geri döner.
+
+Yön hesabı: **önce ardışık ölçümlerden** (her cihazda güvenilir), cihazın kendi
+başlığı yalnızca açıkça geçerliyse (0'dan büyük ve hareket varken). Birçok
+Android cihaz "bilinmiyor" yerine 0 döndürüyor; buna güvenmek oku sürekli
+kuzeye çeviriyordu. Önceki konum yalnızca açı hesaplandığında güncellenir,
+yoksa 5 m'lik eşiğe hiç ulaşılamaz ve küçük adımlar birikmez.
 - Rotadan **45 m** uzaklaşıp bu üç ölçüm sürerse rotayı yeniden hesaplar
   (tek bir kötü ölçüm yeniden hesaplamayı tetiklemez)
 - Hedefe **25 m** kalınca varış bildirir

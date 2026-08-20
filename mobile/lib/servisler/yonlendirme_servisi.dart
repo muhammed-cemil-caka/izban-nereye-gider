@@ -177,15 +177,22 @@ class YonlendirmeServisi {
       (yer) {
         final konum = Konum(enlem: yer.latitude, boylam: yer.longitude);
 
-        // Yön: cihaz veriyorsa onu kullan, yoksa ardışık ölçümlerden çıkar.
-        // Çok küçük hareketlerde açı gürültülü olur, eski açı korunur.
+        // Yön önce ardışık ölçümlerden hesaplanır: her cihazda güvenilirdir.
+        // Cihazın kendi başlığı yalnızca açıkça geçerliyse kullanılır — birçok
+        // Android cihaz "bilinmiyor" yerine 0 döndürüyor ve buna güvenmek oku
+        // sürekli kuzeye çeviriyordu.
+        //
+        // Önceki konum yalnızca yön hesaplandığında güncellenir; yoksa 5 m'lik
+        // eşiğe hiç ulaşılamaz ve küçük adımlar birikmez.
         final onceki = oncekiKonum;
-        if (yer.heading != 0 || yer.speed > 0.5) {
-          sonAci = yer.heading;
-        } else if (onceki != null && onceki.metreUzaklik(konum) >= 5) {
+        if (onceki == null) {
+          oncekiKonum = konum;
+        } else if (onceki.metreUzaklik(konum) >= 5) {
           sonAci = yonAcisi(onceki, konum);
+          oncekiKonum = konum;
+        } else if (yer.heading > 0 && yer.speed > 0.5) {
+          sonAci = yer.heading;
         }
-        oncekiKonum = konum;
 
         final ilerleme = ilerlemeHesapla(konum, rota, sinirlar);
 
