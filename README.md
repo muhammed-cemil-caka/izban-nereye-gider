@@ -189,13 +189,10 @@ kullanılmaz — tek bir bağlantı açılır, navigasyonu Google üstlenir.
 kartı kapanır ve "Konumumu bul" düğmesi görünür. Konum cihazdan dışarı gönderilmez,
 en yakın durak hesabı tamamen istemcide yapılır.
 
-Konum alınamadığında kartta **"Konum neden çalışmıyor?"** bölümü açılır ve
-sebebi tahmin etmek yerine ölçer: adres, güvenli bağlam durumu, izin durumu ve
-tarayıcı. Her duruma özel yapılacak işi yazar.
-
 Sık karışan nokta: Chrome adres çubuğunda `http://localhost` için "Güvenli
 değil" yazar ama **localhost güvenli bağlam sayılır** ve konum çalışır. Bu yazı
-tek başına sebep değildir; tanı bölümü gerçek sebebi gösterir.
+tek başına konum sorununun sebebi değildir; izin reddi ya da işletim sistemi
+seviyesinde kapalı konum servisi daha olası sebeplerdir.
 
 Platform notları:
 

@@ -216,20 +216,6 @@ function konumHatasiniAcikla(hata) {
       return 'Konum alınamadı.';
   }
 }
-
-/**
- * Tarayıcı izin durumunu sorar (destekleyen tarayıcılarda).
- * @returns {Promise<'granted'|'denied'|'prompt'|'bilinmiyor'>}
- */
-function konumIzinDurumu() {
-  if (!navigator.permissions || !navigator.permissions.query) {
-    return Promise.resolve('bilinmiyor');
-  }
-  return navigator.permissions.query({ name: 'geolocation' })
-    .then(function (sonuc) { return sonuc.state; })
-    .catch(function () { return 'bilinmiyor'; });
-}
-
 /* ---------- Elle konum düzeltme ---------- */
 //
 // Masaüstünde tarayıcı konumu Wi-Fi tabanlıdır ve yüzlerce metre şaşabilir.
@@ -314,73 +300,4 @@ function konumTakibiBaslat(olcumGeldi) {
   );
 
   return function () { navigator.geolocation.clearWatch(izleyici); };
-}
-
-/* ---------- Tanı ---------- */
-//
-// "Konum çalışmıyor" şikâyetinin birden çok sebebi olabilir: güvensiz bağlam,
-// reddedilmiş izin, işletim sistemi seviyesinde kapalı konum servisi, ya da
-// tarayıcı farkı (Safari localhost'ta bile HTTPS isteyebiliyor). Hangisi
-// olduğunu tahmin etmek yerine ölçüp yazıyoruz.
-
-/** @returns {Promise<{satirlar: Array<{ad:string, deger:string, iyi:boolean}>, oneri: string}>} */
-function konumTanisi() {
-  var tarayici = tarayiciTahmini();
-  var guvenli = window.isSecureContext === true;
-  var yerelMi = ['localhost', '127.0.0.1', '::1'].indexOf(location.hostname) !== -1;
-
-  return konumIzinDurumu().then(function (izin) {
-    var satirlar = [
-      { ad: 'Adres', deger: location.origin, iyi: guvenli },
-      {
-        ad: 'Güvenli bağlam',
-        deger: guvenli ? 'evet' : 'hayır',
-        iyi: guvenli
-      },
-      {
-        ad: 'Konum izni',
-        deger: izin === 'granted' ? 'verildi'
-             : izin === 'denied' ? 'reddedildi'
-             : izin === 'prompt' ? 'henüz sorulmadı'
-             : 'bilinmiyor',
-        iyi: izin !== 'denied'
-      },
-      { ad: 'Tarayıcı', deger: tarayici, iyi: true }
-    ];
-
-    return { satirlar: satirlar, oneri: tanidanOneri(guvenli, yerelMi, izin, tarayici) };
-  });
-}
-
-function tarayiciTahmini() {
-  var ua = navigator.userAgent;
-  if (/Edg\//.test(ua)) return 'Edge';
-  if (/Chrome\//.test(ua) && !/Chromium/.test(ua)) return 'Chrome';
-  if (/Safari\//.test(ua) && !/Chrome/.test(ua)) return 'Safari';
-  if (/Firefox\//.test(ua)) return 'Firefox';
-  return 'bilinmiyor';
-}
-
-function tanidanOneri(guvenli, yerelMi, izin, tarayici) {
-  if (izin === 'denied') {
-    return 'Bu site için konum izni reddedilmiş. Adres çubuğundaki kilit/ayar ' +
-           'simgesine tıklayıp konum iznini "İzin ver" yap, sonra sayfayı yenile.';
-  }
-
-  if (!guvenli) {
-    if (yerelMi && tarayici === 'Safari') {
-      return 'Safari, localhost üzerinde bile konum için HTTPS isteyebiliyor. ' +
-             'Sunucuyu HTTPS ile başlat: python3 araclar/gelistirme-sunucusu.py --https';
-    }
-    return 'Sayfa güvenli bağlamda değil. localhost adresinden aç, ya da ' +
-           'sunucuyu HTTPS ile başlat: python3 araclar/gelistirme-sunucusu.py --https';
-  }
-
-  if (tarayici === 'Safari') {
-    return 'Bağlam güvenli görünüyor. Safari\'de sorun sürerse: Ayarlar → ' +
-           'Web Siteleri → Konum bölümünden bu siteye izin ver.';
-  }
-
-  return 'Bağlam ve izin uygun görünüyor. Sorun sürüyorsa macOS: Sistem Ayarları → ' +
-         'Gizlilik ve Güvenlik → Konum Servisleri altında tarayıcının açık olduğundan emin ol.';
 }
