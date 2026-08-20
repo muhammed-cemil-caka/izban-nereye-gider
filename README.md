@@ -161,6 +161,12 @@ Bunun önüne geçmek için:
 - Ölçüm doğruluğu ekranda yazar. ±200 m'nin üstündeyse kullanıcı uyarılır.
 - Her iki istemcide de **en yakın dört durak** listelenir; GPS şaşarsa kullanıcı
   doğru durağı kendisi seçebilir.
+- Sıralama **gerçek yürüme mesafesine** göre yapılır, kuş uçuşuna göre değil.
+  Kuş uçuşu yanıltıyor: dere, otoyol veya demiryolu araya girdiğinde yakın
+  görünen durak yürüyerek çok daha uzak olabiliyor. Ölçüldü: Çiğli kuş uçuşu
+  daha yakın ama yürüyüşle **2,5 km**; Mavişehir **1,4 km**. Mesafeler OSRM'in
+  matris servisiyle **tek istekte** alınır (hedef başına ayrı rota istenmez).
+  Kuş uçuşu sıralama anında gösterilir, yürüme mesafesi gelince düzeltilir.
 - İlk ölçüm oturduktan sonra **canlı takip** devreye girer: harita işareti
   kullanıcıyla birlikte hareket eder ve en yakın durak sürekli tazelenir.
   Takip düşük isabet/yüksek eşikle çalışır (20 m'den küçük hareketler yok
@@ -299,9 +305,13 @@ yoksa 5 m'lik eşiğe hiç ulaşılamaz ve küçük adımlar birikmez.
   şehirde sık görülen tek bir kötü ölçüm yeniden hesaplama tetiklemez
 - Yeniden hesaplama **sessizdir**: uyarı basılmaz. Kısa süre sonra kaybolan
   uyarı ekranda yanıp sönüyordu; Google Haritalar da sessizce yeniden hesaplar
+- Yönlendirme panelinde **ilerleme çubuğu** ve "540 m / 1,4 km toplam yürüyüş"
+  gösterilir; toplam yürünecek mesafe her an görünür
 - Harita **gidiş yönüne çevrilir**: kullanıcının baktığı yön yukarı bakar, ok
   ekranda sabit dik durur (`Marker(rotate: true)`). Yön için önce pusula,
-  yoksa hareket yönü kullanılır; 10°'den küçük oynamalarda harita döndürülmez.
+  yoksa hareket yönü kullanılır; 8°'den küçük oynamalarda harita döndürülmez ve dönüş en kısa yönden,
+  yarım saniyelik animasyonla yapılır — doğrudan çevirmek takılmalı
+  görünüyordu.
   Yönlendirme bitince harita kuzey yukarı konumuna döner
 - Doğruluk uyarısı histerezisli: 100 m'de çıkar, 70 m'nin altına inince
   kaybolur; tek eşik sınırda gezinirken uyarıyı yanıp söndürüyordu

@@ -95,6 +95,50 @@ class RotaServisi {
     }
   }
 
+  /// Bir noktadan birden çok hedefe yürüme mesafelerini tek istekte alır.
+  ///
+  /// Kuş uçuşu yanıltıyor: dere, otoyol veya demiryolu araya girdiğinde yakın
+  /// görünen durak yürüyerek çok daha uzak olabiliyor. Ölçüldü: Çiğli kuş
+  /// uçuşu daha yakın ama yürüyüşle 2,5 km; Mavişehir 1,4 km.
+  ///
+  /// Hedeflerle aynı sırada döner; ulaşılamayan hedef için null.
+  Future<List<({double mesafeM, double sureSn})?>> yuruyusMesafeleri(
+    Konum baslangic,
+    List<Konum> hedefler,
+  ) async {
+    if (hedefler.isEmpty) return const [];
+
+    final noktalar = [baslangic, ...hedefler]
+        .map((k) => '${k.boylam},${k.enlem}')
+        .join(';');
+
+    final adres = Uri.parse(
+      '${_taban.replaceFirst('/route/v1/foot', '/table/v1/foot')}'
+      '/$noktalar?sources=0&annotations=distance,duration',
+    );
+
+    final yanit = await http.get(adres).timeout(_zamanAsimi);
+    if (yanit.statusCode != 200) {
+      throw Exception('Mesafe servisi yanıtı: ${yanit.statusCode}');
+    }
+
+    final govde = jsonDecode(utf8.decode(yanit.bodyBytes)) as Map<String, dynamic>;
+    if (govde['code'] != 'Ok') throw Exception('Yürüme mesafeleri alınamadı.');
+
+    final mesafeler = (govde['distances'] as List<dynamic>).first as List<dynamic>;
+    final sureler = (govde['durations'] as List<dynamic>?)?.first as List<dynamic>?;
+
+    // İlk değer başlangıcın kendisi; hedefler ondan sonra geliyor.
+    return List.generate(hedefler.length, (i) {
+      final mesafe = mesafeler[i + 1];
+      if (mesafe == null) return null;
+      return (
+        mesafeM: (mesafe as num).toDouble(),
+        sureSn: ((sureler?[i + 1] as num?) ?? 0).toDouble(),
+      );
+    });
+  }
+
   Future<YuruyusRotasi> rotaAl(Konum baslangic, Konum bitis) async {
     final adres = Uri.parse(
       '$_taban/${baslangic.boylam},${baslangic.enlem}'

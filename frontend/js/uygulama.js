@@ -47,6 +47,9 @@
     yonlendirmeManevra: document.getElementById('yonlendirmeManevra'),
     yonlendirmeMesafe: document.getElementById('yonlendirmeMesafe'),
     yonlendirmeKalan: document.getElementById('yonlendirmeKalan'),
+    yonlendirmeCubuk: document.getElementById('yonlendirmeCubuk'),
+    yonlendirmeYurunen: document.getElementById('yonlendirmeYurunen'),
+    yonlendirmeToplam: document.getElementById('yonlendirmeToplam'),
     yonlendirmeSes: document.getElementById('yonlendirmeSes'),
     yonlendirmeBitir: document.getElementById('yonlendirmeBitir'),
     yonlendirmeUyari: document.getElementById('yonlendirmeUyari'),
@@ -370,7 +373,9 @@
     yakinDurak = enYakin.durak;
 
     oge.yakinDurakAd.textContent = enYakin.durak.ad;
-    oge.yakinDurakMesafe.textContent = mesafeBicimle(enYakin.mesafeM);
+    oge.yakinDurakMesafe.textContent = enYakin.yuruyusMu
+      ? mesafeBicimle(enYakin.mesafeM) + ' yürüyüş'
+      : mesafeBicimle(enYakin.mesafeM);
     oge.yolTarifi.setAttribute(
       'aria-label',
       enYakin.durak.ad + ' durağına yürüyerek yol tarifini haritada göster'
@@ -497,6 +502,41 @@
     try { localStorage.removeItem(ELLE_KONUM_ANAHTAR); } catch (sorun) { /* özel mod */ }
   }
 
+  /**
+   * Adayları gerçek yürüme mesafesine göre yeniden sıralar.
+   *
+   * Kuş uçuşu yanıltıyor: dere, otoyol veya demiryolu araya girdiğinde yakın
+   * görünen durak yürüyerek çok daha uzak olabiliyor. Ölçüldü: Çiğli kuş
+   * uçuşu daha yakın ama yürüyüşle 2,5 km; Mavişehir 1,4 km.
+   */
+  function adaylariYuruyuseGoreSirala(konum, adaylar) {
+    if (typeof yuruyusMesafeleriAl !== 'function') return;
+
+    var hedefler = adaylar.map(function (a) { return a.durak.konum; });
+
+    yuruyusMesafeleriAl(konum, hedefler)
+      .then(function (olcumler) {
+        var yeniSira = adaylar
+          .map(function (aday, sira) {
+            var olcum = olcumler[sira];
+            if (!olcum || !isFinite(olcum.mesafeM)) return aday;
+            return {
+              durak: aday.durak,
+              mesafeM: olcum.mesafeM,
+              sureSn: olcum.sureSn,
+              yuruyusMu: true
+            };
+          })
+          .sort(function (a, b) { return a.mesafeM - b.mesafeM; });
+
+        tumAdaylar = yeniSira;
+        yakinDuragiGoster(yeniSira, sonDogruluk.dogrulukM, true);
+      })
+      .catch(function () {
+        // Servise ulaşılamazsa kuş uçuşu sıralama kalır; site çalışmaya devam eder.
+      });
+  }
+
   /** Bir konumdan aday listesini kurup arayüzü tazeler. */
   function konumuIsle(konum, kesinMi) {
     var adaylar = enYakinDuraklar(aktifDuraklar, konum, 4);
@@ -510,6 +550,11 @@
 
     sonKonum = { enlem: konum.enlem, boylam: konum.boylam };
     if (harita) harita.konumuGoster(konum);
+
+    // Kuş uçuşu sıralama anında gösterilir; yürüme mesafesi gelince düzeltilir.
+    if (kesinMi && !yonlendirmeOturumu) {
+      adaylariYuruyuseGoreSirala(sonKonum, adaylar);
+    }
   }
 
   /**
@@ -680,6 +725,9 @@
     oge.yonlendirmeMesafe.textContent = '—';
     oge.yonlendirmeKalan.textContent =
       mesafeBicimle(sonRota.mesafeM) + ' · ' + yuruyusSuresiBicimle(sonRota.sureSn);
+    oge.yonlendirmeToplam.textContent = mesafeBicimle(sonRota.mesafeM);
+    oge.yonlendirmeYurunen.textContent = '0 m';
+    oge.yonlendirmeCubuk.style.width = '0%';
     yonlendirmeUyarisiYaz('');
 
     // İşareti hemen yön okuna çevir ve haritayı yakınlaştır. Yeni bir konum
@@ -717,6 +765,14 @@
         oge.yonlendirmeKalan.textContent =
           'Kalan: ' + mesafeBicimle(durum.ilerleme.kalanM) +
           ' · ' + yuruyusSuresiBicimle(kalanSaniye);
+
+        // Toplam yürüyüşün ne kadarı bitti: çubuk ve sayılar.
+        var oran = sonRota.mesafeM > 0
+          ? Math.min(100, 100 * durum.ilerleme.katEdilenM / sonRota.mesafeM)
+          : 0;
+        oge.yonlendirmeCubuk.style.width = oran.toFixed(1) + '%';
+        oge.yonlendirmeYurunen.textContent = mesafeBicimle(durum.ilerleme.katEdilenM);
+        oge.yonlendirmeToplam.textContent = mesafeBicimle(sonRota.mesafeM);
 
         yonlendirmeUyarisiYaz(
           durum.konum.dogrulukM > 100

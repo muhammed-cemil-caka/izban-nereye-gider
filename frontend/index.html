@@ -6,7 +6,7 @@
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/stil.css?s=29270e2c">
+  <link rel="stylesheet" href="css/stil.css?s=0ca3888e">
 </head>
 <body>
   <header class="ust-bant">
@@ -107,6 +107,16 @@
           <p class="yonlendirme-manevra" id="yonlendirmeManevra">—</p>
           <span class="yonlendirme-mesafe" id="yonlendirmeMesafe">—</span>
         </div>
+        <div class="yonlendirme-ilerleme">
+          <div class="yonlendirme-cubuk"><span id="yonlendirmeCubuk"></span></div>
+          <p class="yonlendirme-toplam">
+            <strong id="yonlendirmeYurunen">0 m</strong>
+            <span class="yonlendirme-bolu">/</span>
+            <strong id="yonlendirmeToplam">—</strong>
+            <span class="yonlendirme-toplam-etiket">toplam yürüyüş</span>
+          </p>
+        </div>
+
         <div class="yonlendirme-alt">
           <span class="yonlendirme-kalan" id="yonlendirmeKalan">—</span>
           <label class="yonlendirme-ses">
@@ -180,10 +190,10 @@
   <script src="js/hesap.js?s=69e91242"></script>
   <script src="js/konum.js?s=1669bc2c"></script>
   <script src="js/harita.js?s=f59e004d"></script>
-  <script src="js/rota.js?s=59961fe7"></script>
+  <script src="js/rota.js?s=e75d483d"></script>
   <script src="js/yonlendirme.js?s=a7bbad61"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=c86bfed5"></script>
+  <script src="js/uygulama.js?s=f55ef76a"></script>
 </body>
 </html>

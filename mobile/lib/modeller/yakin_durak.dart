@@ -5,7 +5,10 @@ class YakinDurak {
   final Durak durak;
   final double mesafeM;
 
-  const YakinDurak(this.durak, this.mesafeM);
+  /// Mesafe kuş uçuşu mu, gerçek yürüme mesafesi mi?
+  final bool yuruyusMu;
+
+  const YakinDurak(this.durak, this.mesafeM, {this.yuruyusMu = false});
 
   /// 450 → "450 m", 2300 → "2,3 km"
   String get mesafeMetni {

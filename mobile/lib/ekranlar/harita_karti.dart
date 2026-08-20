@@ -97,7 +97,9 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
 
   /// Haritayı gidiş yönüne çevirme eşiği. Küçük açı oynamalarında harita
   /// döndürülürse baş döndürücü olur.
-  static const _donusEsigiDerece = 10.0;
+  static const _donusEsigiDerece = 8.0;
+
+  AnimationController? _donusAnimasyonu;
 
   /// Haritanın en son çevrildiği açı.
   double? _sonHaritaAcisi;
@@ -209,9 +211,32 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
       if (fark.abs() < _donusEsigiDerece) return;
     }
 
+    // Doğrudan rotate çağırmak haritayı takılarak döndürüyordu; dönüş en kısa
+    // yönden ve araya animasyon konarak yapılıyor.
+    final baslangic = onceki ?? aci;
+    var fark = (aci - baslangic + 540) % 360 - 180;
+
     _sonHaritaAcisi = aci;
-    // Harita, gidiş yönü yukarı bakacak şekilde ters yöne çevrilir.
-    _denetleyici.rotate(-aci);
+    _donusAnimasyonu?.dispose();
+
+    if (onceki == null) {
+      _denetleyici.rotate(-aci);
+      _donusAnimasyonu = null;
+      return;
+    }
+
+    final denetleyici = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    final egri = CurvedAnimation(parent: denetleyici, curve: Curves.easeOut);
+
+    denetleyici.addListener(() {
+      _denetleyici.rotate(-(baslangic + fark * egri.value));
+    });
+
+    _donusAnimasyonu = denetleyici;
+    denetleyici.forward();
   }
 
   @override
@@ -219,11 +244,14 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     _pusula?.cancel();
     widget.konumDurumu.removeListener(_konumDegisti);
     _kameraAnimasyonu?.dispose();
+    _donusAnimasyonu?.dispose();
     super.dispose();
   }
 
   /// Yönlendirme bitince harita kuzey yukarı konumuna döner.
   void _haritayiKuzeyeAl() {
+    _donusAnimasyonu?.dispose();
+    _donusAnimasyonu = null;
     _sonHaritaAcisi = null;
     if (_haritaHazir) _denetleyici.rotate(0);
   }

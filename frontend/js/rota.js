@@ -95,6 +95,48 @@ function yuruyusRotasiAl(baslangic, bitis) {
     });
 }
 
+/**
+ * Bir noktadan birden çok hedefe yürüme mesafelerini tek istekte alır.
+ *
+ * Kuş uçuşu mesafe yanıltıyor: dere, otoyol veya demiryolu araya girdiğinde
+ * yakın görünen durak yürüyerek çok daha uzak olabiliyor. OSRM'in matris
+ * servisi bunu tek çağrıda çözüyor, hedef başına ayrı rota istemeye gerek yok.
+ *
+ * @returns {Promise<Array<{mesafeM: number, sureSn: number}>>} hedeflerle aynı sırada
+ */
+function yuruyusMesafeleriAl(baslangic, hedefler) {
+  if (!hedefler.length) return Promise.resolve([]);
+
+  var noktalar = [baslangic].concat(hedefler)
+    .map(function (n) { return n.boylam + ',' + n.enlem; })
+    .join(';');
+
+  var adres = ROTA_TABAN.replace('/route/v1/foot', '/table/v1/foot') +
+    '/' + noktalar + '?sources=0&annotations=distance,duration';
+
+  return fetch(adres)
+    .then(function (yanit) {
+      if (!yanit.ok) throw new Error('Mesafe servisi yanıtı: ' + yanit.status);
+      return yanit.json();
+    })
+    .then(function (veri) {
+      if (veri.code !== 'Ok' || !veri.distances || !veri.distances[0]) {
+        throw new Error('Yürüme mesafeleri alınamadı.');
+      }
+
+      var mesafeler = veri.distances[0];
+      var sureler = (veri.durations && veri.durations[0]) || [];
+
+      // İlk değer başlangıcın kendisi; hedefler ondan sonra geliyor.
+      return hedefler.map(function (_, sira) {
+        return {
+          mesafeM: mesafeler[sira + 1],
+          sureSn: sureler[sira + 1] || 0
+        };
+      });
+    });
+}
+
 /** 1140 → "19 dk" */
 function yuruyusSuresiBicimle(saniye) {
   var dakika = Math.max(1, Math.round(saniye / 60));
@@ -107,6 +149,7 @@ function yuruyusSuresiBicimle(saniye) {
 if (typeof module !== 'undefined') {
   module.exports = {
     manevrayiTurkcelestir: manevrayiTurkcelestir,
-    yuruyusSuresiBicimle: yuruyusSuresiBicimle
+    yuruyusSuresiBicimle: yuruyusSuresiBicimle,
+    yuruyusMesafeleriAl: yuruyusMesafeleriAl
   };
 }

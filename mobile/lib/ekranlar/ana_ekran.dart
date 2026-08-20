@@ -102,6 +102,9 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           _konumAraniyor = false;
         });
 
+        // Kuş uçuşu sıralama anında gösterilir; yürüme mesafesi gelince düzelir.
+        _adaylariYuruyuseGoreSirala(konum, adaylar);
+
       case KonumHatasi(:final mesaj, :final ayarlarGerekli):
         setState(() {
           _yakinDurak = null;
@@ -115,6 +118,40 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
   /// Yürüyüş rotasını hesaplayıp haritada gösterir.
   /// Google Haritalar'a yönlendirilmiyor: rota uygulamanın kendi haritasında.
+  /// Adayları gerçek yürüme mesafesine göre yeniden sıralar.
+  ///
+  /// Kuş uçuşu yanıltıyor: dere, otoyol veya demiryolu araya girdiğinde yakın
+  /// görünen durak yürüyerek çok daha uzak olabiliyor. Ölçüldü: Çiğli kuş
+  /// uçuşu daha yakın ama yürüyüşle 2,5 km; Mavişehir 1,4 km.
+  Future<void> _adaylariYuruyuseGoreSirala(
+    Konum konum,
+    List<YakinDurak> adaylar,
+  ) async {
+    if (adaylar.isEmpty) return;
+
+    try {
+      final olcumler = await const RotaServisi()
+          .yuruyusMesafeleri(konum, adaylar.map((a) => a.durak.konum).toList());
+      if (!mounted) return;
+
+      final yeniSira = <YakinDurak>[];
+      for (var i = 0; i < adaylar.length; i++) {
+        final olcum = i < olcumler.length ? olcumler[i] : null;
+        yeniSira.add(olcum == null
+            ? adaylar[i]
+            : YakinDurak(adaylar[i].durak, olcum.mesafeM, yuruyusMu: true));
+      }
+      yeniSira.sort((a, b) => a.mesafeM.compareTo(b.mesafeM));
+
+      setState(() {
+        _yakinAdaylar = yeniSira;
+        _yakinDurak = yeniSira.first;
+      });
+    } catch (_) {
+      // Servise ulaşılamazsa kuş uçuşu sıralama kalır.
+    }
+  }
+
   /// Harita işareti kullanıcıyla birlikte hareket etsin diye takibi açar.
   void _takibiBaslat() {
     _takipAboneligi?.cancel();
@@ -803,7 +840,9 @@ class _KonumKarti extends StatelessWidget {
             style: tema.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           Chip(
-            label: Text(yakin.mesafeMetni),
+            label: Text(
+              yakin.yuruyusMu ? '${yakin.mesafeMetni} yürüyüş' : yakin.mesafeMetni,
+            ),
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
           ),
@@ -1056,16 +1095,13 @@ class _YonlendirmePaneli extends StatelessWidget {
     return kalanDk == 0 ? '$saat sa' : '$saat sa $kalanDk dk';
   }
 
-  /// "Yürüdüğün: 689 m · 4,8 km/sa"
+  /// Anlık hız; hareket algılanmıyorsa null.
   ///
-  /// Hız, konumun gerçekten güncellendiğinin en doğrudan göstergesi: kamera
-  /// kullanıcıyı ortada tuttuğu için ok sabit duruyormuş gibi görünüyor.
-  static String _ilerlemeMetni(double katEdilenM, double hizMs) {
-    final yuruyus = 'Yürüdüğün: ${_mesafe(katEdilenM)}';
-    if (hizMs < 0.3) return yuruyus;
-
-    final kmSa = (hizMs * 3.6).toStringAsFixed(1).replaceAll('.', ',');
-    return '$yuruyus · $kmSa km/sa';
+  /// Kamera kullanıcıyı ortada tuttuğu için ok sabit duruyormuş gibi görünüyor;
+  /// hız, konumun gerçekten güncellendiğinin doğrudan göstergesi.
+  static String? _hizMetni(double hizMs) {
+    if (hizMs < 0.3) return null;
+    return '${(hizMs * 3.6).toStringAsFixed(1).replaceAll('.', ',')} km/sa';
   }
 
   String _kalanMetni(double kalanM) {
@@ -1141,15 +1177,49 @@ class _YonlendirmePaneli extends StatelessWidget {
               style: tema.textTheme.bodySmall
                   ?.copyWith(color: renkler.onPrimary.withValues(alpha: .9)),
             ),
-            if (!varildi && ilerleme != null) ...[
-              const SizedBox(height: 2),
-              // Yürünen mesafe: kamera kullanıcıyı ortada tuttuğu için ok sabit
-              // duruyormuş gibi görünüyor; bu sayı arttıkça konumun gerçekten
-              // güncellendiği görülür.
-              Text(
-                _ilerlemeMetni(ilerleme.katEdilenM, durum?.hizMs ?? 0),
-                style: tema.textTheme.bodySmall
-                    ?.copyWith(color: renkler.onPrimary.withValues(alpha: .75)),
+            if (!varildi && ilerleme != null && rota != null) ...[
+              const SizedBox(height: 10),
+              // Toplam yürüyüşün ne kadarı bitti: çubuk ve büyük sayılar.
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: rota!.mesafeM > 0
+                      ? (ilerleme.katEdilenM / rota!.mesafeM).clamp(0.0, 1.0)
+                      : 0,
+                  minHeight: 6,
+                  backgroundColor: renkler.onPrimary.withValues(alpha: .25),
+                  valueColor: AlwaysStoppedAnimation(renkler.onPrimary),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    _mesafe(ilerleme.katEdilenM),
+                    style: tema.textTheme.titleSmall?.copyWith(
+                      color: renkler.onPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    ' / ${_mesafe(rota!.mesafeM)}',
+                    style: tema.textTheme.titleSmall?.copyWith(
+                      color: renkler.onPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _hizMetni(durum?.hizMs ?? 0) ?? 'toplam yürüyüş',
+                      style: tema.textTheme.bodySmall?.copyWith(
+                        color: renkler.onPrimary.withValues(alpha: .8),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
             if (uyari != null) ...[

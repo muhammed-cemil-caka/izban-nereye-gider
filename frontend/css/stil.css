@@ -419,3 +419,26 @@ button.satir-baglanti {
   box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
   transition: transform .25s ease;
 }
+
+/* Yönlendirme ilerleme çubuğu */
+.yonlendirme-ilerleme { margin-top: .7rem; }
+.yonlendirme-cubuk {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vurgu-yazi) 25%, transparent);
+  overflow: hidden;
+}
+.yonlendirme-cubuk span {
+  display: block; height: 100%; width: 0;
+  border-radius: 999px;
+  background: var(--vurgu-yazi);
+  transition: width .4s ease;
+}
+.yonlendirme-toplam {
+  margin: .45rem 0 0;
+  display: flex; align-items: baseline; gap: .35rem; flex-wrap: wrap;
+  font-size: .95rem;
+}
+.yonlendirme-toplam strong { font-size: 1.05rem; font-weight: 800; }
+.yonlendirme-bolu { opacity: .6; }
+.yonlendirme-toplam-etiket { font-size: .78rem; opacity: .85; margin-left: .2rem; }
