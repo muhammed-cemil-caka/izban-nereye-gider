@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../modeller/durak.dart';
 import '../modeller/yakin_durak.dart';
+import '../modeller/turistik_yer.dart';
 import '../modeller/yolculuk.dart';
 import '../servisler/durak_servisi.dart';
 import '../servisler/konum_servisi.dart';
 import 'dart:async';
 import '../servisler/rota_servisi.dart';
+import '../servisler/turistik_servisi.dart';
 import '../servisler/ses_servisi.dart';
 import '../servisler/yonlendirme_servisi.dart';
 import 'harita_karti.dart';
@@ -46,6 +48,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// Yol tarifi alınınca haritaya kaydırmak için.
   final _haritaAnahtari = GlobalKey();
   late final Future<List<Durak>> _duraklarGelecegi;
+  List<TuristikYer> _turistikYerler = const [];
 
   String? _binisKod;
   String? _inisKod;
@@ -99,10 +102,143 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     super.initState();
     _servis = widget.servis ?? DurakServisi();
     _duraklarGelecegi = _servis.duraklariGetir();
+    _turistikYerleriYukle();
 
     // Kullanıcı uygulamayı açar açmaz konum isteniyor; reddedilirse uygulama
     // normal çalışmaya devam eder, yalnızca en yakın durak kartı kapanır.
     WidgetsBinding.instance.addPostFrameCallback((_) => _konumuBul());
+  }
+
+  Future<void> _turistikYerleriYukle() async {
+    final yerler = await const TuristikServisi().yerleriGetir();
+    if (!mounted) return;
+    setState(() => _turistikYerler = yerler);
+  }
+
+  /// Turistik yere yol tarifi.
+  ///
+  /// Rota kullanıcının konumundan değil, **o kipe göre en yakın DURAKTAN**
+  /// çizilir: kullanıcı oraya İZBAN ile geliyor. Durak da kipin kendi ağıyla
+  /// seçilir — yürürken yakın olan durak arabayla dolambaçlı olabiliyor.
+  Future<void> _yereYolTarifi(TuristikYer yer, RotaKipi kip) async {
+    final duraklar = await _duraklarGelecegi;
+    if (!mounted) return;
+
+    setState(() {
+      _rotaKipi = kip;
+      _rotaAraniyor = true;
+      _rotaHatasi = null;
+    });
+
+    try {
+      final durak = await _yereEnYakinDurak(yer, duraklar, kip);
+      if (!mounted) return;
+
+      // Haritada o durağı seçili getir.
+      setState(() {
+        _binisKod = durak.kod;
+        if (_inisKod == _binisKod) {
+          final indeks = duraklar.indexWhere((d) => d.kod == durak.kod);
+          _inisKod = indeks < duraklar.length / 2
+              ? duraklar.last.kod
+              : duraklar.first.kod;
+        }
+      });
+
+      final rota = await const RotaServisi()
+          .rotaAl(durak.konum, yer.konum, kip: kip);
+      if (!mounted) return;
+
+      setState(() {
+        _yuruyusRotasi = rota;
+        _rotaHedefi = RotaHedefi(yer.ad, yer.konum);
+        _rotaAraniyor = false;
+      });
+      _haritayaKaydir();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _rotaHatasi = '${kip.etiket} rotası alınamadı.';
+        _rotaAraniyor = false;
+      });
+    }
+  }
+
+  /// Bir yere kipin ağına göre en yakın durak.
+  ///
+  /// Kuş uçuşu YALNIZCA ön eleme için (6 aday); karar OSRM matrisinden gelen
+  /// SÜREYE göre verilir. Araçta uzun ama hızlı çevre yol, kısa ama yavaş
+  /// şehir içinden iyi olabiliyor.
+  Future<Durak> _yereEnYakinDurak(
+    TuristikYer yer,
+    List<Durak> duraklar,
+    RotaKipi kip,
+  ) async {
+    final adaylar = YakinDurak.enYakinlar(duraklar, yer.konum, adet: 6);
+    if (adaylar.isEmpty) throw Exception('Durak bulunamadı.');
+
+    try {
+      final olcumler = await const RotaServisi().mesafeler(
+        yer.konum,
+        adaylar.map((a) => a.durak.konum).toList(),
+        kip: kip,
+      );
+
+      var enIyi = adaylar.first.durak;
+      var enIyiSure = double.infinity;
+      for (var i = 0; i < adaylar.length; i++) {
+        final olcum = i < olcumler.length ? olcumler[i] : null;
+        final sure = olcum?.sureSn ?? double.infinity;
+        if (sure < enIyiSure) {
+          enIyiSure = sure;
+          enIyi = adaylar[i].durak;
+        }
+      }
+      return enIyi;
+    } catch (_) {
+      // Servis yanıt vermezse kuş uçuşu sıralama kalır; akış kesilmez.
+      return adaylar.first.durak;
+    }
+  }
+
+  /// Toplu taşıma: gerçek bir sefer motorumuz yok, aktarma zinciri anlatılır.
+  void _topluTasimaAnlat(TuristikYer yer, List<Durak> duraklar) {
+    final adaylar = YakinDurak.enYakinlar(duraklar, yer.konum, adet: 1);
+    if (adaylar.isEmpty) return;
+
+    final durak = adaylar.first.durak;
+    final hatlar = durak.otobusHatlari.take(6).join(', ');
+    final aktarma = durak.aktarma.join(' · ');
+
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${yer.ad} — toplu taşıma'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 8,
+          children: [
+            Text('1. İZBAN ile ${durak.ad} durağına gel.'),
+            if (aktarma.isNotEmpty) Text('2. ${durak.ad} aktarmaları: $aktarma'),
+            if (hatlar.isNotEmpty) Text('3. ESHOT hatları: $hatlar'),
+            Text('4. Oradan "Yürüyerek" ile ${yer.ad}.'),
+            const Divider(),
+            const Text(
+              'Sefer saati veremiyorum: elimizde tarife verisi yok, '
+              'uydurulmuş bir süre yanıltır.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _konumuBul() async {
@@ -702,6 +838,16 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 _OzetKarti(yolculuk: yolculuk),
                 const SizedBox(height: 16),
                 _GuzergahKarti(yolculuk: yolculuk),
+                if (_turistikYerler.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _GeziKarti(
+                    yerler: _turistikYerler,
+                    binis: yolculuk.binis,
+                    inis: yolculuk.inis,
+                    yolTarifi: _yereYolTarifi,
+                    topluTasima: (yer) => _topluTasimaAnlat(yer, duraklar),
+                  ),
+                ],
                 if (yolculuk.aktarmaliDuraklar.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _AktarmaKarti(
@@ -1043,6 +1189,290 @@ class _OtobusHatlari extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Biniş ve iniş durağının çevresindeki gezilecek yerler.
+///
+/// Kartlar yatay şeritte: Alsancak Gar çevresinde 32 yer var, alt alta dizmek
+/// ekranı boyunca uzatırdı.
+class _GeziKarti extends StatelessWidget {
+  /// Durak başına gösterilecek en fazla kart.
+  static const gorunurYer = 8;
+
+  final List<TuristikYer> yerler;
+  final Durak binis;
+  final Durak inis;
+  final void Function(TuristikYer, RotaKipi) yolTarifi;
+  final ValueChanged<TuristikYer> topluTasima;
+
+  const _GeziKarti({
+    required this.yerler,
+    required this.binis,
+    required this.inis,
+    required this.yolTarifi,
+    required this.topluTasima,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+
+    final gruplar = <(String, List<({TuristikYer yer, double mesafeM})>)>[];
+    for (final durak in {binis, inis}) {
+      final yakinlar = TuristikServisi.duragaYakinlar(yerler, durak.kod);
+      if (yakinlar.isNotEmpty) gruplar.add(('${durak.ad} çevresi', yakinlar));
+    }
+    if (gruplar.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 0, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 12,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('GEZİLECEK YERLER', style: tema.textTheme.labelMedium),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Biniş ve iniş durağının çevresi · karttaki düğmeler yol tarifi çizer',
+                    style: tema.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            for (final (baslik, liste) in gruplar) ...[
+              Text(
+                '$baslik · ${liste.length} yer',
+                style: tema.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: .4,
+                ),
+              ),
+              SizedBox(
+                height: 300,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(right: 16),
+                  itemCount: liste.length > gorunurYer ? gorunurYer : liste.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  itemBuilder: (context, sira) => _YerKarti(
+                    kayit: liste[sira],
+                    yolTarifi: yolTarifi,
+                    topluTasima: topluTasima,
+                  ),
+                ),
+              ),
+            ],
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Text(
+                'Metin ve görseller: Wikidata · Vikipedi (CC BY-SA) · Wikimedia Commons',
+                style: tema.textTheme.bodySmall?.copyWith(
+                  color: tema.textTheme.bodySmall?.color?.withValues(alpha: .7),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tek bir turistik yer kartı: fotoğraf, başlık, kısa tarihçe, yol tarifi.
+class _YerKarti extends StatelessWidget {
+  static const simgeler = <String, IconData>{
+    'antik-kent': Icons.account_balance,
+    'muze': Icons.museum,
+    'cami': Icons.mosque,
+    'kilise': Icons.church,
+    'kale': Icons.castle,
+    'anit': Icons.emoji_flags,
+    'park': Icons.park,
+    'kultur-varligi': Icons.auto_awesome,
+    'kule': Icons.cell_tower,
+    'tarihi-yapi': Icons.home_work,
+  };
+
+  final ({TuristikYer yer, double mesafeM}) kayit;
+  final void Function(TuristikYer, RotaKipi) yolTarifi;
+  final ValueChanged<TuristikYer> topluTasima;
+
+  const _YerKarti({
+    required this.kayit,
+    required this.yolTarifi,
+    required this.topluTasima,
+  });
+
+  static String _mesafe(double m) => m < 1000
+      ? '${m.round()} m'
+      : '${(m / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final renkler = tema.colorScheme;
+    final yer = kayit.yer;
+
+    return SizedBox(
+      width: 230,
+      child: KabarikKutu(
+        dolgu: EdgeInsets.zero,
+        cocuk: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (yer.gorsel != null)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+                child: Image.network(
+                  yer.gorsel!.kucukAdres,
+                  width: double.infinity,
+                  height: 120,
+                  fit: BoxFit.cover,
+                  // Görsel yüklenmezse (ağ yok) kart metinle çalışsın.
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  loadingBuilder: (context, cocuk, ilerleme) => ilerleme == null
+                      ? cocuk
+                      : Container(
+                          height: 120,
+                          color: renkler.primary.withValues(alpha: .08),
+                        ),
+                ),
+              ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(simgeler[yer.tur] ?? Icons.place,
+                            size: 16, color: renkler.primary),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            yer.ad,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: tema.textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Duraktan ${_mesafe(kayit.mesafeM)}',
+                      style: tema.textTheme.labelSmall?.copyWith(
+                        color: renkler.onSurface.withValues(alpha: .6),
+                      ),
+                    ),
+                    if (yer.ozet.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Expanded(
+                        child: Text(
+                          yer.ozet,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                          style: tema.textTheme.bodySmall,
+                        ),
+                      ),
+                    ] else
+                      const Spacer(),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: [
+                        _GeziDugmesi(
+                          simge: Icons.directions_walk,
+                          etiket: 'Yürü',
+                          basildi: () => yolTarifi(yer, RotaKipi.yuruyus),
+                        ),
+                        _GeziDugmesi(
+                          simge: Icons.directions_car,
+                          etiket: 'Araba',
+                          basildi: () => yolTarifi(yer, RotaKipi.araba),
+                        ),
+                        _GeziDugmesi(
+                          simge: Icons.directions_transit,
+                          etiket: 'Toplu',
+                          basildi: () => topluTasima(yer),
+                        ),
+                      ],
+                    ),
+                    if (yer.gorsel != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Foto: ${yer.gorsel!.yazar} (${yer.gorsel!.lisans})',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tema.textTheme.labelSmall?.copyWith(
+                          fontSize: 9,
+                          color: renkler.onSurface.withValues(alpha: .5),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GeziDugmesi extends StatelessWidget {
+  final IconData simge;
+  final String etiket;
+  final VoidCallback basildi;
+
+  const _GeziDugmesi({
+    required this.simge,
+    required this.etiket,
+    required this.basildi,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final renkler = Theme.of(context).colorScheme;
+
+    return InkWell(
+      onTap: basildi,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          border: Border.all(color: renkler.outlineVariant),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(simge, size: 13, color: renkler.primary),
+            const SizedBox(width: 4),
+            Text(
+              etiket,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: renkler.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

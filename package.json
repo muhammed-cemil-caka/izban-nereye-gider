@@ -12,7 +12,8 @@
     "dogrula": "node araclar/aktarmalari-dogrula.js",
     "eshot": "node araclar/eshot-hatlarini-ekle.js",
     "aktarma-noktalari": "node araclar/aktarma-noktalarini-ekle.js",
-    "mesafeler": "node araclar/mesafeleri-guncelle.js"
+    "mesafeler": "node araclar/mesafeleri-guncelle.js",
+    "turistik": "node araclar/turistik-yerleri-uret.js"
   },
   "repository": {
     "type": "git",

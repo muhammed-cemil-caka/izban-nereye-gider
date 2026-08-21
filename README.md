@@ -751,6 +751,55 @@ Her iki adres de tek sabitte tutulur, geçiş tek satırdır:
 
 Haritada "© OpenStreetMap katkıcıları" ibaresi bulunmak zorundadır.
 
+## Gezilecek yerler
+
+Biniş ve iniş durağının çevresindeki tarihi/turistik yerler; her biri fotoğraf,
+başlık, kısa tarihçe ve üç yol tarifi düğmesi taşıyan bir kart.
+
+```bash
+npm run turistik      # veriyi Wikidata'dan üret
+npm run veri          # frontend ve mobile kopyalarını yaz
+```
+
+Kaynaklar (üçü de anahtarsız): **Wikidata** (durağa 1500 m'den yakın
+tarihi/turistik ögeler), **Vikipedi** (Türkçe özet, CC BY-SA), **Wikimedia
+Commons** (fotoğraf + yazar + lisans). Kartta yazar ve lisans gösterilir —
+Commons dosyaları bunu zorunlu kılıyor.
+
+Sonuç: **73 yer**, 68'inde fotoğraf. En yoğun duraklar Alsancak Gar (32 yer),
+Hilal (30), Kemer (20), Selçuk (12).
+
+Turistik veri `duraklar.json` içine **konmaz**, yanına konur
+(`backend/veri/turistik-yerler.json`): durak dosyası OSM'den her üretimde
+yeniden yazılıyor, içine konan veri kaybolurdu.
+
+### Yol tarifi: duraktan yere, kipe göre durak
+
+Kartlardaki düğme rotayı kullanıcının konumundan değil **o kipe göre en yakın
+duraktan** çizer — kullanıcı oraya İZBAN ile geliyor. Durak seçimi kipin kendi
+ağıyla yapılır:
+
+1. Kuş uçuşu **yalnızca ön eleme** (6 aday)
+2. OSRM matris servisi, kipin profiliyle tek istekte (`routed-foot` /
+   `routed-car`)
+3. Sıralama anahtarı **süre** — araçta uzun ama hızlı çevre yol, kısa ama yavaş
+   şehir içinden iyi olabiliyor
+4. Servis düşerse kuş uçuşu sıralama kalır, akış kesilmez
+
+Ölçüldü: "Hayat Çemberi" Alsancak Gar'a yürüyerek **246 m**, arabayla **3,8 km**
+— tek yönler yüzünden.
+
+**Toplu taşıma düğmesi rota çizmez**, aktarma zincirini anlatır: hangi durağa
+İZBAN ile gelinir, orada hangi aktarmalar/ESHOT hatları var. Sefer saati
+verilmez — OSRM'de toplu taşıma profili yok ve elimizde tarife verisi yok;
+uydurulmuş bir süre yolcuyu yanıltır. Ayrıntı:
+[`belgeler/turistik-yerler-tasarim.md`](belgeler/turistik-yerler-tasarim.md)
+
+> **Test notu:** `Image.network` widget testlerinde gerçek istek atıyor ve
+> `pumpAndSettle` sonsuza kadar bekliyor. Gezi kartını testte çizdirecekseniz
+> `HttpOverrides` ile sahte bir istemci gerekiyor; saf mantık
+> `test/turistik_servisi_test.dart` içinde ağsız test ediliyor.
+
 ## Testler
 
 ```bash

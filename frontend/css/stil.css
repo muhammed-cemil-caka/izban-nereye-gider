@@ -740,3 +740,84 @@ button.satir-baglanti {
 
 /* Açılış ekranı açıkken arka plan kaymasın. */
 body.acilis-acik { overflow: hidden; }
+
+/* ---------- Gezilecek yerler ----------
+
+   Kartlar yatay şeritte: 30'a yakın yer olabiliyor ve alt alta dizmek sayfayı
+   uzatıyor. Şerit kendi içinde kaydırılır, sayfa yerinde kalır. */
+.gezi-gruplari { display: grid; gap: 1.1rem; }
+.gezi-grup-baslik {
+  margin: 0 0 .5rem;
+  font-size: .82rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--yazi-soluk);
+}
+
+.gezi-serit {
+  display: flex; gap: .8rem;
+  overflow-x: auto;
+  padding-bottom: .5rem;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.gezi-serit::-webkit-scrollbar { height: 8px; }
+.gezi-serit::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--yazi-soluk) 35%, transparent);
+  border-radius: 999px;
+}
+
+.gezi-kart {
+  flex: 0 0 250px;
+  scroll-snap-align: start;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--cizgi);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--zemin);
+  background-image: var(--kutu-yuzey);
+  box-shadow: var(--golge), var(--kutu-ic-isik);
+}
+.gezi-gorsel {
+  width: 100%; height: 140px;
+  object-fit: cover;
+  display: block;
+  background: var(--vurgu-soluk);
+}
+.gezi-govde { padding: .7rem .8rem .8rem; display: flex; flex-direction: column; gap: .35rem; flex: 1; }
+.gezi-baslik { margin: 0; font-size: .95rem; line-height: 1.3; }
+.gezi-mesafe { margin: 0; font-size: .75rem; color: var(--yazi-soluk); }
+
+/* Özet uzun olabiliyor; kart boyları eşit kalsın diye dört satırda kesilir. */
+.gezi-ozet {
+  margin: 0;
+  font-size: .82rem; line-height: 1.45;
+  color: var(--yazi-soluk);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gezi-dugmeler { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: auto; padding-top: .5rem; }
+.gezi-dugme {
+  border: 1px solid var(--cizgi);
+  border-radius: 999px;
+  background: var(--zemin-kart);
+  color: var(--yazi);
+  padding: .25rem .6rem;
+  font: inherit; font-size: .76rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.gezi-dugme:hover { border-color: var(--vurgu); color: var(--vurgu); }
+.gezi-dugme:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+
+.gezi-lisans { margin: .2rem 0 0; font-size: .68rem; color: var(--yazi-soluk); }
+.gezi-lisans a { color: var(--yazi-soluk); }
+.gezi-kaynak { margin: .9rem 0 0; font-size: .72rem; color: var(--yazi-soluk); }
+.gezi-kaynak a { color: var(--vurgu); }
+
+@media (max-width: 620px) {
+  .gezi-kart { flex-basis: 78vw; }
+}

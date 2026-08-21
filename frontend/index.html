@@ -6,7 +6,7 @@
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/stil.css?s=d46208b5">
+  <link rel="stylesheet" href="css/stil.css?s=dea1af3c">
 </head>
 <body>
   <!-- Açılış ekranı. Marka çizilir, sonra kendini kapatır; sayfa arkada
@@ -210,6 +210,19 @@
       <p class="rota-durum" id="rotaDurum" hidden></p>
     </section>
 
+    <section class="kart gezi-karti" id="geziKarti" aria-labelledby="geziBaslik" hidden>
+      <div class="harita-ust">
+        <h2 id="geziBaslik" class="kart-baslik">Gezilecek yerler</h2>
+        <p class="harita-ipucu">Biniş ve iniş durağının çevresi · karta tıkla, yol tarifi çıksın</p>
+      </div>
+      <div class="gezi-gruplari" id="geziGruplari"></div>
+      <p class="gezi-kaynak">
+        Metin ve görseller: <a href="https://www.wikidata.org" target="_blank" rel="noopener noreferrer">Wikidata</a> ·
+        <a href="https://tr.wikipedia.org" target="_blank" rel="noopener noreferrer">Vikipedi</a> (CC BY-SA) ·
+        <a href="https://commons.wikimedia.org" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
+      </p>
+    </section>
+
     <section id="sonucBolumu" class="sonuc" aria-live="polite">
       <div class="kart ozet-karti">
         <div class="yon-rozeti" id="yonRozeti">—</div>
@@ -253,6 +266,7 @@
 
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="vendor/leaflet/leaflet-rotate.js"></script>
+  <script src="js/turistik.js?s=028e9be2"></script>
   <script src="js/duraklar.js?s=cc49d008"></script>
   <script src="js/hesap.js?s=42d2777d"></script>
   <script src="js/konum.js?s=dd520dd9"></script>
@@ -261,6 +275,6 @@
   <script src="js/yonlendirme.js?s=a7bbad61"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=9bbf0a88"></script>
+  <script src="js/uygulama.js?s=5c207d96"></script>
 </body>
 </html>

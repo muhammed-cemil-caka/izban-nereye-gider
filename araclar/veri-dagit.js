@@ -36,6 +36,33 @@ console.log(`${kaynak.duraklar.length} durak dağıtıldı:`);
 console.log('  → frontend/js/duraklar.js');
 console.log('  → mobile/assets/duraklar.json');
 
+// 3) Turistik yerler — ayrı dosya. duraklar.json OSM'den her üretimde yeniden
+// yazıldığı için turistik veri onun içine konmaz, yanına konur.
+const turistikYolu = path.join(kok, 'backend', 'veri', 'turistik-yerler.json');
+if (fs.existsSync(turistikYolu)) {
+  const turistik = JSON.parse(fs.readFileSync(turistikYolu, 'utf8'));
+
+  fs.writeFileSync(
+    path.join(kok, 'frontend', 'js', 'turistik.js'),
+    '// OTOMATİK ÜRETİLDİ — elle düzenlemeyin.\n' +
+    '// Kaynak: backend/veri/turistik-yerler.json — node araclar/veri-dagit.js\n' +
+    'const TURISTIK_VERI = ' + JSON.stringify(turistik, null, 2) + ';\n' +
+    'const TURISTIK_YERLER = TURISTIK_VERI.yerler;\n' +
+    'if (typeof module !== \'undefined\') { module.exports = { TURISTIK_VERI, TURISTIK_YERLER }; }\n',
+    'utf8'
+  );
+
+  fs.writeFileSync(
+    path.join(mobilKlasor, 'turistik-yerler.json'),
+    JSON.stringify(turistik, null, 2) + '\n',
+    'utf8'
+  );
+
+  console.log(`${turistik.yerler.length} turistik yer dağıtıldı:`);
+  console.log('  → frontend/js/turistik.js');
+  console.log('  → mobile/assets/turistik-yerler.json');
+}
+
 // duraklar.js değiştiği için index.html'deki damgalar tazelenmeli; aksi halde
 // tarayıcı eski veriyi önbellekten okumaya devam eder.
 const { damgala } = require('./varlik-damgala.js');

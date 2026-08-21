@@ -74,6 +74,7 @@ flutter:
   # Güncelledikten sonra depo kökünde: node araclar/veri-dagit.js
   assets:
     - assets/duraklar.json
+    - assets/turistik-yerler.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

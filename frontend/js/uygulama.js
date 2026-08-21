@@ -27,6 +27,8 @@
     aktarmaKarti: document.getElementById('aktarmaKarti'),
     aktarmaListesi: document.getElementById('aktarmaListesi'),
     aktarmaSayisi: document.getElementById('aktarmaSayisi'),
+    geziKarti: document.getElementById('geziKarti'),
+    geziGruplari: document.getElementById('geziGruplari'),
     veriSurumu: document.getElementById('veriSurumu'),
     veriKaynagi: document.getElementById('veriKaynagi'),
     konumKarti: document.getElementById('konumKarti'),
@@ -237,6 +239,255 @@
     if (yukseklik > 0) liste.style.setProperty('--aktarma-yukseklik', yukseklik + 'px');
   }
 
+  /* ---------- Gezilecek yerler ---------- */
+
+  // Bir durak için gösterilecek en fazla kart. Alsancak Gar'ın çevresinde 32
+  // yer var; hepsini basmak kartı sayfa boyu uzatır.
+  var GORUNUR_GEZI = 8;
+
+  var GEZI_SIMGELERI = {
+    'antik-kent': '🏛', muze: '🖼', cami: '🕌', kilise: '⛪',
+    kale: '🏰', anit: '🗿', park: '🌳', 'kultur-varligi': '🏺',
+    kule: '🗼', 'tarihi-yapi': '🏚', 'gezi-noktasi': '📍'
+  };
+
+  /** Bir durağın çevresindeki yerler, yakından uzağa. */
+  function duragaYakinYerler(durakKodu) {
+    if (typeof TURISTIK_YERLER === 'undefined') return [];
+
+    return TURISTIK_YERLER
+      .map(function (yer) {
+        var bag = yer.duraklar.find(function (d) { return d.kod === durakKodu; });
+        return bag ? { yer: yer, mesafeM: bag.kusUcusuM } : null;
+      })
+      .filter(Boolean)
+      .sort(function (a, b) { return a.mesafeM - b.mesafeM; });
+  }
+
+  /** Tek bir turistik yer kartı: fotoğraf, başlık, kısa tarihçe, yol tarifi. */
+  function geziKartiKur(kayit) {
+    var yer = kayit.yer;
+    var kart = document.createElement('article');
+    kart.className = 'gezi-kart';
+
+    if (yer.gorsel) {
+      var gorsel = document.createElement('img');
+      gorsel.className = 'gezi-gorsel';
+      gorsel.src = yer.gorsel.kucukAdres;
+      gorsel.alt = yer.ad;
+      gorsel.loading = 'lazy';
+      // Görsel yüklenmezse (Commons kapalı, ağ yok) kart metinle çalışsın.
+      gorsel.addEventListener('error', function () { gorsel.remove(); });
+      kart.appendChild(gorsel);
+    }
+
+    var govde = document.createElement('div');
+    govde.className = 'gezi-govde';
+
+    var baslik = document.createElement('h3');
+    baslik.className = 'gezi-baslik';
+    baslik.textContent = (GEZI_SIMGELERI[yer.tur] || '📍') + ' ' + yer.ad;
+    govde.appendChild(baslik);
+
+    var mesafe = document.createElement('p');
+    mesafe.className = 'gezi-mesafe';
+    mesafe.textContent = 'Duraktan ' + mesafeBicimle(kayit.mesafeM);
+    govde.appendChild(mesafe);
+
+    if (yer.ozet) {
+      var ozet = document.createElement('p');
+      ozet.className = 'gezi-ozet';
+      ozet.textContent = yer.ozet;
+      govde.appendChild(ozet);
+    }
+
+    var dugmeler = document.createElement('div');
+    dugmeler.className = 'gezi-dugmeler';
+
+    [
+      { kip: 'yuruyus', etiket: '🚶 Yürüyerek' },
+      { kip: 'araba', etiket: '🚗 Arabayla' }
+    ].forEach(function (secim) {
+      var dugme = document.createElement('button');
+      dugme.type = 'button';
+      dugme.className = 'gezi-dugme';
+      dugme.textContent = secim.etiket;
+      dugme.addEventListener('click', function () { yereYolTarifi(yer, secim.kip); });
+      dugmeler.appendChild(dugme);
+    });
+
+    var toplu = document.createElement('button');
+    toplu.type = 'button';
+    toplu.className = 'gezi-dugme';
+    toplu.textContent = '🚊 Toplu taşıma';
+    toplu.addEventListener('click', function () { topluTasimaAnlat(yer); });
+    dugmeler.appendChild(toplu);
+
+    govde.appendChild(dugmeler);
+
+    if (yer.gorsel || yer.kaynaklar.wikipedia) {
+      var kaynak = document.createElement('p');
+      kaynak.className = 'gezi-lisans';
+
+      if (yer.kaynaklar.wikipedia) {
+        var vp = document.createElement('a');
+        vp.href = yer.kaynaklar.wikipedia;
+        vp.target = '_blank';
+        vp.rel = 'noopener noreferrer';
+        vp.textContent = 'Vikipedi';
+        kaynak.appendChild(vp);
+      }
+
+      if (yer.gorsel) {
+        if (kaynak.childNodes.length) kaynak.appendChild(document.createTextNode(' · '));
+        var foto = document.createElement('a');
+        foto.href = yer.gorsel.kaynakSayfa;
+        foto.target = '_blank';
+        foto.rel = 'noopener noreferrer';
+        foto.textContent = 'Foto: ' + yer.gorsel.yazar + ' (' + yer.gorsel.lisans + ')';
+        kaynak.appendChild(foto);
+      }
+
+      govde.appendChild(kaynak);
+    }
+
+    kart.appendChild(govde);
+    return kart;
+  }
+
+  /** Biniş ve iniş durağı için gezilecek yerleri çizer. */
+  function geziYerleriniCiz(sonuc) {
+    oge.geziGruplari.textContent = '';
+
+    var gruplar = [
+      { baslik: sonuc.binis.ad + ' çevresi', kod: sonuc.binis.kod },
+      { baslik: sonuc.inis.ad + ' çevresi', kod: sonuc.inis.kod }
+    ];
+
+    var toplam = 0;
+    gruplar.forEach(function (grup) {
+      var yerler = duragaYakinYerler(grup.kod);
+      if (!yerler.length) return;
+      toplam += yerler.length;
+
+      var bolum = document.createElement('div');
+      bolum.className = 'gezi-grup';
+
+      var baslik = document.createElement('h3');
+      baslik.className = 'gezi-grup-baslik';
+      baslik.textContent = grup.baslik + ' · ' + yerler.length + ' yer';
+      bolum.appendChild(baslik);
+
+      var seritKap = document.createElement('div');
+      seritKap.className = 'gezi-serit';
+      yerler.slice(0, GORUNUR_GEZI).forEach(function (kayit) {
+        seritKap.appendChild(geziKartiKur(kayit));
+      });
+      bolum.appendChild(seritKap);
+
+      oge.geziGruplari.appendChild(bolum);
+    });
+
+    oge.geziKarti.hidden = toplam === 0;
+  }
+
+  /**
+   * Turistik yere yol tarifi.
+   *
+   * Rota, kullanıcının konumundan değil **o kipe göre en yakın DURAKTAN**
+   * çizilir: kullanıcı oraya İZBAN ile geliyor. En yakın durak da kipin kendi
+   * ağıyla seçilir — yürürken yakın olan durak arabayla dolambaçlı olabiliyor.
+   */
+  function yereYolTarifi(yer, kip) {
+    var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
+    rotaDurumuYaz(secilenKip === 'araba'
+      ? 'En yakın durak araç ağına göre seçiliyor…'
+      : 'En yakın durak yürüyüş ağına göre seçiliyor…');
+
+    yereEnYakinDurak(yer, secilenKip).then(function (durak) {
+      // Haritada o durağı seçili getir.
+      oge.binis.value = durak.kod;
+      if (oge.inis.value === oge.binis.value) {
+        var kodlar = aktifDuraklar.map(function (d) { return d.kod; });
+        var indeks = kodlar.indexOf(durak.kod);
+        oge.inis.value = indeks < kodlar.length / 2 ? kodlar[kodlar.length - 1] : kodlar[0];
+      }
+      guncelle();
+
+      sonRotaKip = secilenKip;
+      kipDugmeleriniTazele();
+
+      return rotaAl(durak.konum, yer.konum, secilenKip).then(function (rota) {
+        if (harita) harita.rotayiCiz(rota.noktalar, rota.kip);
+        sonRota = rota;
+        sonRotaHedefi = { ad: yer.ad, konum: yer.konum };
+        rotaSonucunuYaz(rota, { ad: yer.ad, durakMi: false });
+        rotaDurumuYaz('');
+        haritayaKaydir();
+      });
+    }).catch(function (sorun) {
+      rotaDurumuYaz(sorun.message || 'Rota alınamadı.', 'hata');
+    });
+  }
+
+  /**
+   * Bir yere kipin ağına göre en yakın durak.
+   *
+   * Kuş uçuşu YALNIZCA ön eleme için kullanılır (6 aday); karar OSRM'in matris
+   * servisinden gelen SÜREYE göre verilir. Araçta uzun ama hızlı çevre yol,
+   * kısa ama yavaş şehir içinden iyi olabiliyor.
+   */
+  function yereEnYakinDurak(yer, kip) {
+    var adaylar = enYakinDuraklar(aktifDuraklar, yer.konum, 6);
+    if (!adaylar.length) return Promise.reject(new Error('Durak bulunamadı.'));
+
+    if (typeof mesafeleriAl !== 'function') return Promise.resolve(adaylar[0].durak);
+
+    return mesafeleriAl(yer.konum, adaylar.map(function (a) { return a.durak.konum; }), kip)
+      .then(function (olcumler) {
+        var sirali = adaylar
+          .map(function (aday, sira) {
+            var olcum = olcumler[sira];
+            return {
+              durak: aday.durak,
+              sureSn: olcum && isFinite(olcum.sureSn) ? olcum.sureSn : Infinity
+            };
+          })
+          .sort(function (a, b) { return a.sureSn - b.sureSn; });
+
+        return sirali[0].durak;
+      })
+      .catch(function () {
+        // Servis yanıt vermezse kuş uçuşu sıralama kalır; akış kesilmez.
+        return adaylar[0].durak;
+      });
+  }
+
+  /**
+   * Toplu taşıma: gerçek bir sefer motorumuz yok, aktarma zinciri anlatılır.
+   *
+   * OSRM'de toplu taşıma profili yok; sefer saati verisi de elimizde yok.
+   * Uydurulmuş bir süre yolcuyu yanıltır, o yüzden yalnızca zincir gösterilir.
+   */
+  function topluTasimaAnlat(yer) {
+    var adaylar = enYakinDuraklar(aktifDuraklar, yer.konum, 1);
+    if (!adaylar.length) return;
+
+    var durak = adaylar[0].durak;
+    var hatlar = (durak.otobusHatlari || []).slice(0, 6).join(', ');
+    var aktarmalar = (durak.aktarma || []).join(' · ');
+
+    var satirlar = [
+      'İZBAN ile ' + durak.ad + ' durağına gel.',
+      aktarmalar ? durak.ad + ' aktarmaları: ' + aktarmalar : null,
+      hatlar ? 'ESHOT hatları: ' + hatlar : null,
+      'Oradan ' + yer.ad + ' için "Yürüyerek" düğmesini kullan.',
+      'Sefer saati veremiyorum: elimizde tarife verisi yok.'
+    ].filter(Boolean);
+
+    rotaDurumuYaz(satirlar.join(' · '));
+  }
+
   function aktarmalariCiz(sonuc) {
     oge.aktarmaListesi.textContent = '';
     oge.aktarmaSayisi.textContent = '';
@@ -441,10 +692,12 @@
     if (yukseklik > 0) liste.style.setProperty('--adim-yukseklik', yukseklik + 'px');
   }
 
-  function rotaSonucunuYaz(rota, durak) {
+  function rotaSonucunuYaz(rota, hedef) {
     var arabaMi = rota.kip === 'araba';
-    oge.rotaBaslik.textContent = durak.ad + ' durağına ' +
-      (arabaMi ? 'araba ile' : 'yürüyüş');
+    // Hedef bir durak olabilir, turistik yer de: "Ayasuluk Camii durağına"
+    // demek yanlış olurdu.
+    var ad = hedef.durakMi === false ? hedef.ad : hedef.ad + ' durağına';
+    oge.rotaBaslik.textContent = ad + ' ' + (arabaMi ? '— araba ile' : '— yürüyüş');
     oge.rotaOlcu.textContent =
       mesafeBicimle(rota.mesafeM) + ' · ' + rotaSuresiBicimle(rota.sureSn);
 
@@ -1145,6 +1398,7 @@
     sonucuGoster(sonuc);
     binisYolTarifiniGuncelle(sonuc.binis);
     if (harita) harita.guzergahiVurgula(sonuc);
+    geziYerleriniCiz(sonuc);
   }
 
   /**
