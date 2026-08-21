@@ -79,6 +79,45 @@ elenir), ilçeleri Nominatim'den alır. Veri **ODbL** lisanslıdır — yayında
 **Süreler hâlâ tahminidir:** gerçek mesafeden sabit hız modeliyle hesaplanır,
 resmî tarife değildir. Model parametreleri dosyanın `kaynak.sureModeli` alanında yazılıdır.
 
+### ESHOT otobüs aktarmaları
+
+Otobüs verisi ayrı bir betikle tazelenir — tam üretim durak sırasını, ilçeleri
+ve süreleri de yeniden hesapladığı için yalnızca otobüs için çalıştırmak
+gereksiz risk:
+
+```bash
+node araclar/eshot-hatlarini-ekle.js
+```
+
+**Tek Overpass isteği** atılır: İzmir çevresindeki bütün `route=bus`
+ilişkileri ve üye düğümleri bir kerede indirilir, durak eşleştirmesi yerelde
+yapılır. Durağa **400 m**'den yakın bir hattın numarası `otobusHatlari` alanına
+yazılır ve `aktarma` listesine "ESHOT" eklenir.
+
+Önce durak başına ayrı sorgu atılıyordu (41 istek). Overpass gönüllü bir servis;
+bu tempoyu önce 429 ile karşıladı, sonra bağlantıyı tamamen kesti. Tek istek hem
+servise nazik hem de tekrar çalıştırması ucuz.
+
+Neden 400 m: otobüs durakları şehirde çok sık. Raylı aktarmalar için kullanılan
+600 m ile neredeyse her İZBAN durağı düzinelerce hat topluyor ve bilgi anlamını
+yitiriyor.
+
+**İşletmeci filtresi:** OSM'de İzmir hatlarının bir kısmında `operator` alanı
+"ESHOT" yazıyor, bir kısmında ise bu alan hiç yok. Etiketsizleri elemek gerçek
+hatları kaybettiriyor (ör. 535, 912), o yüzden etiketsizler ESHOT sayılıyor;
+açıkça **başka** bir işletmeci yazanlar (özel halk otobüsü kooperatifleri)
+elenir.
+
+**Overpass tuzakları** — üçü de veriyi sessizce bozuyordu, betikte kapatıldı:
+
+- `overpass.osm.ch` yalnızca İsviçre çıkartmasını tutuyor: Türkiye sorgularına
+  **200 + boş sonuç** dönüyor, yani "hat yok" gibi görünüyor. Aynalar kaldırıldı,
+  tek sunucu (`overpass-api.de`) kullanılıyor.
+- Zaman aşımında da **200** dönüyor; hata gövdedeki `remark` alanında yazıyor.
+  Böyle yanıtlar başarısız sayılıyor.
+- Boş yanıt hiçbir zaman geçerli sayılmıyor. Sorgu çözülemezse dosya
+  **hiç yazılmıyor** — var olan veri geçici bir sunucu hatası yüzünden silinmesin.
+
 Bu dosyayı değiştirdikten sonra frontend ve mobile kopyalarını üretmek için:
 
 ```bash
@@ -329,9 +368,14 @@ kaldırıldı) ve ibare kartın içine, haritanın hemen altına alındı. İbar
 
 **Aktarmalar iki yerde yazar.** Güzergâh listesinde aktarmalı duraklarda
 "AKTARMA" rozeti, altındaki **"Yol üstündeki aktarmalar"** kartında da hangi
-durakta hangi hatlara geçildiği (`Halkapınar — Metro · Tramvay`) görünür. Mobilde
-önce yalnızca bir simge vardı ve hat adları ancak simgeye basılı tutunca çıkan
-ipucunda görünüyordu; artık iki istemci de aynı bilgiyi aynı yerde gösteriyor.
+durakta hangi hatlara geçildiği (`Halkapınar — ESHOT · Metro · Tramvay`)
+görünür. Mobilde önce yalnızca bir simge vardı ve hat adları ancak simgeye
+basılı tutunca çıkan ipucunda görünüyordu; artık iki istemci de aynı bilgiyi
+aynı yerde gösteriyor.
+
+**ESHOT aktarmasında hat numaraları da yazar** (`53 · 102 · 154 …`): "ESHOT"
+tek başına hangi otobüse binileceğini söylemiyor. Çok hat olan duraklarda ilk
+12 tanesi gösterilir, gerisi "+N hat" olarak özetlenir.
 
 Haritada hat çizilir, 41 durak işaretlenir, seçili güzergâh vurgulanır, biniş
 yeşil / iniş turuncu gösterilir. Durağa tıklamak onu biniş durağı yapar.
@@ -374,13 +418,31 @@ dönmek için elle kaydırmak gerekmiyor. Konum bilinmiyorsa düğme görünmez.
 Kendiliğinden gelen ölçümler için konulan gürültü eşiği (8 m) bu düğmeye
 uygulanmaz: basıldığında kamera her hâlükârda konuma döner.
 
-### Yürüyüş yol tarifi
+### Yol tarifi: yürüyerek ve arabayla
 
 Rota, harici bir harita uygulamasına yönlendirmeden **uygulama içinde** çizilir:
-mesafe, yürüme süresi ve Türkçe adım adım tarif (sokak adlarıyla) gösterilir.
+mesafe, süre ve Türkçe adım adım tarif (sokak adlarıyla) gösterilir.
 Google Haritalar'a yönlendirme kaldırıldı.
 
-Yönlendirme servisi: [OSRM](https://routing.openstreetmap.de) yürüyüş profili —
+**İki kip var.** En yakın durak kartında "Yürüyerek" ve "Arabayla" düğmeleri,
+rota kartında da kip değiştirici bulunur; kip değişince aynı hedefe rota
+yeniden istenir. Haritada yürüyüş **noktalı turuncu**, araba **düz mavi**
+çizilir — hangisine bakıldığı haritadan da anlaşılsın.
+
+| Kip | OSRM profili |
+| --- | --- |
+| Yürüyerek | `routed-foot/route/v1/foot` |
+| Arabayla | `routed-car/route/v1/driving` |
+
+**Adım adım yönlendirme yalnızca yürüyüşte açılır.** Araba kipinde "Başla"
+düğmesi görünmez: panel yürüme temposundan süre hesaplıyor, harita yaya
+yakınlığında duruyor ve sesli uyarı araç hızında geç kalıyor. Araba kipi rotayı,
+mesafeyi, süreyi ve adımları gösterir.
+
+En yakın durak sıralaması her hâlükârda **yürüme** mesafesine göre yapılır:
+kullanıcı durağa yürüyerek gidiyor, araba mesafesi orada yanıltıcı olurdu.
+
+Yönlendirme servisi: [OSRM](https://routing.openstreetmap.de) —
 FOSSGIS'in işlettiği ücretsiz topluluk servisi, anahtar istemez. Rota yalnızca
 kullanıcı düğmeye bastığında çekilir, kendiliğinden değil.
 
@@ -488,8 +550,20 @@ yoksa 5 m'lik eşiğe hiç ulaşılamaz ve küçük adımlar birikmez.
   algılandığının doğrudan kanıtıdır
 - Hedefe **25 m** kalınca varış bildirir
 
-Webde ayrıca sesli yönlendirme vardır (tarayıcının kendi konuşma sentezi,
-`tr-TR`); açıp kapatılabilir. Mobilde henüz ses yok.
+**Sesli yönlendirme iki istemcide de var** ve açılıp kapatılabilir:
+
+| | Motor | Anahtar |
+| --- | --- | --- |
+| Web | Tarayıcının `speechSynthesis` servisi (`tr-TR`) | Panelde "Sesli" kutusu |
+| Mobil | `flutter_tts` (`tr-TR`) | Panelde hoparlör düğmesi |
+
+"Başla"ya basıldığı anda ilk talimat okunur — kullanıcı ilk konum ölçümünü
+beklemesin. Sonraki talimatlar **adım değiştikçe** okunur: konum saniyede
+birkaç kez geliyor, her ölçümde konuşmak aynı cümleyi tekrar tekrar söylemek
+olurdu. Hedefe varınca "Vardın." denir.
+
+Cihazda Türkçe ses paketi yoksa ya da motor açılamazsa sessizce vazgeçilir;
+yönlendirme sesli olmadan çalışmaya devam eder.
 
 Navigasyon SDK'sı kullanılmıyor — gereken her şey elde: OSRM rota geometrisi,
 adımlar ve cihazın konum akışı. Geometri saf fonksiyonlarda tutulur ve
@@ -502,7 +576,8 @@ yönlendirme, gidiş yönüne dönen harita, ekranda dik duran yön oku, ilerlem
 çubuğu, kat edilen yolun soluklaşması, 2 saniye basılı tutunca taşınan konum
 iğnesi, konuma dön düğmesi, pusula, canlanan açılış ekranı, açık/koyu tema
 düğmesi, aynı marka paleti ve kabartma kutucuklar, en fazla 7 satırlık adım
-listesi.
+listesi, yürüyerek/arabayla rota seçimi, ESHOT hat numaraları ve sesli
+yönlendirme.
 
 Leaflet haritayı döndürmeyi yerleşik desteklemediği için web tarafında
 `leaflet-rotate` eklentisi kullanılır (`frontend/vendor/leaflet/`, MIT).

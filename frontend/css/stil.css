@@ -273,7 +273,7 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
 /* Aktarmalar */
 .aktarma-listesi { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
 .aktarma-listesi li {
-  display: flex; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+  display: flex; flex-direction: column; gap: .15rem;
   padding: .65rem .8rem; border-radius: 11px;
   background: var(--zemin);
   background-image: var(--kutu-yuzey);
@@ -281,6 +281,23 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
   box-shadow: var(--golge), var(--kutu-ic-isik);
 }
 .aktarma-hatlar { color: var(--yazi-soluk); font-size: .88rem; }
+.aktarma-ust { display: flex; justify-content: space-between; gap: .75rem; flex-wrap: wrap; width: 100%; }
+
+/* ESHOT hat numaraları: "ESHOT" tek başına hangi otobüse binileceğini
+   söylemiyor, numaralar ayrı satırda şerit şerit yazılır. */
+.otobus-hatlari {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem;
+  margin-top: .5rem; width: 100%;
+}
+.otobus-simge { font-size: .8rem; line-height: 1; }
+.otobus-hat {
+  padding: .1rem .45rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--guney) 14%, transparent);
+  color: var(--guney);
+  font-size: .74rem; font-weight: 700; letter-spacing: .02em;
+}
+.otobus-kalan { font-size: .72rem; color: var(--yazi-soluk); }
 
 /* Alt bant */
 .alt-bant { border-top: 1px solid var(--cizgi); padding: 1.25rem 0 2rem; color: var(--yazi-soluk); font-size: .85rem; }
@@ -466,6 +483,28 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
   background: var(--vurgu-soluk); color: var(--guney);
   font-size: .8rem; font-weight: 700;
 }
+/* Rota kipi: yürüyerek / arabayla */
+.rota-kip {
+  display: inline-flex;
+  border: 1px solid var(--cizgi);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--zemin);
+}
+.rota-kip-dugme {
+  border: none; background: none;
+  padding: .3rem .75rem;
+  font: inherit; font-size: .8rem; font-weight: 600;
+  color: var(--yazi-soluk); cursor: pointer;
+  white-space: nowrap;
+}
+.rota-kip-dugme:hover { color: var(--vurgu); }
+.rota-kip-dugme[aria-pressed="true"] {
+  background: var(--vurgu);
+  color: var(--vurgu-yazi);
+}
+.rota-kip-dugme:focus-visible { outline: 2px solid var(--vurgu); outline-offset: -2px; }
+
 .rota-kapat {
   margin-left: auto;
   width: 28px; height: 28px;

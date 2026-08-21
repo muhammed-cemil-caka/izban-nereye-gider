@@ -6,6 +6,7 @@ import '../servisler/durak_servisi.dart';
 import '../servisler/konum_servisi.dart';
 import 'dart:async';
 import '../servisler/rota_servisi.dart';
+import '../servisler/ses_servisi.dart';
 import '../servisler/yonlendirme_servisi.dart';
 import 'harita_karti.dart';
 import 'izban_logosu.dart';
@@ -54,10 +55,18 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   List<YakinDurak> _yakinAdaylar = const [];
   double? _konumDogrulukM;
   Konum? _kullaniciKonumu;
-  YuruyusRotasi? _yuruyusRotasi;
+  Rota? _yuruyusRotasi;
   Durak? _rotaHedefi;
+  RotaKipi _rotaKipi = RotaKipi.yuruyus;
   bool _rotaAraniyor = false;
   String? _rotaHatasi;
+
+  /// Sesli yönlendirme — webdeki "Sesli" kutusunun karşılığı.
+  final _ses = SesServisi();
+  bool _sesliMi = true;
+
+  /// Aynı talimatın her ölçümde yeniden okunmaması için son okunan adım.
+  int? _seslendirilenAdim;
 
   StreamSubscription? _takipAboneligi;
   StreamSubscription? _yonlendirmeAboneligi;
@@ -206,17 +215,22 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     _takipAboneligi = null;
   }
 
-  Future<void> _yolTarifiniGoster(YakinDurak yakin) async {
+  Future<void> _yolTarifiniGoster(
+    YakinDurak yakin, {
+    RotaKipi kip = RotaKipi.yuruyus,
+  }) async {
     final konum = _kullaniciKonumu;
     if (konum == null) return;
 
     setState(() {
+      _rotaKipi = kip;
       _rotaAraniyor = true;
       _rotaHatasi = null;
     });
 
     try {
-      final rota = await const RotaServisi().rotaAl(konum, yakin.durak.konum);
+      final rota = await const RotaServisi()
+          .rotaAl(konum, yakin.durak.konum, kip: kip);
       if (!mounted) return;
       setState(() {
         _yuruyusRotasi = rota;
@@ -227,10 +241,30 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     } catch (sorun) {
       if (!mounted) return;
       setState(() {
-        _rotaHatasi = 'Yürüyüş rotası alınamadı.';
+        _rotaHatasi = '${kip.etiket} rotası alınamadı.';
         _rotaAraniyor = false;
       });
     }
+  }
+
+  /// Sıradaki manevrayı okur. Aynı adım iki kez okunmaz: konum saniyede
+  /// birkaç kez geliyor, her ölçümde konuşmak tekrar tekrar aynı cümleyi
+  /// söylemek olurdu.
+  void _adimiSeslendir(int adimIndeksi, Rota rota) {
+    if (!_sesliMi) return;
+    if (_seslendirilenAdim == adimIndeksi) return;
+    if (adimIndeksi < 0 || adimIndeksi >= rota.adimlar.length) return;
+
+    _seslendirilenAdim = adimIndeksi;
+    _ses.konus(rota.adimlar[adimIndeksi].metin);
+  }
+
+  /// Aynı hedefe kipi değiştirerek yeniden rota ister.
+  void _rotaKipiniDegistir(RotaKipi kip) {
+    final hedef = _rotaHedefi;
+    if (hedef == null || kip == _rotaKipi) return;
+    if (_yonlendirmeAktif) _yonlendirmeyiBitir();
+    _yolTarifiniGoster(YakinDurak(hedef, 0), kip: kip);
   }
 
   void _yonlendirmeyiBaslat() {
@@ -266,6 +300,11 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     // seyrekleştiriyor; yönlendirme sırasında takip kapatılır.
     _takibiKapat();
 
+    // İlk talimat hemen okunur: kullanıcı "Başla"ya bastığında ilk ölçümü
+    // beklemeden nereye gideceğini duysun.
+    _seslendirilenAdim = null;
+    if (rota.adimlar.isNotEmpty) _adimiSeslendir(0, rota);
+
     _yonlendirmeAboneligi = YonlendirmeServisi.baslat(
       rota: rota,
       durumDegisti: (durum) {
@@ -282,6 +321,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           katEdilenM: durum.ilerleme.katEdilenM,
         );
         _yonlendirmeNotifier.value = durum;
+        _adimiSeslendir(durum.ilerleme.adimIndeksi, rota);
 
         // Histerezis: uyarı 100 m'de çıkar, 70 m'nin altına inince kaybolur.
         // Tek bir eşik, doğruluk sınırda gezinirken uyarıyı yanıp söndürüyordu.
@@ -332,6 +372,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
       },
       varildi: () {
         if (!mounted) return;
+        if (_sesliMi) _ses.konus('Vardın.');
         setState(() => _varildi = true);
         _yonlendirmeyiBitir(varisSonrasi: true);
       },
@@ -346,6 +387,10 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   void _yonlendirmeyiBitir({bool varisSonrasi = false}) {
     _yonlendirmeAboneligi?.cancel();
     _yonlendirmeAboneligi = null;
+
+    // Varışta "Vardın." okunuyor; onu kesmemek için orada susturulmuyor.
+    if (!varisSonrasi) _ses.sustur();
+    _seslendirilenAdim = null;
 
     if (mounted) {
       // İşaret yön okundan sürüklenebilir iğneye geri dönsün.
@@ -506,7 +551,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                         : duraklar.first.kod;
                   }
                 }),
-                yolTarifiAc: _yolTarifiniGoster,
+                yolTarifiAc: (yakin, kip) =>
+                    _yolTarifiniGoster(yakin, kip: kip),
               ),
               const SizedBox(height: 16),
               _SecimKarti(
@@ -562,6 +608,22 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                       durum: durum,
                       uyari: _yonlendirmeUyarisi,
                       varildi: _varildi,
+                      sesliMi: _sesliMi,
+                      sesDegisti: (acik) {
+                        setState(() => _sesliMi = acik);
+                        if (!acik) {
+                          _ses.sustur();
+                        } else {
+                          // Ses yeniden açılınca sıradaki talimat hemen okunsun.
+                          final rota = _yuruyusRotasi;
+                          final indeks =
+                              _yonlendirmeNotifier.value?.ilerleme.adimIndeksi;
+                          _seslendirilenAdim = null;
+                          if (rota != null && indeks != null) {
+                            _adimiSeslendir(indeks, rota);
+                          }
+                        }
+                      },
                       bitir: () {
                         setState(() => _varildi = false);
                         _yonlendirmeyiBitir();
@@ -588,6 +650,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                     setState(() => _varildi = false);
                     _yonlendirmeyiBitir();
                   },
+                  kip: _rotaKipi,
+                  kipDegisti: _rotaKipiniDegistir,
                 ),
               ],
               const SizedBox(height: 16),
@@ -887,6 +951,55 @@ class _GuzergahKarti extends StatelessWidget {
   }
 }
 
+/// ESHOT hat numaraları. Çok hat olan duraklarda liste kartı şişirmesin diye
+/// ilk [gorunurHat] tanesi gösterilir, gerisi "+N" olarak özetlenir.
+class _OtobusHatlari extends StatelessWidget {
+  static const gorunurHat = 12;
+
+  final List<String> hatlar;
+
+  const _OtobusHatlari({required this.hatlar});
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final renkler = tema.colorScheme;
+    final gosterilen = hatlar.take(gorunurHat).toList();
+    final kalan = hatlar.length - gosterilen.length;
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Icon(Icons.directions_bus, size: 15, color: renkler.secondary),
+        for (final hat in gosterilen)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: renkler.secondary.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              hat,
+              style: tema.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: renkler.secondary,
+              ),
+            ),
+          ),
+        if (kalan > 0)
+          Text(
+            '+$kalan hat',
+            style: tema.textTheme.labelSmall?.copyWith(
+              color: tema.textTheme.bodySmall?.color?.withValues(alpha: .7),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// Küçük etiket — webdeki .rozet karşılığı.
 class _Rozet extends StatelessWidget {
   final String metin;
@@ -943,26 +1056,37 @@ class _AktarmaKarti extends StatelessWidget {
             ...duraklar.map(
               (durak) => KabarikKutu(
                 dolgu: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                cocuk: Row(
+                cocuk: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        durak.ad,
-                        style: tema.textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: Text(
-                        durak.aktarma.join(' · '),
-                        textAlign: TextAlign.end,
-                        style: tema.textTheme.bodySmall?.copyWith(
-                          color: tema.textTheme.bodySmall?.color
-                              ?.withValues(alpha: .8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            durak.ad,
+                            style: tema.textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Flexible(
+                          child: Text(
+                            durak.aktarma.join(' · '),
+                            textAlign: TextAlign.end,
+                            style: tema.textTheme.bodySmall?.copyWith(
+                              color: tema.textTheme.bodySmall?.color
+                                  ?.withValues(alpha: .8),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                    // ESHOT aktarması varsa hangi hatlar olduğu yazılır;
+                    // "ESHOT" tek başına hangi otobüse bineceğini söylemiyor.
+                    if (durak.otobusHatlari.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _OtobusHatlari(hatlar: durak.otobusHatlari),
+                    ],
                   ],
                 ),
               ),
@@ -1007,7 +1131,8 @@ class _KonumKarti extends StatelessWidget {
   final VoidCallback tekrarDene;
   final VoidCallback ayarlariAc;
   final ValueChanged<Durak> binisYap;
-  final ValueChanged<YakinDurak> yolTarifiAc;
+  /// (durak, kip) — yürüyüş ya da araba rotası istenir.
+  final void Function(YakinDurak, RotaKipi) yolTarifiAc;
 
   const _KonumKarti({
     required this.yakinDurak,
@@ -1099,9 +1224,14 @@ class _KonumKarti extends StatelessWidget {
             child: const Text('Biniş durağı yap'),
           ),
           OutlinedButton.icon(
-            onPressed: () => yolTarifiAc(yakin),
+            onPressed: () => yolTarifiAc(yakin, RotaKipi.yuruyus),
             icon: const Icon(Icons.directions_walk, size: 18),
-            label: const Text('Yol tarifi al'),
+            label: const Text('Yürüyerek'),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => yolTarifiAc(yakin, RotaKipi.araba),
+            icon: const Icon(Icons.directions_car, size: 18),
+            label: const Text('Arabayla'),
           ),
         ],
       ),
@@ -1170,7 +1300,7 @@ class _KonumKarti extends StatelessWidget {
 
 /// Hesaplanan yürüyüş rotasını adım adım gösterir.
 class _RotaKarti extends StatelessWidget {
-  final YuruyusRotasi? rota;
+  final Rota? rota;
   final Durak? hedef;
   final bool araniyor;
   final String? hata;
@@ -1179,6 +1309,10 @@ class _RotaKarti extends StatelessWidget {
   final bool yonlendirmede;
   final VoidCallback basla;
   final VoidCallback bitir;
+
+  /// Aynı hedefe kip değiştirerek yeniden rota istemek için.
+  final RotaKipi kip;
+  final ValueChanged<RotaKipi> kipDegisti;
 
   const _RotaKarti({
     required this.rota,
@@ -1189,6 +1323,8 @@ class _RotaKarti extends StatelessWidget {
     required this.yonlendirmede,
     required this.basla,
     required this.bitir,
+    required this.kip,
+    required this.kipDegisti,
   });
 
   @override
@@ -1233,20 +1369,26 @@ class _RotaKarti extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${hedef?.ad ?? ""} durağına yürüyüş',
+                    '${hedef?.ad ?? ""} durağına '
+                    '${yol.kip == RotaKipi.araba ? "araba ile" : "yürüyüş"}',
                     style: tema.textTheme.titleSmall,
                   ),
                 ),
-                FilledButton(
-                  onPressed: yonlendirmede ? bitir : basla,
-                  style: FilledButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    backgroundColor: yonlendirmede
-                        ? Theme.of(context).colorScheme.error
-                        : null,
+                // Adım adım yönlendirme yürüyüş için tasarlandı: panel yürüme
+                // temposundan süre hesaplıyor, harita yaya yakınlığında duruyor
+                // ve sesli uyarı araç hızında geç kalıyor. Araba kipinde rota
+                // gösterilir, yönlendirme başlatılmaz.
+                if (yol.kip == RotaKipi.yuruyus)
+                  FilledButton(
+                    onPressed: yonlendirmede ? bitir : basla,
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: yonlendirmede
+                          ? Theme.of(context).colorScheme.error
+                          : null,
+                    ),
+                    child: Text(yonlendirmede ? 'Bitir' : 'Başla'),
                   ),
-                  child: Text(yonlendirmede ? 'Bitir' : 'Başla'),
-                ),
                 IconButton(
                   onPressed: temizle,
                   icon: const Icon(Icons.close, size: 20),
@@ -1255,9 +1397,36 @@ class _RotaKarti extends StatelessWidget {
                 ),
               ],
             ),
-            Chip(
-              label: Text('${yol.mesafeMetni} · ${yol.sureMetni}'),
-              visualDensity: VisualDensity.compact,
+            Row(
+              spacing: 8,
+              children: [
+                Chip(
+                  label: Text('${yol.mesafeMetni} · ${yol.sureMetni}'),
+                  visualDensity: VisualDensity.compact,
+                ),
+                const Spacer(),
+                SegmentedButton<RotaKipi>(
+                  segments: const [
+                    ButtonSegment(
+                      value: RotaKipi.yuruyus,
+                      icon: Icon(Icons.directions_walk, size: 18),
+                      tooltip: 'Yürüyerek',
+                    ),
+                    ButtonSegment(
+                      value: RotaKipi.araba,
+                      icon: Icon(Icons.directions_car, size: 18),
+                      tooltip: 'Arabayla',
+                    ),
+                  ],
+                  selected: {kip},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (secim) => kipDegisti(secim.first),
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             _AdimListesi(adimlar: yol.adimlar),
@@ -1359,12 +1528,16 @@ class _AdimListesiDurumu extends State<_AdimListesi> {
 
 /// Yönlendirme sırasında sıradaki manevrayı ve kalan mesafeyi gösterir.
 class _YonlendirmePaneli extends StatelessWidget {
-  final YuruyusRotasi? rota;
+  final Rota? rota;
   final Durak? hedef;
   final YonlendirmeDurumu? durum;
   final String? uyari;
   final bool varildi;
   final VoidCallback bitir;
+
+  /// Sesli yönlendirme açık mı — webdeki "Sesli" kutusunun karşılığı.
+  final bool sesliMi;
+  final ValueChanged<bool> sesDegisti;
 
   const _YonlendirmePaneli({
     required this.rota,
@@ -1373,6 +1546,8 @@ class _YonlendirmePaneli extends StatelessWidget {
     required this.uyari,
     required this.varildi,
     required this.bitir,
+    required this.sesliMi,
+    required this.sesDegisti,
   });
 
   static String _mesafe(double metre) => metre < 1000
@@ -1384,7 +1559,7 @@ class _YonlendirmePaneli extends StatelessWidget {
   /// Sabit bir yürüyüş hızı varsaymak yerine, servis o rota için ne kadar süre
   /// öngördüyse (yokuş, yaya geçidi, kavşak dahil) aynı tempo kalan mesafeye
   /// uygulanıyor.
-  static String? _kalanSure(YuruyusRotasi? rota, double kalanM) {
+  static String? _kalanSure(Rota? rota, double kalanM) {
     if (rota == null || rota.mesafeM <= 0) return null;
 
     final saniye = rota.sureSn * (kalanM / rota.mesafeM);
@@ -1471,12 +1646,30 @@ class _YonlendirmePaneli extends StatelessWidget {
             Divider(color: renkler.onPrimary.withValues(alpha: .25), height: 1),
             const SizedBox(height: 8),
             // Bitir düğmesi buradan kaldırıldı; alttaki rota kartında zaten var.
-            Text(
-              varildi
-                  ? 'Yolculuk başlasın.'
-                  : _kalanMetni(durum?.ilerleme.kalanM ?? 0),
-              style: tema.textTheme.bodySmall
-                  ?.copyWith(color: renkler.onPrimary.withValues(alpha: .9)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    varildi
+                        ? 'Yolculuk başlasın.'
+                        : _kalanMetni(durum?.ilerleme.kalanM ?? 0),
+                    style: tema.textTheme.bodySmall
+                        ?.copyWith(color: renkler.onPrimary.withValues(alpha: .9)),
+                  ),
+                ),
+                // Sesli yönlendirme anahtarı: talimatlar yürürken okunur.
+                IconButton(
+                  onPressed: () => sesDegisti(!sesliMi),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: sesliMi ? 'Sesi kapat' : 'Sesi aç',
+                  icon: Icon(
+                    sesliMi ? Icons.volume_up : Icons.volume_off,
+                    size: 20,
+                    color: renkler.onPrimary
+                        .withValues(alpha: sesliMi ? 1 : .55),
+                  ),
+                ),
+              ],
             ),
             if (!varildi && ilerleme != null && rota != null) ...[
               const SizedBox(height: 10),

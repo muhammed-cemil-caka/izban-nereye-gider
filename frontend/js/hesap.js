@@ -42,7 +42,14 @@ function yolculukHesapla(duraklar, binisKod, inisKod) {
   // Biniş ve iniş dahil, aradaki aktarma imkânları.
   var aktarmalar = guzergah
     .filter(function (d) { return d.aktarma && d.aktarma.length > 0; })
-    .map(function (d) { return { ad: d.ad, hatlar: d.aktarma }; });
+    .map(function (d) {
+      return {
+        ad: d.ad,
+        hatlar: d.aktarma,
+        // ESHOT aktarmasında hangi otobüs hatlarına binileceği.
+        otobusHatlari: d.otobusHatlari || []
+      };
+    });
 
   return {
     gecerli: true,

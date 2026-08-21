@@ -15,6 +15,7 @@ var IZMIR_MERKEZ = { enlem: 38.42, boylam: 27.14 };
 var HAT_RENGI = '#7a8798';
 var GUZERGAH_RENGI = '#0b5fa5';
 var YURUYUS_RENGI = '#b3541e';
+var ARABA_RENGI = '#0c4ca3';
 
 /**
  * Harita kurar ve üzerinde çalışacak küçük bir arayüz döndürür.
@@ -354,16 +355,25 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     }
   }
 
-  /** Yürüyüş rotasını çizer ve görünür alana oturtur. */
-  function yuruyusRotasiniCiz(noktalar) {
+  /**
+   * Rotayı çizer ve görünür alana oturtur.
+   *
+   * Yürüyüş noktalı, araba düz çizgi: iki kip aynı anda karışmasın ve
+   * hangisine bakıldığı haritadan da anlaşılsın.
+   *
+   * @param {Array} noktalar
+   * @param {string} [kip] 'yuruyus' (varsayılan) veya 'araba'
+   */
+  function rotayiCiz(noktalar, kip) {
     yuruyusRotasiniTemizle();
     if (!noktalar || !noktalar.length) return;
 
+    var arabaMi = kip === 'araba';
     yuruyusCizgisi = L.polyline(noktalar, {
-      color: YURUYUS_RENGI,
-      weight: 5,
+      color: arabaMi ? ARABA_RENGI : YURUYUS_RENGI,
+      weight: arabaMi ? 6 : 5,
       opacity: .95,
-      dashArray: '1 9',
+      dashArray: arabaMi ? null : '1 9',
       lineCap: 'round'
     }).addTo(harita);
 
@@ -621,7 +631,7 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   return {
     haritayiYoneCevir: haritayiYoneCevir,
     haritayiKuzeyeAl: haritayiKuzeyeAl,
-    yuruyusRotasiniCiz: yuruyusRotasiniCiz,
+    rotayiCiz: rotayiCiz,
     yuruyusRotasiniTemizle: yuruyusRotasiniTemizle,
     duraklariCiz: duraklariCiz,
     guzergahiVurgula: guzergahiVurgula,

@@ -2,7 +2,22 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../modeller/durak.dart';
 
-/// Yürüyüş rotasının bir adımı.
+/// Rota kipi. FOSSGIS her OSRM profilini ayrı adreste sunuyor.
+enum RotaKipi {
+  yuruyus('routed-foot', 'foot', 'Yürüyüş'),
+  araba('routed-car', 'driving', 'Araba');
+
+  final String sunucu;
+  final String profil;
+  final String etiket;
+
+  const RotaKipi(this.sunucu, this.profil, this.etiket);
+
+  String get taban =>
+      'https://routing.openstreetmap.de/$sunucu/route/v1/$profil';
+}
+
+/// Rotanın bir adımı.
 class RotaAdimi {
   final String metin;
   final double mesafeM;
@@ -10,18 +25,20 @@ class RotaAdimi {
   const RotaAdimi(this.metin, this.mesafeM);
 }
 
-/// Hesaplanmış yürüyüş rotası.
-class YuruyusRotasi {
+/// Hesaplanmış rota — yürüyüş ya da araba.
+class Rota {
   final List<Konum> noktalar;
   final double mesafeM;
   final double sureSn;
   final List<RotaAdimi> adimlar;
+  final RotaKipi kip;
 
-  const YuruyusRotasi({
+  const Rota({
     required this.noktalar,
     required this.mesafeM,
     required this.sureSn,
     required this.adimlar,
+    this.kip = RotaKipi.yuruyus,
   });
 
   String get mesafeMetni => mesafeM < 1000
@@ -46,8 +63,9 @@ class YuruyusRotasi {
 class RotaServisi {
   const RotaServisi();
 
-  static const _taban =
-      'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
+  /// En yakın durak sıralaması hep YÜRÜYEREK hesaplanır: kullanıcı durağa
+  /// yürüyerek gidiyor, araba mesafesi orada yanıltıcı olurdu.
+  static final _yuruyusTabani = RotaKipi.yuruyus.taban;
   static const _zamanAsimi = Duration(seconds: 15);
 
   static const _yonAdlari = <String, String>{
@@ -113,7 +131,7 @@ class RotaServisi {
         .join(';');
 
     final adres = Uri.parse(
-      '${_taban.replaceFirst('/route/v1/foot', '/table/v1/foot')}'
+      '${_yuruyusTabani.replaceFirst('/route/v1/foot', '/table/v1/foot')}'
       '/$noktalar?sources=0&annotations=distance,duration',
     );
 
@@ -139,9 +157,13 @@ class RotaServisi {
     });
   }
 
-  Future<YuruyusRotasi> rotaAl(Konum baslangic, Konum bitis) async {
+  Future<Rota> rotaAl(
+    Konum baslangic,
+    Konum bitis, {
+    RotaKipi kip = RotaKipi.yuruyus,
+  }) async {
     final adres = Uri.parse(
-      '$_taban/${baslangic.boylam},${baslangic.enlem}'
+      '${kip.taban}/${baslangic.boylam},${baslangic.enlem}'
       ';${bitis.boylam},${bitis.enlem}'
       '?overview=full&geometries=geojson&steps=true',
     );
@@ -152,10 +174,10 @@ class RotaServisi {
     }
 
     final govde = jsonDecode(utf8.decode(yanit.bodyBytes)) as Map<String, dynamic>;
-    if (govde['code'] != 'Ok') throw Exception('Yürüyüş rotası bulunamadı.');
+    if (govde['code'] != 'Ok') throw Exception('${kip.etiket} rotası bulunamadı.');
 
     final rotalar = govde['routes'] as List<dynamic>;
-    if (rotalar.isEmpty) throw Exception('Yürüyüş rotası bulunamadı.');
+    if (rotalar.isEmpty) throw Exception('${kip.etiket} rotası bulunamadı.');
 
     final rota = rotalar.first as Map<String, dynamic>;
     final geometri = rota['geometry'] as Map<String, dynamic>;
@@ -191,11 +213,12 @@ class RotaServisi {
       ));
     }
 
-    return YuruyusRotasi(
+    return Rota(
       noktalar: noktalar,
       mesafeM: (rota['distance'] as num).toDouble(),
       sureSn: (rota['duration'] as num).toDouble(),
       adimlar: adimlar,
+      kip: kip,
     );
   }
 }

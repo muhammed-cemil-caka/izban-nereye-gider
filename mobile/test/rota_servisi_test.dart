@@ -40,7 +40,7 @@ void main() {
   });
 
   group('biçimlendirme', () {
-    YuruyusRotasi rota({double mesafe = 0, double sure = 0}) => YuruyusRotasi(
+    Rota rota({double mesafe = 0, double sure = 0}) => Rota(
           noktalar: const [],
           mesafeM: mesafe,
           sureSn: sure,

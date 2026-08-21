@@ -10,7 +10,7 @@ const {
   metreUzaklik, mesafeBicimle, enYakinDurak, enYakinDuraklar,
   durakAra, aramaIcinSadelestir
 } = require('../frontend/js/hesap.js');
-const { manevrayiTurkcelestir, yuruyusSuresiBicimle } = require('../frontend/js/rota.js');
+const { manevrayiTurkcelestir, rotaSuresiBicimle } = require('../frontend/js/rota.js');
 const {
   rotayaIzdusur, adimSinirlariniKur, rotaIlerlemesi, yonAcisi
 } = require('../frontend/js/yonlendirme.js');
@@ -178,10 +178,10 @@ dogrula('bilinmeyen manevra makul bir metne düşüyor', () => {
 });
 
 dogrula('yürüyüş süresi biçimlendirme', () => {
-  assert.strictEqual(yuruyusSuresiBicimle(1140), '19 dk');
-  assert.strictEqual(yuruyusSuresiBicimle(20), '1 dk');
-  assert.strictEqual(yuruyusSuresiBicimle(3600), '1 sa');
-  assert.strictEqual(yuruyusSuresiBicimle(4500), '1 sa 15 dk');
+  assert.strictEqual(rotaSuresiBicimle(1140), '19 dk');
+  assert.strictEqual(rotaSuresiBicimle(20), '1 dk');
+  assert.strictEqual(rotaSuresiBicimle(3600), '1 sa');
+  assert.strictEqual(rotaSuresiBicimle(4500), '1 sa 15 dk');
 });
 
 console.log('\nYönlendirme geometrisi');
@@ -376,6 +376,62 @@ dogrula('uçtan uca yolculuk tutarlı', () => {
   assert.strictEqual(s.gecerli, true);
   assert.strictEqual(s.durakSayisi, DURAKLAR.length - 1);
   assert.strictEqual(s.yon, 'guney');
+});
+
+/* ---------- ESHOT otobüs hatları ---------- */
+
+const {
+  eshotSayilirMi, hatlariCoz, duragaYakinHatlar, hatSirala
+} = require('./eshot-hatlari.js');
+
+dogrula('ESHOT işletmecisi tanınıyor, başkası elenir', () => {
+  assert.strictEqual(eshotSayilirMi({ operator: 'ESHOT' }), true);
+  assert.strictEqual(eshotSayilirMi({ operator: 'Eshot' }), true);
+  assert.strictEqual(eshotSayilirMi({ network: 'ESHOT Genel Müdürlüğü' }), true);
+  // İşletmecisi yazmayan İzmir hatları ESHOT sayılır (ör. 535, 912).
+  assert.strictEqual(eshotSayilirMi({}), true);
+  // Özel halk otobüsü kooperatifi ESHOT değildir.
+  assert.strictEqual(
+    eshotSayilirMi({ operator: '34 no.lu Menemen Özel Halk Otobüsleri kooperatifi' }),
+    false
+  );
+});
+
+// Halkapınar'ın ~100 m kuzeyinde bir otobüs durağı, bir de kilometrelerce uzakta.
+const OSM_YANITI = {
+  elements: [
+    { type: 'node', id: 1, lat: 38.4361, lon: 27.1688 },
+    { type: 'node', id: 2, lat: 38.4800, lon: 27.1000 },
+    { type: 'relation', id: 10, tags: { ref: '445', operator: 'ESHOT' },
+      members: [{ type: 'node', ref: 1 }] },
+    { type: 'relation', id: 11, tags: { ref: '800', operator: '34 no.lu Menemen Ozel Halk Otobusleri kooperatifi' },
+      members: [{ type: 'node', ref: 1 }] },
+    { type: 'relation', id: 12, tags: { name: '912 Egekent Aktarma Merkezi-Alsancak Gar' },
+      members: [{ type: 'node', ref: 1 }] },
+    { type: 'relation', id: 13, tags: { ref: '53', operator: 'Eshot' },
+      members: [{ type: 'node', ref: 2 }] },
+    { type: 'relation', id: 14, tags: { ref: '99', operator: 'ESHOT' },
+      members: [{ type: 'way', ref: 500 }] }
+  ]
+};
+
+dogrula('hat numaraları ref veya ad başından çıkarılır', () => {
+  const hatlar = hatlariCoz(OSM_YANITI).map((h) => h.numara).sort(hatSirala);
+  // 800 kooperatif olduğu için elenir; 99'un durak düğümü yok.
+  assert.deepStrictEqual(hatlar, ['53', '445', '912']);
+});
+
+dogrula('yalnızca durağa yakın hatlar sayılır', () => {
+  const hatlar = hatlariCoz(OSM_YANITI);
+  const halkapinar = { enlem: 38.43519, boylam: 27.168837 };
+  assert.deepStrictEqual(duragaYakinHatlar(halkapinar, hatlar), ['445', '912']);
+
+  // Uzaktaki hat, yarıçap büyütülünce listeye girer.
+  assert.deepStrictEqual(duragaYakinHatlar(halkapinar, hatlar, 10000), ['53', '445', '912']);
+});
+
+dogrula('hat sıralaması sayıca yapılır', () => {
+  assert.deepStrictEqual(['154', '53', 'C10', '9'].sort(hatSirala), ['9', '53', '154', 'C10']);
 });
 
 console.log(`\n${sayac} test geçti.\n`);

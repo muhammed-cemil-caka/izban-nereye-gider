@@ -122,7 +122,9 @@ void main() {
     expect(find.text('En yakın durak:'), findsOneWidget);
     expect(find.text('Halkapınar'), findsWidgets);
     expect(find.text('Biniş durağı yap'), findsOneWidget);
-    expect(find.text('Yol tarifi al'), findsOneWidget);
+    // Yol tarifi iki kiple istenebiliyor.
+    expect(find.text('Yürüyerek'), findsOneWidget);
+    expect(find.text('Arabayla'), findsOneWidget);
 
     // Doğruluk yazısı ve alternatif duraklar da görünmeli.
     expect(find.text('Konum doğruluğu ±20 m'), findsOneWidget);

@@ -45,6 +45,9 @@ dependencies:
   # Tema seçimi uygulama kapansa da hatırlansın diye
   shared_preferences: ^2.3.0
 
+  # Adım adım yönlendirmede sesli talimat (webdeki speechSynthesis karşılığı)
+  flutter_tts: ^4.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

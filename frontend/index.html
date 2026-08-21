@@ -6,7 +6,7 @@
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/stil.css?s=efb62d65">
+  <link rel="stylesheet" href="css/stil.css?s=0038f170">
 </head>
 <body>
   <!-- Açılış ekranı. Marka çizilir, sonra kendini kapatır; sayfa arkada
@@ -96,7 +96,10 @@
             Biniş durağı yap
           </button>
           <button type="button" id="yolTarifiDugmesi" class="dugme dugme--ikincil">
-            Yol tarifini haritada göster
+            Yürüyerek yol tarifi
+          </button>
+          <button type="button" id="arabaTarifiDugmesi" class="dugme dugme--ikincil">
+            Arabayla yol tarifi
           </button>
         </div>
 
@@ -187,6 +190,14 @@
         <div class="rota-ozet">
           <strong id="rotaBaslik">—</strong>
           <span class="rota-olcu" id="rotaOlcu">—</span>
+          <div class="rota-kip" role="group" aria-label="Rota kipi">
+            <button type="button" id="rotaKipYuruyus" class="rota-kip-dugme" aria-pressed="true">
+              Yürüyerek
+            </button>
+            <button type="button" id="rotaKipAraba" class="rota-kip-dugme" aria-pressed="false">
+              Arabayla
+            </button>
+          </div>
           <button type="button" id="yonlendirmeBaslat" class="dugme dugme--birincil dugme--kucuk">
             Başla
           </button>
@@ -242,13 +253,13 @@
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="vendor/leaflet/leaflet-rotate.js"></script>
   <script src="js/duraklar.js?s=d90b4a80"></script>
-  <script src="js/hesap.js?s=69e91242"></script>
+  <script src="js/hesap.js?s=e3f1df0e"></script>
   <script src="js/konum.js?s=dd520dd9"></script>
-  <script src="js/harita.js?s=e5e0e047"></script>
-  <script src="js/rota.js?s=e75d483d"></script>
+  <script src="js/harita.js?s=b9a40b04"></script>
+  <script src="js/rota.js?s=343fc905"></script>
   <script src="js/yonlendirme.js?s=a7bbad61"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=65fb4c96"></script>
+  <script src="js/uygulama.js?s=6a0dab39"></script>
 </body>
 </html>

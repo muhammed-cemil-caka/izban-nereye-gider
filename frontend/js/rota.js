@@ -1,10 +1,19 @@
-// Yürüyüş rotası — OSRM (OpenStreetMap tabanlı yönlendirme).
+// Rota — OSRM (OpenStreetMap tabanlı yönlendirme).
 //
 // Servis notu: routing.openstreetmap.de FOSSGIS'in işlettiği ücretsiz bir
 // topluluk servisidir, anahtar istemez ama ağır kullanıma uygun değildir.
 // Bu yüzden rota yalnızca kullanıcı isteyince çekilir, kendiliğinden değil.
 // Yayına çıkarken kendi OSRM örneğimize ya da anahtarlı bir servise geçilmeli.
-var ROTA_TABAN = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
+//
+// İki kip var: yürüyüş ve araba. FOSSGIS her profili ayrı adreste sunuyor.
+var ROTA_TABANLARI = {
+  yuruyus: 'https://routing.openstreetmap.de/routed-foot/route/v1/foot',
+  araba: 'https://routing.openstreetmap.de/routed-car/route/v1/driving'
+};
+
+// En yakın durak sıralaması hep yürüyerek hesaplanır: kullanıcı durağa
+// yürüyerek gidiyor, araba mesafesi orada yanıltıcı olurdu.
+var ROTA_TABAN = ROTA_TABANLARI.yuruyus;
 
 /** OSRM manevralarının Türkçe karşılıkları. */
 var YON_ADLARI = {
@@ -48,11 +57,17 @@ function manevrayiTurkcelestir(manevra, yolAdi) {
 }
 
 /**
- * İki nokta arasında yürüyüş rotası ister.
- * @returns {Promise<{noktalar: Array<[number,number]>, mesafeM: number, sureSn: number, adimlar: Array}>}
+ * İki nokta arasında rota ister.
+ * @param {object} baslangic
+ * @param {object} bitis
+ * @param {string} [kip] 'yuruyus' (varsayılan) veya 'araba'
+ * @returns {Promise<{kip: string, noktalar: Array<[number,number]>, mesafeM: number, sureSn: number, adimlar: Array}>}
  */
-function yuruyusRotasiAl(baslangic, bitis) {
-  var adres = ROTA_TABAN + '/' +
+function rotaAl(baslangic, bitis, kip) {
+  var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
+  var taban = ROTA_TABANLARI[secilenKip];
+
+  var adres = taban + '/' +
     baslangic.boylam + ',' + baslangic.enlem + ';' +
     bitis.boylam + ',' + bitis.enlem +
     '?overview=full&geometries=geojson&steps=true';
@@ -64,7 +79,9 @@ function yuruyusRotasiAl(baslangic, bitis) {
     })
     .then(function (veri) {
       if (veri.code !== 'Ok' || !veri.routes || !veri.routes.length) {
-        throw new Error('Yürüyüş rotası bulunamadı.');
+        throw new Error(secilenKip === 'araba'
+          ? 'Araba rotası bulunamadı.'
+          : 'Yürüyüş rotası bulunamadı.');
       }
 
       var rota = veri.routes[0];
@@ -87,6 +104,7 @@ function yuruyusRotasiAl(baslangic, bitis) {
         });
 
       return {
+        kip: secilenKip,
         noktalar: noktalar,
         mesafeM: rota.distance,
         sureSn: rota.duration,
@@ -137,8 +155,14 @@ function yuruyusMesafeleriAl(baslangic, hedefler) {
     });
 }
 
-/** 1140 → "19 dk" */
-function yuruyusSuresiBicimle(saniye) {
+/**
+ * 1140 → "19 dk"
+ *
+ * Adı hesap.js'teki sureBicimle'den ayrı: o dakika alıyor, bu saniye.
+ * İkisi de küresel kapsamda olduğu için aynı adı taşımaları, sonra
+ * yüklenen dosyanın diğerini ezmesi demekti.
+ */
+function rotaSuresiBicimle(saniye) {
   var dakika = Math.max(1, Math.round(saniye / 60));
   if (dakika < 60) return dakika + ' dk';
   var saat = Math.floor(dakika / 60);
@@ -149,7 +173,7 @@ function yuruyusSuresiBicimle(saniye) {
 if (typeof module !== 'undefined') {
   module.exports = {
     manevrayiTurkcelestir: manevrayiTurkcelestir,
-    yuruyusSuresiBicimle: yuruyusSuresiBicimle,
+    rotaSuresiBicimle: rotaSuresiBicimle,
     yuruyusMesafeleriAl: yuruyusMesafeleriAl
   };
 }

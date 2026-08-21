@@ -153,7 +153,7 @@ class YonlendirmeServisi {
   /// Kullanıcının rota üzerindeki durumunu hesaplar.
   static RotaIlerlemesi ilerlemeHesapla(
     Konum konum,
-    YuruyusRotasi rota,
+    Rota rota,
     List<double> adimSinirlari,
   ) {
     final izdusum = rotayaIzdusur(konum, rota.noktalar);
@@ -215,7 +215,7 @@ class YonlendirmeServisi {
   /// [rotadanCikildi] rotadan çıkıldığında yeni konumla çağrılır; çağıran
   /// taraf yeni rota isteyip oturumu yeniden başlatmalıdır.
   static StreamSubscription<Position> baslat({
-    required YuruyusRotasi rota,
+    required Rota rota,
     required void Function(YonlendirmeDurumu) durumDegisti,
     required void Function(Konum) rotadanCikildi,
     required void Function() varildi,

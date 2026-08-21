@@ -42,7 +42,7 @@ class HaritaKarti extends StatefulWidget {
 
   final List<Durak> duraklar;
   final Yolculuk? yolculuk;
-  final YuruyusRotasi? yuruyusRotasi;
+  final Rota? yuruyusRotasi;
 
   /// Kullanıcı konumu ve yönü.
   ///

@@ -35,6 +35,9 @@
     yakinDurakMesafe: document.getElementById('yakinDurakMesafe'),
     binisYap: document.getElementById('binisYapDugmesi'),
     yolTarifi: document.getElementById('yolTarifiDugmesi'),
+    arabaTarifi: document.getElementById('arabaTarifiDugmesi'),
+    rotaKipYuruyus: document.getElementById('rotaKipYuruyus'),
+    rotaKipAraba: document.getElementById('rotaKipAraba'),
     rotaSonucu: document.getElementById('rotaSonucu'),
     rotaBaslik: document.getElementById('rotaBaslik'),
     rotaOlcu: document.getElementById('rotaOlcu'),
@@ -161,6 +164,37 @@
     return rozet;
   }
 
+  // Çok hat olan duraklarda liste kartı şişirmesin diye ilki gösterilir.
+  var GORUNUR_OTOBUS_HATTI = 12;
+
+  /** ESHOT hat numaralarını küçük şeritler hâlinde yazar. */
+  function otobusHatlariniYaz(hatlar) {
+    var kutu = document.createElement('div');
+    kutu.className = 'otobus-hatlari';
+
+    var simge = document.createElement('span');
+    simge.className = 'otobus-simge';
+    simge.setAttribute('aria-hidden', 'true');
+    simge.textContent = '🚌';
+    kutu.appendChild(simge);
+
+    hatlar.slice(0, GORUNUR_OTOBUS_HATTI).forEach(function (hat) {
+      var etiket = document.createElement('span');
+      etiket.className = 'otobus-hat';
+      etiket.textContent = hat;
+      kutu.appendChild(etiket);
+    });
+
+    if (hatlar.length > GORUNUR_OTOBUS_HATTI) {
+      var kalan = document.createElement('span');
+      kalan.className = 'otobus-kalan';
+      kalan.textContent = '+' + (hatlar.length - GORUNUR_OTOBUS_HATTI) + ' hat';
+      kutu.appendChild(kalan);
+    }
+
+    return kutu;
+  }
+
   function aktarmalariCiz(sonuc) {
     oge.aktarmaListesi.textContent = '';
     if (!sonuc.aktarmalar.length) {
@@ -170,14 +204,25 @@
     sonuc.aktarmalar.forEach(function (aktarma) {
       var satir = document.createElement('li');
 
+      var ust = document.createElement('div');
+      ust.className = 'aktarma-ust';
+
       var ad = document.createElement('strong');
       ad.textContent = aktarma.ad;
-      satir.appendChild(ad);
+      ust.appendChild(ad);
 
       var hatlar = document.createElement('span');
       hatlar.className = 'aktarma-hatlar';
       hatlar.textContent = aktarma.hatlar.join(' · ');
-      satir.appendChild(hatlar);
+      ust.appendChild(hatlar);
+
+      satir.appendChild(ust);
+
+      // "ESHOT" tek başına hangi otobüse binileceğini söylemiyor; hat
+      // numaraları ayrı bir satırda listelenir.
+      if (aktarma.otobusHatlari && aktarma.otobusHatlari.length) {
+        satir.appendChild(otobusHatlariniYaz(aktarma.otobusHatlari));
+      }
 
       oge.aktarmaListesi.appendChild(satir);
     });
@@ -322,9 +367,11 @@
   }
 
   function rotaSonucunuYaz(rota, durak) {
-    oge.rotaBaslik.textContent = durak.ad + ' durağına yürüyüş';
+    var arabaMi = rota.kip === 'araba';
+    oge.rotaBaslik.textContent = durak.ad + ' durağına ' +
+      (arabaMi ? 'araba ile' : 'yürüyüş');
     oge.rotaOlcu.textContent =
-      mesafeBicimle(rota.mesafeM) + ' · ' + yuruyusSuresiBicimle(rota.sureSn);
+      mesafeBicimle(rota.mesafeM) + ' · ' + rotaSuresiBicimle(rota.sureSn);
 
     oge.rotaAdimlar.textContent = '';
     rota.adimlar.forEach(function (adim) {
@@ -348,19 +395,30 @@
   }
 
   /** Kullanıcının konumundan verilen durağa yürüyüş rotası çizer. */
-  function yolTarifiniGoster(durak) {
+  /**
+   * Kullanıcının konumundan verilen durağa rota çizer.
+   * @param {object} durak
+   * @param {string} [kip] 'yuruyus' (varsayılan) veya 'araba'
+   */
+  function yolTarifiniGoster(durak, kip) {
     if (!sonKonum) {
       rotaDurumuYaz('Önce konumunu bulmam gerekiyor.', 'hata');
       return;
     }
-    if (typeof yuruyusRotasiAl !== 'function') return;
+    if (typeof rotaAl !== 'function') return;
 
-    rotaDurumuYaz('Yürüyüş rotası hesaplanıyor…');
+    var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
+    sonRotaKip = secilenKip;
+    kipDugmeleriniTazele();
+
+    rotaDurumuYaz(secilenKip === 'araba'
+      ? 'Araba rotası hesaplanıyor…'
+      : 'Yürüyüş rotası hesaplanıyor…');
     oge.rotaSonucu.hidden = true;
 
-    yuruyusRotasiAl(sonKonum, durak.konum)
+    rotaAl(sonKonum, durak.konum, secilenKip)
       .then(function (rota) {
-        if (harita) harita.yuruyusRotasiniCiz(rota.noktalar);
+        if (harita) harita.rotayiCiz(rota.noktalar, rota.kip);
         sonRota = rota;
         sonRotaHedefi = durak;
         rotaSonucunuYaz(rota, durak);
@@ -370,6 +428,19 @@
       .catch(function (sorun) {
         rotaDurumuYaz(sorun.message, 'hata');
       });
+  }
+
+  /** Kip düğmelerinin basılı durumunu ve "Başla"nın görünürlüğünü ayarlar. */
+  function kipDugmeleriniTazele() {
+    var arabaMi = sonRotaKip === 'araba';
+    oge.rotaKipYuruyus.setAttribute('aria-pressed', String(!arabaMi));
+    oge.rotaKipAraba.setAttribute('aria-pressed', String(arabaMi));
+
+    // Adım adım yönlendirme yürüyüş için tasarlandı: panel yürüme temposuna
+    // göre süre hesaplıyor, harita yaya yakınlığında duruyor ve sesli uyarılar
+    // araç hızında geç kalıyor. Araba kipinde rota gösterilir, yönlendirme
+    // başlatılmaz.
+    oge.yonlendirmeBaslat.hidden = arabaMi;
   }
 
   function hataGoster(mesaj) {
@@ -759,6 +830,7 @@
 
   var yonlendirmeOturumu = null;
   var sonRota = null;
+  var sonRotaKip = 'yuruyus';
   var sonRotaHedefi = null;
 
   // Bilinen son yön. Yeni ölçümde açı hesaplanamazsa (henüz yeterli hareket
@@ -783,7 +855,7 @@
       : 'Yola çık';
     oge.yonlendirmeMesafe.textContent = '—';
     oge.yonlendirmeKalan.textContent =
-      mesafeBicimle(sonRota.mesafeM) + ' · ' + yuruyusSuresiBicimle(sonRota.sureSn);
+      mesafeBicimle(sonRota.mesafeM) + ' · ' + rotaSuresiBicimle(sonRota.sureSn);
     oge.yonlendirmeToplam.textContent = mesafeBicimle(sonRota.mesafeM);
     oge.yonlendirmeYurunen.textContent = '0 m';
     oge.yonlendirmeCubuk.style.width = '0%';
@@ -833,7 +905,7 @@
 
         oge.yonlendirmeKalan.textContent =
           'Kalan: ' + mesafeBicimle(durum.ilerleme.kalanM) +
-          ' · ' + yuruyusSuresiBicimle(kalanSaniye);
+          ' · ' + rotaSuresiBicimle(kalanSaniye);
 
         // Toplam yürüyüşün ne kadarı bitti: çubuk ve sayılar.
         var oran = sonRota.mesafeM > 0
@@ -865,10 +937,10 @@
         yonlendirmeUyarisiYaz('Rotadan çıktın, yeniden hesaplanıyor…');
         sonKonum = { enlem: konum.enlem, boylam: konum.boylam };
 
-        yuruyusRotasiAl(sonKonum, sonRotaHedefi.konum)
+        rotaAl(sonKonum, sonRotaHedefi.konum, sonRotaKip)
           .then(function (yeni) {
             sonRota = yeni;
-            if (harita) harita.yuruyusRotasiniCiz(yeni.noktalar);
+            if (harita) harita.rotayiCiz(yeni.noktalar, yeni.kip);
             rotaSonucunuYaz(yeni, sonRotaHedefi);
             yonlendirmeyiBaslat();
           })
@@ -1022,7 +1094,19 @@
     oge.konumTekrar.addEventListener('click', konumuBul);
 
     oge.yolTarifi.addEventListener('click', function () {
-      if (yakinDurak) yolTarifiniGoster(yakinDurak);
+      if (yakinDurak) yolTarifiniGoster(yakinDurak, 'yuruyus');
+    });
+
+    oge.arabaTarifi.addEventListener('click', function () {
+      if (yakinDurak) yolTarifiniGoster(yakinDurak, 'araba');
+    });
+
+    // Kip düğmeleri aynı hedefe farklı kiple yeniden rota ister.
+    oge.rotaKipYuruyus.addEventListener('click', function () {
+      if (sonRotaHedefi) yolTarifiniGoster(sonRotaHedefi, 'yuruyus');
+    });
+    oge.rotaKipAraba.addEventListener('click', function () {
+      if (sonRotaHedefi) yolTarifiniGoster(sonRotaHedefi, 'araba');
     });
 
     oge.binisYolTarifi.addEventListener('click', function () {

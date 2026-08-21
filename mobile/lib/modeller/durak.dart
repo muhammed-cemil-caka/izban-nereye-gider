@@ -10,6 +10,10 @@ class Durak {
   final Konum konum;
   final List<String> aktarma;
 
+  /// Durağa yakın ESHOT otobüs hatlarının numaraları ("53", "912"...).
+  /// Kaynak: OpenStreetMap — bkz. araclar/eshot-hatlarini-ekle.js
+  final List<String> otobusHatlari;
+
   const Durak({
     required this.kod,
     required this.ad,
@@ -18,6 +22,7 @@ class Durak {
     required this.konum,
     this.mesafeKm = 0,
     this.aktarma = const [],
+    this.otobusHatlari = const [],
   });
 
   factory Durak.jsondan(Map<String, dynamic> json) {
@@ -29,6 +34,8 @@ class Durak {
       mesafeKm: (json['mesafeKm'] as num?)?.toDouble() ?? 0,
       konum: Konum.jsondan(json['konum'] as Map<String, dynamic>?),
       aktarma: List<String>.from(json['aktarma'] as List<dynamic>? ?? const []),
+      otobusHatlari:
+          List<String>.from(json['otobusHatlari'] as List<dynamic>? ?? const []),
     );
   }
 

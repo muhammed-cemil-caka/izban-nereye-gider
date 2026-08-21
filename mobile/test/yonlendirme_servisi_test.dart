@@ -4,7 +4,7 @@ import 'package:izban_nereye_gider/servisler/rota_servisi.dart';
 import 'package:izban_nereye_gider/servisler/yonlendirme_servisi.dart';
 
 // Doğu yönünde uzanan düz bir rota: 38.48 enleminde, yaklaşık 1 km.
-final _duzRota = YuruyusRotasi(
+final _duzRota = Rota(
   noktalar: const [
     Konum(enlem: 38.48, boylam: 27.0),
     Konum(enlem: 38.48, boylam: 27.00575),
