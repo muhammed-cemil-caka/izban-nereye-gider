@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'diller.dart';
 import 'ekranlar/acilis_ekrani.dart';
 import 'ekranlar/ana_ekran.dart';
 import 'servisler/durak_servisi.dart';
@@ -42,14 +43,40 @@ class IzbanUygulamasi extends StatefulWidget {
 
 class _IzbanUygulamasiDurumu extends State<IzbanUygulamasi> {
   static const _temaAnahtari = 'izban.tema';
+  static const _dilAnahtari = 'izban.dil';
 
   /// Seçim yapılmadıysa cihazın tercihi geçerli.
   ThemeMode _temaKipi = ThemeMode.system;
+
+  /// Seçim yapılmadıysa cihaz dili; Türkçe değilse İngilizce.
+  String? _dilKodu;
 
   @override
   void initState() {
     super.initState();
     _temayiOku();
+    _diliOku();
+  }
+
+  Future<void> _diliOku() async {
+    try {
+      final ayarlar = await SharedPreferences.getInstance();
+      final deger = ayarlar.getString(_dilAnahtari);
+      if (!mounted || deger == null) return;
+      setState(() => _dilKodu = deger);
+    } catch (_) {
+      // Eklenti yoksa (widget testleri) cihaz dili kullanılır.
+    }
+  }
+
+  Future<void> _diliDegistir(String kod) async {
+    setState(() => _dilKodu = kod);
+    try {
+      final ayarlar = await SharedPreferences.getInstance();
+      await ayarlar.setString(_dilAnahtari, kod);
+    } catch (_) {
+      // Kaydedilemezse dil yine de bu oturumda değişir.
+    }
   }
 
   Future<void> _temayiOku() async {
@@ -86,13 +113,26 @@ class _IzbanUygulamasiDurumu extends State<IzbanUygulamasi> {
       theme: izbanTemasi(Brightness.light),
       darkTheme: izbanTemasi(Brightness.dark),
       themeMode: _temaKipi,
-      home: AcilisKapisi(
-        cocuk: AnaEkran(
-          servis: widget.servis,
-          konumServisi: widget.konumServisi,
-          temaKipi: _temaKipi,
-          temaDegisti: _temayiDegistir,
-        ),
+      home: Builder(
+        builder: (context) {
+          // Seçim yoksa cihaz dili: Türkçe değilse İngilizce.
+          final cihaz = View.of(context).platformDispatcher.locale.languageCode;
+          final kod = _dilKodu ?? (cihaz == 'tr' ? 'tr' : 'en');
+
+          return DilKapsami(
+            diller: Diller(kod),
+            child: AcilisKapisi(
+              cocuk: AnaEkran(
+                servis: widget.servis,
+                konumServisi: widget.konumServisi,
+                temaKipi: _temaKipi,
+                temaDegisti: _temayiDegistir,
+                dilKodu: kod,
+                dilDegisti: _diliDegistir,
+              ),
+            ),
+          );
+        },
       ),
     );
   }

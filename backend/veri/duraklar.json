@@ -1,5 +1,5 @@
 {
-  "surum": "2.5.0",
+  "surum": "2.6.0",
   "guncellemeTarihi": "2026-08-21",
   "uyari": "Durak sırası, koordinatlar ve aktarmalar OpenStreetMap verisinden üretilmiştir. SÜRELER TAHMİNİDİR: gerçek mesafeden hesaplanır, resmî tarife değildir. Gerçek varış saatleri için izban.com.tr tarifesi kullanılmalıdır.",
   "kaynak": {
@@ -8,7 +8,8 @@
     "ilce": "Nominatim ters coğrafi kodlama",
     "sureModeli": "65 km/sa ortalama hız, durak başına 0.6 dk bekleme; mesafeler gerçek ray geometrisi üzerinden ölçülür",
     "otobus": "OpenStreetMap — durağa 400 m'den yakın ESHOT otobüs hatları (type=route, route=bus ilişkileri)",
-    "aktarmaNoktalari": "OpenStreetMap — her aktarma türünün durağa en yakın noktası (raylı/vapur 600 m, otobüs 600 m)"
+    "aktarmaNoktalari": "OpenStreetMap — her aktarma türünün durağa en yakın noktası (raylı/vapur 600 m, otobüs 600 m)",
+    "seferSaatleri": "İzmir Büyükşehir Belediyesi açık veri — openapi.izmir.bel.tr/api/izban"
   },
   "hat": {
     "ad": "İZBAN Banliyö Hattı",
@@ -46,7 +47,8 @@
           },
           "mesafeM": 148
         }
-      ]
+      ],
+      "izbanId": 1
     },
     {
       "kod": "bicerova",
@@ -74,7 +76,8 @@
           },
           "mesafeM": 106
         }
-      ]
+      ],
+      "izbanId": 2
     },
     {
       "kod": "hatundere",
@@ -85,7 +88,8 @@
       "konum": {
         "enlem": 38.689897,
         "boylam": 27.017432
-      }
+      },
+      "izbanId": 3
     },
     {
       "kod": "menemen",
@@ -113,7 +117,8 @@
           },
           "mesafeM": 84
         }
-      ]
+      ],
+      "izbanId": 4
     },
     {
       "kod": "egekent-2",
@@ -138,7 +143,8 @@
           },
           "mesafeM": 117
         }
-      ]
+      ],
+      "izbanId": 5
     },
     {
       "kod": "ulukent",
@@ -166,7 +172,8 @@
           },
           "mesafeM": 29
         }
-      ]
+      ],
+      "izbanId": 6
     },
     {
       "kod": "egekent",
@@ -208,7 +215,8 @@
           },
           "mesafeM": 308
         }
-      ]
+      ],
+      "izbanId": 7
     },
     {
       "kod": "atasanayi",
@@ -248,7 +256,8 @@
           },
           "mesafeM": 419
         }
-      ]
+      ],
+      "izbanId": 8
     },
     {
       "kod": "cigli",
@@ -288,7 +297,8 @@
           },
           "mesafeM": 180
         }
-      ]
+      ],
+      "izbanId": 9
     },
     {
       "kod": "mavisehir",
@@ -317,7 +327,8 @@
           },
           "mesafeM": 147
         }
-      ]
+      ],
+      "izbanId": 10
     },
     {
       "kod": "semikler",
@@ -342,7 +353,8 @@
           },
           "mesafeM": 559
         }
-      ]
+      ],
+      "izbanId": 11
     },
     {
       "kod": "demirkopru",
@@ -367,7 +379,8 @@
           },
           "mesafeM": 454
         }
-      ]
+      ],
+      "izbanId": 13
     },
     {
       "kod": "nergiz",
@@ -400,7 +413,8 @@
           },
           "mesafeM": 240
         }
-      ]
+      ],
+      "izbanId": 14
     },
     {
       "kod": "karsiyaka",
@@ -445,7 +459,8 @@
           },
           "mesafeM": 525
         }
-      ]
+      ],
+      "izbanId": 15
     },
     {
       "kod": "alaybey",
@@ -480,7 +495,8 @@
           },
           "mesafeM": 498
         }
-      ]
+      ],
+      "izbanId": 16
     },
     {
       "kod": "naldoken",
@@ -527,7 +543,8 @@
           },
           "mesafeM": 518
         }
-      ]
+      ],
+      "izbanId": 17
     },
     {
       "kod": "turan",
@@ -564,7 +581,8 @@
           },
           "mesafeM": 90
         }
-      ]
+      ],
+      "izbanId": 18
     },
     {
       "kod": "bayrakli",
@@ -607,7 +625,8 @@
           },
           "mesafeM": 85
         }
-      ]
+      ],
+      "izbanId": 19
     },
     {
       "kod": "salhane",
@@ -643,7 +662,8 @@
           },
           "mesafeM": 63
         }
-      ]
+      ],
+      "izbanId": 20
     },
     {
       "kod": "halkapinar",
@@ -710,7 +730,8 @@
           },
           "mesafeM": 293
         }
-      ]
+      ],
+      "izbanId": 21
     },
     {
       "kod": "alsancak-gar",
@@ -753,7 +774,8 @@
           },
           "mesafeM": 117
         }
-      ]
+      ],
+      "izbanId": 34
     },
     {
       "kod": "hilal",
@@ -788,7 +810,8 @@
           },
           "mesafeM": 162
         }
-      ]
+      ],
+      "izbanId": 35
     },
     {
       "kod": "kemer",
@@ -830,7 +853,8 @@
           },
           "mesafeM": 582
         }
-      ]
+      ],
+      "izbanId": 23
     },
     {
       "kod": "sirinyer",
@@ -859,7 +883,8 @@
           },
           "mesafeM": 33
         }
-      ]
+      ],
+      "izbanId": 24
     },
     {
       "kod": "kosu",
@@ -887,7 +912,8 @@
           },
           "mesafeM": 10
         }
-      ]
+      ],
+      "izbanId": 25
     },
     {
       "kod": "inkilap",
@@ -898,7 +924,8 @@
       "konum": {
         "enlem": 38.368872,
         "boylam": 27.141503
-      }
+      },
+      "izbanId": 26
     },
     {
       "kod": "semt-garaji",
@@ -926,7 +953,8 @@
           },
           "mesafeM": 93
         }
-      ]
+      ],
+      "izbanId": 27
     },
     {
       "kod": "esbas",
@@ -954,7 +982,8 @@
           },
           "mesafeM": 201
         }
-      ]
+      ],
+      "izbanId": 28
     },
     {
       "kod": "gaziemir",
@@ -979,7 +1008,8 @@
           },
           "mesafeM": 336
         }
-      ]
+      ],
+      "izbanId": 29
     },
     {
       "kod": "sarnic",
@@ -1007,7 +1037,8 @@
           },
           "mesafeM": 106
         }
-      ]
+      ],
+      "izbanId": 30
     },
     {
       "kod": "havalimani",
@@ -1032,7 +1063,8 @@
           },
           "mesafeM": 419
         }
-      ]
+      ],
+      "izbanId": 31
     },
     {
       "kod": "cumaovasi",
@@ -1043,7 +1075,8 @@
       "konum": {
         "enlem": 38.264131,
         "boylam": 27.162903
-      }
+      },
+      "izbanId": 32
     },
     {
       "kod": "develi",
@@ -1054,7 +1087,8 @@
       "konum": {
         "enlem": 38.203284,
         "boylam": 27.166602
-      }
+      },
+      "izbanId": 38
     },
     {
       "kod": "tekeli",
@@ -1065,7 +1099,8 @@
       "konum": {
         "enlem": 38.181005,
         "boylam": 27.185652
-      }
+      },
+      "izbanId": 40
     },
     {
       "kod": "pancar",
@@ -1090,7 +1125,8 @@
           },
           "mesafeM": 104
         }
-      ]
+      ],
+      "izbanId": 42
     },
     {
       "kod": "kuscuburun",
@@ -1101,7 +1137,8 @@
       "konum": {
         "enlem": 38.209128,
         "boylam": 27.309317
-      }
+      },
+      "izbanId": 43
     },
     {
       "kod": "torbali",
@@ -1126,7 +1163,8 @@
           },
           "mesafeM": 262
         }
-      ]
+      ],
+      "izbanId": 44
     },
     {
       "kod": "tepekoy",
@@ -1151,7 +1189,8 @@
           },
           "mesafeM": 77
         }
-      ]
+      ],
+      "izbanId": 45
     },
     {
       "kod": "saglik",
@@ -1176,7 +1215,8 @@
           },
           "mesafeM": 561
         }
-      ]
+      ],
+      "izbanId": 47
     },
     {
       "kod": "belevi",
@@ -1187,7 +1227,8 @@
       "konum": {
         "enlem": 38.031431,
         "boylam": 27.433077
-      }
+      },
+      "izbanId": 50
     },
     {
       "kod": "selcuk",
@@ -1212,7 +1253,8 @@
           },
           "mesafeM": 401
         }
-      ]
+      ],
+      "izbanId": 48
     }
   ]
 }

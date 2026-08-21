@@ -82,7 +82,7 @@ async function getir(adres, secenekler = {}, deneme = 0) {
 async function yerleriGetir() {
   const turSatiri = Object.keys(TURLER).map((k) => `wd:${k}`).join(' ');
   const sorgu = `
-    SELECT ?yer ?yerLabel ?koord ?tur ?gorsel ?makale WHERE {
+    SELECT ?yer ?yerLabel ?koord ?tur ?gorsel ?makale ?aciklama WHERE {
       SERVICE wikibase:box {
         ?yer wdt:P625 ?koord .
         bd:serviceParam wikibase:cornerSouthWest "Point(${KUTU.bati} ${KUTU.guney})"^^geo:wktLiteral .
@@ -91,6 +91,7 @@ async function yerleriGetir() {
       ?yer wdt:P31/wdt:P279* ?tur .
       VALUES ?tur { ${turSatiri} }
       OPTIONAL { ?yer wdt:P18 ?gorsel . }
+      OPTIONAL { ?yer schema:description ?aciklama . FILTER(LANG(?aciklama) = "tr") }
       OPTIONAL {
         ?makale schema:about ?yer ;
                 schema:isPartOf <https://tr.wikipedia.org/> .
@@ -136,8 +137,67 @@ async function ozetGetir(makaleAdresi) {
   return {
     ozet: (veri.extract || '').trim(),
     baslik: veri.title || baslik,
-    adres: veri.content_urls?.desktop?.page || makaleAdresi
+    adres: veri.content_urls?.desktop?.page || makaleAdresi,
+    // Wikidata'da P18 yoksa makalenin kendi görseli kullanılır: 73 yerin
+    // 5'inde P18 yoktu, çoğunun makalesinde fotoğraf var.
+    gorsel: veri.thumbnail?.source
+      ? {
+          adres: veri.originalimage?.source || veri.thumbnail.source,
+          kucukAdres: veri.thumbnail.source,
+          yazar: 'Vikipedi katkıcıları',
+          lisans: 'bkz. dosya sayfası',
+          kaynakSayfa: veri.content_urls?.desktop?.page || makaleAdresi
+        }
+      : null
   };
+}
+
+/**
+ * Son çare: Commons'ta ad araması.
+ *
+ * Wikidata'da P18, makalede de görsel yoksa dosya adıyla aranır. YANLIŞ
+ * fotoğraf, fotoğrafsızdan kötüdür: bulunan dosyanın adı, yerin adındaki
+ * anlamlı kelimelerden en az ikisini içermiyorsa kabul edilmez.
+ */
+async function commonsAra(ad) {
+  const adres = COMMONS + '?action=query&format=json&origin=*'
+    + '&generator=search&gsrnamespace=6&gsrlimit=5'
+    + '&gsrsearch=' + encodeURIComponent(ad)
+    + '&prop=imageinfo&iiprop=extmetadata|url&iiurlwidth=640';
+
+  const yanit = await getir(adres);
+  if (!yanit) return null;
+
+  const veri = await yanit.json();
+  const sayfalar = Object.values(veri.query?.pages || {});
+  if (!sayfalar.length) return null;
+
+  const anahtar = ad.toLowerCase()
+    .replace(/[(),]/g, ' ')
+    .split(/\s+/)
+    .filter((k) => k.length > 3);
+  if (anahtar.length < 2) return null;
+
+  for (const sayfa of sayfalar) {
+    const dosyaAdi = (sayfa.title || '').toLowerCase();
+    const tutan = anahtar.filter((k) => dosyaAdi.includes(k)).length;
+    if (tutan < 2) continue;
+
+    const ii = sayfa.imageinfo?.[0];
+    if (!ii) continue;
+    const ek = ii.extmetadata || {};
+    const temizle = (m) => (m || '').replace(/<[^>]*>/g, '').trim();
+
+    return {
+      adres: ii.url,
+      kucukAdres: ii.thumburl || ii.url,
+      yazar: temizle(ek.Artist?.value) || 'bilinmiyor',
+      lisans: temizle(ek.LicenseShortName?.value) || 'bilinmiyor',
+      kaynakSayfa: ii.descriptionurl
+    };
+  }
+
+  return null;
 }
 
 /** Commons: görsellerin yazar ve lisansı — 50'şerli toplu istek. */
@@ -210,7 +270,8 @@ async function gorselBilgileri(dosyalar) {
       tur,
       konum,
       gorselDosya: satir.gorsel ? decodeURIComponent(satir.gorsel.value.split('/').pop()) : null,
-      makale: satir.makale?.value || null
+      makale: satir.makale?.value || null,
+      aciklama: (satir.aciklama?.value || '').trim()
     });
   }
 
@@ -241,13 +302,25 @@ async function gorselBilgileri(dosyalar) {
       await bekle(400);
     }
 
+    // Görsel önceliği: Wikidata P18 (lisansı Commons'tan geliyor) → makale
+    // görseli. Özet: Wikipedia metni → Wikidata açıklaması.
+    let gorsel = (yer.gorselDosya ? gorseller.get(yer.gorselDosya) : null)
+      || metin?.gorsel
+      || null;
+
+    // Hiçbiri yoksa Commons'ta adıyla aranır.
+    if (!gorsel) {
+      gorsel = await commonsAra(yer.ad);
+      await bekle(400);
+    }
+
     cikti.push({
       kod: kodUret(yer.ad),
       ad: yer.ad,
       tur: yer.tur,
       konum: { enlem: +yer.konum.enlem.toFixed(6), boylam: +yer.konum.boylam.toFixed(6) },
-      ozet: metin?.ozet || '',
-      gorsel: yer.gorselDosya ? gorseller.get(yer.gorselDosya) || null : null,
+      ozet: metin?.ozet || yer.aciklama || '',
+      gorsel,
       kaynaklar: {
         wikidata: yer.kimlik,
         wikipedia: metin?.adres || null
@@ -258,8 +331,12 @@ async function gorselBilgileri(dosyalar) {
     process.stdout.write(`  ${cikti.length}/${yerler.length} ${yer.ad}\r`);
   }
 
-  // Özeti ya da görseli olmayan kartı göstermeye değmez.
-  const kullanilabilir = cikti.filter((y) => y.ozet || y.gorsel);
+  // Kart ölçütü: fotoğrafı olan her yer girer. Fotoğrafsızlar ancak
+  // Vikipedi makalesi varsa (yani kayda değerse) kalır — yoksa liste
+  // fotoğrafsız çeşme/türbe kayıtlarıyla doluyor ve kartlar boş görünüyor.
+  const kullanilabilir = cikti.filter(
+    (y) => y.gorsel || (y.ozet && y.kaynaklar.wikipedia)
+  );
 
   const veri = {
     surum: '1.0.0',

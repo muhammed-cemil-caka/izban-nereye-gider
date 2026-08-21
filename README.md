@@ -751,6 +751,47 @@ Her iki adres de tek sabitte tutulur, geçiş tek satırdır:
 
 Haritada "© OpenStreetMap katkıcıları" ibaresi bulunmak zorundadır.
 
+## Sefer saatleri
+
+Biniş durağından iniş durağına **sıradaki trenler** özet kartının üstünde
+gösterilir: kalkış, varış ve "kaç dakika sonra". İlk sefer vurgulanır.
+
+Kaynak: **İzmir Büyükşehir Belediyesi açık veri** —
+`openapi.izmir.bel.tr/api/izban/sefersaatleri/{kalkis}/{varis}`. Anahtar
+istemiyor, CORS'a açık (`access-control-allow-origin: *`), bu yüzden hem
+tarayıcı hem uygulama doğrudan çağırıyor.
+
+İstasyon kimlikleri veriye bir kez yazılır:
+
+```bash
+node araclar/izban-kimlik-ekle.js
+```
+
+41 durağın 41'i eşleşiyor; ikisi ad farkıyla: "Alsancak Gar" → *Alsancak*,
+"Havalimanı" → *Adnan Menderes Havalimanı*.
+
+**Kapsam sınırı:** servis Aliağa – Tepeköy arasını veriyor. Selçuk uzantısında
+(Sağlık, Belevi, Selçuk) boş liste dönüyor; uydurma saat basmak yerine
+"bu durak çifti için resmî sefer verisi yayınlanmıyor" yazılır.
+
+Tarife gün içinde değişmediği için yanıt oturum boyu saklanır — durak seçimi
+her değiştiğinde yeniden istenmez.
+
+## Dil: Türkçe / İngilizce
+
+Üst bantta **TR/EN** düğmesi; seçim `localStorage` (web) ve
+`shared_preferences` (mobil) ile hatırlanır. Seçim yoksa cihaz dili kullanılır,
+Türkçe değilse İngilizce.
+
+Çevrilen: arayüz metinleri (başlıklar, düğmeler, etiketler, durum mesajları).
+**Çevrilmeyen:** durak ve turistik yer adları (özel isim) ve turistik özetler —
+metin Türkçe Vikipedi'den geliyor. İngilizce özet istenirse üretim betiğinin
+`en.wikipedia.org` özetini de çekmesi gerekir.
+
+Sözlükler: `frontend/js/diller.js` · `mobile/lib/diller.dart` — aynı anahtarlar.
+Webde çevrilecek metinler HTML'de `data-ceviri` ile işaretli; mobilde
+`Diller.of(context)` ile okunur.
+
 ## Gezilecek yerler
 
 Biniş ve iniş durağının çevresindeki tarihi/turistik yerler; her biri fotoğraf,
@@ -766,8 +807,17 @@ tarihi/turistik ögeler), **Vikipedi** (Türkçe özet, CC BY-SA), **Wikimedia
 Commons** (fotoğraf + yazar + lisans). Kartta yazar ve lisans gösterilir —
 Commons dosyaları bunu zorunlu kılıyor.
 
-Sonuç: **73 yer**, 68'inde fotoğraf. En yoğun duraklar Alsancak Gar (32 yer),
-Hilal (30), Kemer (20), Selçuk (12).
+Sonuç: **95 yer**, **92'sinde fotoğraf**. Fotoğraf üç kademede aranır:
+Wikidata `P18` → Vikipedi makale görseli → Commons'ta ad araması. Sonuncusunda
+yanlış fotoğraf riskine karşı dosya adı, yerin adındaki anlamlı kelimelerden en
+az ikisini içermek zorunda: yanlış fotoğraf, fotoğrafsızdan kötüdür.
+
+Fotoğrafı olmayan yer ancak Vikipedi makalesi varsa listede kalır; yoksa liste
+fotoğrafsız çeşme/türbe kayıtlarıyla doluyor ve kartlar boş görünüyordu.
+
+Kart içi hizalama ızgarayla sabit: başlık iki satır, özet dört satır, düğme ve
+kaynak satırı sabit yükseklikte. Serbest akışta özeti olmayan kartta düğmeler
+yukarı kayıyor, şeritteki kartlar birbirini tutmuyordu.
 
 Turistik veri `duraklar.json` içine **konmaz**, yanına konur
 (`backend/veri/turistik-yerler.json`): durak dosyası OSM'den her üretimde

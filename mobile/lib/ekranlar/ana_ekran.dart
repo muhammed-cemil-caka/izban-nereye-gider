@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../diller.dart';
 import '../modeller/durak.dart';
 import '../modeller/yakin_durak.dart';
 import '../modeller/turistik_yer.dart';
@@ -7,6 +8,7 @@ import '../servisler/durak_servisi.dart';
 import '../servisler/konum_servisi.dart';
 import 'dart:async';
 import '../servisler/rota_servisi.dart';
+import '../servisler/sefer_servisi.dart';
 import '../servisler/turistik_servisi.dart';
 import '../servisler/ses_servisi.dart';
 import '../servisler/yonlendirme_servisi.dart';
@@ -24,12 +26,18 @@ class AnaEkran extends StatefulWidget {
   final ThemeMode temaKipi;
   final ValueChanged<ThemeMode>? temaDegisti;
 
+  /// Dil de kökte tutulur; üst bantta TR/EN düğmesi var.
+  final String dilKodu;
+  final ValueChanged<String>? dilDegisti;
+
   const AnaEkran({
     super.key,
     this.servis,
     this.konumServisi,
     this.temaKipi = ThemeMode.system,
     this.temaDegisti,
+    this.dilKodu = 'tr',
+    this.dilDegisti,
   });
 
   @override
@@ -49,6 +57,13 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   final _haritaAnahtari = GlobalKey();
   late final Future<List<Durak>> _duraklarGelecegi;
   List<TuristikYer> _turistikYerler = const [];
+
+  /// Sefer saatleri: durak çifti → sefer listesi. Tarife gün içinde
+  /// değişmediği için oturum boyu saklanıyor.
+  final Map<String, List<Sefer>> _seferOnbellegi = {};
+  String? _seferAnahtari;
+  bool _seferAraniyor = false;
+  bool _seferHatasi = false;
 
   String? _binisKod;
   String? _inisKod;
@@ -107,6 +122,42 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     // Kullanıcı uygulamayı açar açmaz konum isteniyor; reddedilirse uygulama
     // normal çalışmaya devam eder, yalnızca en yakın durak kartı kapanır.
     WidgetsBinding.instance.addPostFrameCallback((_) => _konumuBul());
+  }
+
+  /// Biniş → iniş için sefer saatlerini getirir (gerekirse).
+  Future<void> _seferleriGetir(Durak binis, Durak inis) async {
+    final binisId = binis.izbanId;
+    final inisId = inis.izbanId;
+    if (binisId == null || inisId == null) return;
+
+    final anahtar = '$binisId-$inisId';
+    if (_seferAnahtari == anahtar) return;   // zaten bu çift için istendi
+    _seferAnahtari = anahtar;
+
+    if (_seferOnbellegi.containsKey(anahtar)) {
+      setState(() => _seferHatasi = false);
+      return;
+    }
+
+    setState(() {
+      _seferAraniyor = true;
+      _seferHatasi = false;
+    });
+
+    try {
+      final seferler = await const SeferServisi().seferleriAl(binisId, inisId);
+      if (!mounted || _seferAnahtari != anahtar) return;
+      setState(() {
+        _seferOnbellegi[anahtar] = seferler;
+        _seferAraniyor = false;
+      });
+    } catch (_) {
+      if (!mounted || _seferAnahtari != anahtar) return;
+      setState(() {
+        _seferAraniyor = false;
+        _seferHatasi = true;
+      });
+    }
   }
 
   Future<void> _turistikYerleriYukle() async {
@@ -623,6 +674,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   Widget build(BuildContext context) {
     final renkler = Theme.of(context).colorScheme;
     final koyuMu = Theme.of(context).brightness == Brightness.dark;
+    final ceviri = Diller.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -655,8 +707,21 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: widget.dilDegisti == null
+                ? null
+                : () => widget.dilDegisti!(widget.dilKodu == 'tr' ? 'en' : 'tr'),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(40, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            child: Text(
+              widget.dilKodu == 'tr' ? 'EN' : 'TR',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+          ),
           IconButton(
-            tooltip: koyuMu ? 'Açık temaya geç' : 'Koyu temaya geç',
+            tooltip: koyuMu ? ceviri('temaAcik') : ceviri('temaKoyu'),
             icon: Icon(koyuMu ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
             onPressed: widget.temaDegisti == null
                 ? null
@@ -694,6 +759,14 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           _inisKod ??= duraklar.last.kod;
 
           final yolculuk = Yolculuk.hesapla(duraklar, _binisKod!, _inisKod!);
+
+          // Seçim değiştiyse sefer saatleri tazelenir; çizim sırasında
+          // setState çağırmamak için kare sonuna bırakılıyor.
+          if (yolculuk != null) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => _seferleriGetir(yolculuk.binis, yolculuk.inis),
+            );
+          }
 
           return ListView(
             controller: _kaydirma,
@@ -836,6 +909,14 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 const _UyariKarti(mesaj: 'Biniş ve iniş durağı aynı olamaz.')
               else ...[
                 _OzetKarti(yolculuk: yolculuk),
+                const SizedBox(height: 16),
+                _SeferKarti(
+                  binis: yolculuk.binis,
+                  inis: yolculuk.inis,
+                  seferler: _seferOnbellegi['${yolculuk.binis.izbanId}-${yolculuk.inis.izbanId}'],
+                  araniyor: _seferAraniyor,
+                  hata: _seferHatasi,
+                ),
                 const SizedBox(height: 16),
                 _GuzergahKarti(yolculuk: yolculuk),
                 if (_turistikYerler.isNotEmpty) ...[
@@ -1189,6 +1270,145 @@ class _OtobusHatlari extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Biniş durağından iniş durağına sıradaki trenler.
+///
+/// Veri İzmir Büyükşehir Belediyesi açık servisinden. Selçuk uzantısında
+/// (Sağlık, Belevi, Selçuk) servis boş liste döndürüyor; uydurma saat basmak
+/// yerine durum açıkça yazılıyor.
+class _SeferKarti extends StatelessWidget {
+  static const gorunurSefer = 4;
+
+  final Durak binis;
+  final Durak inis;
+  final List<Sefer>? seferler;
+  final bool araniyor;
+  final bool hata;
+
+  const _SeferKarti({
+    required this.binis,
+    required this.inis,
+    required this.seferler,
+    required this.araniyor,
+    required this.hata,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final renkler = tema.colorScheme;
+    final ceviri = Diller.of(context);
+
+    if (binis.izbanId == null || inis.izbanId == null) {
+      return const SizedBox.shrink();
+    }
+
+    final soluk = tema.textTheme.bodySmall?.copyWith(
+      color: tema.textTheme.bodySmall?.color?.withValues(alpha: .7),
+    );
+
+    Widget govde;
+    if (araniyor) {
+      govde = Row(
+        children: [
+          const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+          const SizedBox(width: 10),
+          Text(ceviri('seferAliniyor'), style: soluk),
+        ],
+      );
+    } else if (hata) {
+      govde = Text(ceviri('seferUlasilamiyor'), style: soluk);
+    } else if (seferler == null) {
+      govde = const SizedBox.shrink();
+    } else if (seferler!.isEmpty) {
+      govde = Text(ceviri('seferYok'), style: soluk);
+    } else {
+      final siradaki = SeferServisi.siradakiler(seferler!, gorunurSefer);
+      govde = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 4,
+        children: [
+          for (var i = 0; i < siradaki.length; i++)
+            _seferSatiri(context, siradaki[i], ilk: i == 0),
+          const SizedBox(height: 2),
+          Text(
+            '${seferler!.length} ${ceviri('sefer')} · ${ceviri('seferKaynak')}',
+            style: soluk?.copyWith(fontSize: 11),
+          ),
+        ],
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 8,
+          children: [
+            Text(ceviri('siradakiTrenler'), style: tema.textTheme.labelMedium),
+            Text(
+              '${binis.ad} → ${inis.ad}',
+              style: tema.textTheme.bodySmall?.copyWith(
+                color: renkler.onSurface.withValues(alpha: .7),
+              ),
+            ),
+            govde,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _seferSatiri(BuildContext context, SiradakiSefer sefer, {required bool ilk}) {
+    final tema = Theme.of(context);
+    final renkler = tema.colorScheme;
+    final ceviri = Diller.of(context);
+
+    final kalan = sefer.ertesiGun
+        ? ceviri('yarin')
+        : sefer.kalanDk == 0
+            ? ceviri('simdi')
+            : '${sefer.kalanDk} ${ceviri('dkSonra')}';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        // İlk sefer vurgulanır: kullanıcının yetişeceği tren o.
+        color: ilk ? renkler.primary.withValues(alpha: .10) : null,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(
+            sefer.sefer.kalkis,
+            style: tema.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: ilk ? renkler.primary : renkler.onSurface,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '→ ${sefer.sefer.varis}',
+            style: tema.textTheme.bodySmall?.copyWith(
+              color: renkler.onSurface.withValues(alpha: .7),
+            ),
+          ),
+          const Spacer(),
+          Text(
+            kalan,
+            style: tema.textTheme.bodySmall?.copyWith(
+              color: ilk ? renkler.primary : renkler.onSurface.withValues(alpha: .7),
+              fontWeight: ilk ? FontWeight.w700 : FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

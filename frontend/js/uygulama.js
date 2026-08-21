@@ -23,6 +23,10 @@
     durak: document.getElementById('durakDegeri'),
     aktarmaSayisi: document.getElementById('aktarmaDegeri'),
     ozetCumle: document.getElementById('ozetCumle'),
+    seferKutusu: document.getElementById('seferKutusu'),
+    seferBaslik: document.getElementById('seferBaslik'),
+    seferListesi: document.getElementById('seferListesi'),
+    seferNot: document.getElementById('seferNot'),
     hatSemasi: document.getElementById('hatSemasi'),
     aktarmaKarti: document.getElementById('aktarmaKarti'),
     aktarmaListesi: document.getElementById('aktarmaListesi'),
@@ -50,6 +54,8 @@
     rotaTemizle: document.getElementById('rotaTemizle'),
     rotaDurum: document.getElementById('rotaDurum'),
     haritaKarti: document.querySelector('.harita-karti'),
+    haritaIpucu: document.querySelector('.harita-karti .harita-ipucu'),
+    haritaKatki: document.querySelector('.harita-katki'),
     yonlendirmeBaslat: document.getElementById('yonlendirmeBaslat'),
     yonlendirmePaneli: document.getElementById('yonlendirmePaneli'),
     yonlendirmeManevra: document.getElementById('yonlendirmeManevra'),
@@ -69,10 +75,63 @@
     konumArama: document.getElementById('konumArama'),
     konumAramaDurum: document.getElementById('konumAramaDurum'),
     konumAramaListe: document.getElementById('konumAramaListe'),
-    tema: document.getElementById('temaDugmesi')
+    tema: document.getElementById('temaDugmesi'),
+    dil: document.getElementById('dilDugmesi')
   };
 
   /* ---------- Tema ---------- */
+
+  /* ---------- Dil ---------- */
+
+  var dilKodu = typeof dilKodunuBul === 'function' ? dilKodunuBul() : 'tr';
+
+  /** Sözlükten metin. Anahtar yoksa anahtarın kendisi döner (gözden kaçmasın). */
+  function ceviri(anahtar) {
+    var sozluk = (typeof DILLER !== 'undefined' && DILLER[dilKodu]) || {};
+    return sozluk[anahtar] || anahtar;
+  }
+
+  /**
+   * Sayfadaki işaretli metinleri seçili dile çevirir.
+   *
+   * Yalnızca ARAYÜZ çevrilir; durak ve turistik yer adları özel isim olduğu
+   * için olduğu gibi kalır, turistik özetler de Türkçe Vikipedi'den geliyor.
+   */
+  function diliUygula() {
+    document.documentElement.lang = dilKodu;
+
+    document.querySelectorAll('[data-ceviri]').forEach(function (el) {
+      el.textContent = ceviri(el.dataset.ceviri);
+    });
+    document.querySelectorAll('[data-ceviri-yer]').forEach(function (el) {
+      el.placeholder = ceviri(el.dataset.ceviriYer);
+    });
+    document.querySelectorAll('[data-ceviri-baslik]').forEach(function (el) {
+      var metin = ceviri(el.dataset.ceviriBaslik);
+      el.title = metin;
+      el.setAttribute('aria-label', metin);
+    });
+
+    oge.dil.textContent = dilKodu === 'tr' ? 'EN' : 'TR';
+    if (oge.haritaIpucu) oge.haritaIpucu.textContent = ceviri('haritaIpucu');
+    if (oge.haritaKatki) {
+      oge.haritaKatki.innerHTML = ceviri('haritaKatki').replace(
+        'OpenStreetMap',
+        '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>'
+      );
+    }
+
+    guncelle();
+    if (sonKonum && tumAdaylar.length) {
+      yakinDuragiGoster(tumAdaylar, sonDogruluk.dogrulukM, true);
+    }
+  }
+
+  function dilDegistir() {
+    dilKodu = dilKodu === 'tr' ? 'en' : 'tr';
+    try { localStorage.setItem(DIL_ANAHTAR, dilKodu); } catch (e) { /* özel mod */ }
+    diliUygula();
+  }
 
   function temayiUygula(tema) {
     document.documentElement.setAttribute('data-tema', tema);
@@ -239,6 +298,97 @@
     if (yukseklik > 0) liste.style.setProperty('--aktarma-yukseklik', yukseklik + 'px');
   }
 
+  /* ---------- Sefer saatleri ---------- */
+
+  var GORUNUR_SEFER = 4;
+
+  // Aynı çift için servisi tekrar tekrar çağırmamak adına oturum boyu saklanır;
+  // tarife gün içinde değişmiyor.
+  var seferOnbellegi = {};
+  var seferIstegi = 0;
+
+  /**
+   * Biniş durağından iniş durağına sıradaki trenleri gösterir.
+   *
+   * Veri İzmir Büyükşehir Belediyesi açık servisinden geliyor. Selçuk
+   * uzantısında (Sağlık, Belevi, Selçuk) servis boş liste döndürüyor; uydurma
+   * saat basmak yerine durum açıkça yazılır.
+   */
+  function seferleriGoster(sonuc) {
+    var binis = sonuc.binis;
+    var inis = sonuc.inis;
+
+    if (typeof seferleriAl !== 'function' || !binis.izbanId || !inis.izbanId) {
+      oge.seferKutusu.hidden = true;
+      return;
+    }
+
+    var anahtar = binis.izbanId + '-' + inis.izbanId;
+    var istek = ++seferIstegi;
+
+    oge.seferKutusu.hidden = false;
+    oge.seferBaslik.textContent =
+      binis.ad + ' → ' + inis.ad + ' · ' + ceviri('siradakiTrenler').toLowerCase();
+    oge.seferNot.textContent = '';
+
+    if (seferOnbellegi[anahtar]) {
+      seferleriYaz(seferOnbellegi[anahtar]);
+      return;
+    }
+
+    oge.seferListesi.textContent = '';
+    oge.seferNot.textContent = ceviri('seferAliniyor');
+
+    seferleriAl(binis.izbanId, inis.izbanId)
+      .then(function (seferler) {
+        if (istek !== seferIstegi) return;   // kullanıcı seçimi değiştirdi
+        seferOnbellegi[anahtar] = seferler;
+        seferleriYaz(seferler);
+      })
+      .catch(function () {
+        if (istek !== seferIstegi) return;
+        oge.seferListesi.textContent = '';
+        oge.seferNot.textContent = ceviri('seferUlasilamiyor');
+      });
+  }
+
+  function seferleriYaz(seferler) {
+    oge.seferListesi.textContent = '';
+
+    if (!seferler.length) {
+      oge.seferNot.textContent = ceviri('seferYok');
+      return;
+    }
+
+    var siradaki = siradakiSeferler(seferler, GORUNUR_SEFER);
+    siradaki.forEach(function (sefer, sira) {
+      var satir = document.createElement('li');
+      satir.className = 'sefer' + (sira === 0 ? ' sefer--ilk' : '');
+
+      var kalkis = document.createElement('strong');
+      kalkis.className = 'sefer-kalkis';
+      kalkis.textContent = sefer.kalkis;
+      satir.appendChild(kalkis);
+
+      var varis = document.createElement('span');
+      varis.className = 'sefer-varis';
+      varis.textContent = '→ ' + sefer.varis;
+      satir.appendChild(varis);
+
+      var kalan = document.createElement('span');
+      kalan.className = 'sefer-kalan';
+      kalan.textContent = sefer.ertesiGun
+        ? ceviri('yarin')
+        : sefer.kalanDk === 0 ? ceviri('simdi') : sefer.kalanDk + ' ' + ceviri('dkSonra');
+      satir.appendChild(kalan);
+
+      oge.seferListesi.appendChild(satir);
+    });
+
+    oge.seferNot.textContent =
+      seferler.length + ' ' + ceviri('sefer') + ' · ' + ceviri('seferKaynak');
+  }
+
   /* ---------- Gezilecek yerler ---------- */
 
   // Bir durak için gösterilecek en fazla kart. Alsancak Gar'ın çevresinde 32
@@ -291,22 +441,20 @@
 
     var mesafe = document.createElement('p');
     mesafe.className = 'gezi-mesafe';
-    mesafe.textContent = 'Duraktan ' + mesafeBicimle(kayit.mesafeM);
+    mesafe.textContent = ceviri('duraktan') + ' ' + mesafeBicimle(kayit.mesafeM);
     govde.appendChild(mesafe);
 
-    if (yer.ozet) {
-      var ozet = document.createElement('p');
-      ozet.className = 'gezi-ozet';
-      ozet.textContent = yer.ozet;
-      govde.appendChild(ozet);
-    }
+    var ozet = document.createElement('p');
+    ozet.className = 'gezi-ozet';
+    ozet.textContent = yer.ozet || '';
+    govde.appendChild(ozet);
 
     var dugmeler = document.createElement('div');
     dugmeler.className = 'gezi-dugmeler';
 
     [
-      { kip: 'yuruyus', etiket: '🚶 Yürüyerek' },
-      { kip: 'araba', etiket: '🚗 Arabayla' }
+      { kip: 'yuruyus', etiket: '🚶 ' + ceviri('yuruyerek') },
+      { kip: 'araba', etiket: '🚗 ' + ceviri('arabayla') }
     ].forEach(function (secim) {
       var dugme = document.createElement('button');
       dugme.type = 'button';
@@ -319,13 +467,13 @@
     var toplu = document.createElement('button');
     toplu.type = 'button';
     toplu.className = 'gezi-dugme';
-    toplu.textContent = '🚊 Toplu taşıma';
+    toplu.textContent = '🚊 ' + ceviri('topluTasima');
     toplu.addEventListener('click', function () { topluTasimaAnlat(yer); });
     dugmeler.appendChild(toplu);
 
     govde.appendChild(dugmeler);
 
-    if (yer.gorsel || yer.kaynaklar.wikipedia) {
+    {
       var kaynak = document.createElement('p');
       kaynak.className = 'gezi-lisans';
 
@@ -360,8 +508,8 @@
     oge.geziGruplari.textContent = '';
 
     var gruplar = [
-      { baslik: sonuc.binis.ad + ' çevresi', kod: sonuc.binis.kod },
-      { baslik: sonuc.inis.ad + ' çevresi', kod: sonuc.inis.kod }
+      { baslik: sonuc.binis.ad + ' ' + ceviri('geziCevresi'), kod: sonuc.binis.kod },
+      { baslik: sonuc.inis.ad + ' ' + ceviri('geziCevresi'), kod: sonuc.inis.kod }
     ];
 
     var toplam = 0;
@@ -375,7 +523,7 @@
 
       var baslik = document.createElement('h3');
       baslik.className = 'gezi-grup-baslik';
-      baslik.textContent = grup.baslik + ' · ' + yerler.length + ' yer';
+      baslik.textContent = grup.baslik + ' · ' + yerler.length + ' ' + ceviri('yer');
       bolum.appendChild(baslik);
 
       var seritKap = document.createElement('div');
@@ -1398,6 +1546,7 @@
     sonucuGoster(sonuc);
     binisYolTarifiniGuncelle(sonuc.binis);
     if (harita) harita.guzergahiVurgula(sonuc);
+    seferleriGoster(sonuc);
     geziYerleriniCiz(sonuc);
   }
 
@@ -1441,6 +1590,7 @@
   function baslat() {
     acilisiKur();
     temayiBaslat();
+    oge.dil.addEventListener('click', dilDegistir);
     secimleriDoldur();
     baslangicSeciminiYukle();
     oge.veriSurumu.textContent = HAT_VERISI.surum + ' (' + HAT_VERISI.guncellemeTarihi + ')';
@@ -1498,7 +1648,7 @@
     aramayiBagla();
 
     haritayiKur();
-    guncelle();
+    diliUygula();   // guncelle() bunun içinde çağrılıyor
     firestoreDanTazele();
     konumuBaslat();
   }

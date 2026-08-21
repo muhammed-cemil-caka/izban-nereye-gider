@@ -13,7 +13,8 @@
     "eshot": "node araclar/eshot-hatlarini-ekle.js",
     "aktarma-noktalari": "node araclar/aktarma-noktalarini-ekle.js",
     "mesafeler": "node araclar/mesafeleri-guncelle.js",
-    "turistik": "node araclar/turistik-yerleri-uret.js"
+    "turistik": "node araclar/turistik-yerleri-uret.js",
+    "izban-kimlik": "node araclar/izban-kimlik-ekle.js"
   },
   "repository": {
     "type": "git",

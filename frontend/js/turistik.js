@@ -45,7 +45,7 @@ const TURISTIK_VERI = {
         "enlem": 37.951138,
         "boylam": 27.367918
       },
-      "ozet": "",
+      "ozet": "Selçuk, İzmir'de cami",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/0/03/Sel%C3%A7uk%2C_a_small_mosque.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Sel%C3%A7uk%2C_a_small_mosque.jpg/960px-Sel%C3%A7uk%2C_a_small_mosque.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -72,7 +72,7 @@ const TURISTIK_VERI = {
         "enlem": 38.437786,
         "boylam": 27.147728
       },
-      "ozet": "",
+      "ozet": "Konak'ta saat kulesi",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Alsancak_Gar%C4%B1_Saat_Kulesi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Alsancak_Gar%C4%B1_Saat_Kulesi.jpg/960px-Alsancak_Gar%C4%B1_Saat_Kulesi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -134,7 +134,7 @@ const TURISTIK_VERI = {
         "enlem": 37.948982,
         "boylam": 27.363113
       },
-      "ozet": "",
+      "ozet": "Selçuk'ta türbe",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Anonim_T%C3%BCrbe_-_Sel%C3%A7uk_03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Anonim_T%C3%BCrbe_-_Sel%C3%A7uk_03.jpg/960px-Anonim_T%C3%BCrbe_-_Sel%C3%A7uk_03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -190,11 +190,11 @@ const TURISTIK_VERI = {
       },
       "ozet": "Artemis Tapınağı ya da Artemision, aynı zamanda Diana Tapınağı olarak da bilinir. Efes'te bulunan ve tanrıça Artemis'e ithaf edilmiş tapınak, günümüzde İzmir'in Selçuk ilçesindedir. Tapınağın Helenistik dönem evresi, dünyanın yedi harikasından biri sayılıyordu. Bu tapınağın MÖ 356 yılında Herostratos isimli bir Efesli tarafından yakıldığı düşünülüyor. Antik dönemlerde birçok kez yıkılıp tekrar yapılan tapınağın son yıkımı MS 401 yılında olmuştur. Günümüzde sit alanında sadece tapınağın son evresinden mermer parçaları kalmıştır.",
       "gorsel": {
-        "adres": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Temple_of_Artemis.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Temple_of_Artemis.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
-        "yazar": "Philip Galle",
-        "lisans": "Public domain",
-        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Temple_of_Artemis.jpg"
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/2/28/Ephesos.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Ephesos.jpg/960px-Ephesos.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Arkiyolok",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Ephesos.jpg"
       },
       "kaynaklar": {
         "wikidata": "Q43018",
@@ -231,6 +231,64 @@ const TURISTIK_VERI = {
         {
           "kod": "selcuk",
           "kusUcusuM": 809
+        }
+      ]
+    },
+    {
+      "kod": "ataturk-bustu-ornekkoy",
+      "ad": "Atatürk Büstü, Örnekköy",
+      "tur": "anit",
+      "konum": {
+        "enlem": 38.472591,
+        "boylam": 27.108929
+      },
+      "ozet": "Karşıyaka'da anıt",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/d/d3/%C3%96rnekk%C3%B6y_Atat%C3%BCrk_B%C3%BCst%C3%BC_-_kitabe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/%C3%96rnekk%C3%B6y_Atat%C3%BCrk_B%C3%BCst%C3%BC_-_kitabe.jpg/960px-%C3%96rnekk%C3%B6y_Atat%C3%BCrk_B%C3%BCst%C3%BC_-_kitabe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ozlmktv",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:%C3%96rnekk%C3%B6y_Atat%C3%BCrk_B%C3%BCst%C3%BC_-_kitabe.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q134727976",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "demirkopru",
+          "kusUcusuM": 1213
+        },
+        {
+          "kod": "nergiz",
+          "kusUcusuM": 1497
+        }
+      ]
+    },
+    {
+      "kod": "ataturk-bustu-selcuk",
+      "ad": "Atatürk Büstü, Selçuk",
+      "tur": "anit",
+      "konum": {
+        "enlem": 37.94841,
+        "boylam": 27.363939
+      },
+      "ozet": "Selçuk'ta anıt, büst, heykel",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Sel%C3%A7uk_Anadolu_Lisesi_%28Sivas%29_-_Atat%C3%BCrk_B%C3%BCst%C3%BC.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Sel%C3%A7uk_Anadolu_Lisesi_%28Sivas%29_-_Atat%C3%BCrk_B%C3%BCst%C3%BC.jpg/960px-Sel%C3%A7uk_Anadolu_Lisesi_%28Sivas%29_-_Atat%C3%BCrk_B%C3%BCst%C3%BC.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Buzancar",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Sel%C3%A7uk_Anadolu_Lisesi_(Sivas)_-_Atat%C3%BCrk_B%C3%BCst%C3%BC.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q134728450",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "selcuk",
+          "kusUcusuM": 838
         }
       ]
     },
@@ -272,7 +330,7 @@ const TURISTIK_VERI = {
     {
       "kod": "ayasuluk",
       "ad": "Ayasuluk",
-      "tur": "anit",
+      "tur": "antik-kent",
       "konum": {
         "enlem": 37.9555,
         "boylam": 27.368111
@@ -304,7 +362,7 @@ const TURISTIK_VERI = {
         "enlem": 37.955315,
         "boylam": 27.368069
       },
-      "ozet": "",
+      "ozet": "Selçuk, İzmir'de cami",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/c/c0/SelcukZitadelleMoschee.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/SelcukZitadelleMoschee.JPG/960px-SelcukZitadelleMoschee.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -331,7 +389,7 @@ const TURISTIK_VERI = {
         "enlem": 37.955556,
         "boylam": 27.368056
       },
-      "ozet": "",
+      "ozet": "Selçuk'ta kale",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/b/b5/SelcukZitadelle.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/SelcukZitadelle.jpg/960px-SelcukZitadelle.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -533,6 +591,95 @@ const TURISTIK_VERI = {
       ]
     },
     {
+      "kod": "cesme-selcuk",
+      "ad": "Çeşme, Selçuk",
+      "tur": "anit",
+      "konum": {
+        "enlem": 37.947746,
+        "boylam": 27.366808
+      },
+      "ozet": "Selçuk'ta çeşme",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/d/d6/Sel%C3%A7uk_%C3%87e%C5%9Fme_-_geni%C5%9F_plan.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Sel%C3%A7uk_%C3%87e%C5%9Fme_-_geni%C5%9F_plan.jpg/960px-Sel%C3%A7uk_%C3%87e%C5%9Fme_-_geni%C5%9F_plan.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ozlmktv",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Sel%C3%A7uk_%C3%87e%C5%9Fme_-_geni%C5%9F_plan.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q131836525",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "selcuk",
+          "kusUcusuM": 639
+        }
+      ]
+    },
+    {
+      "kod": "cinarli-camii",
+      "ad": "Çınarlı Camii",
+      "tur": "cami",
+      "konum": {
+        "enlem": 38.607796,
+        "boylam": 27.06896
+      },
+      "ozet": "Menemen, İzmir'de cami",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/c/c2/%C3%87%C4%B1narl%C4%B1_Yeni_Camii.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/%C3%87%C4%B1narl%C4%B1_Yeni_Camii.jpg/960px-%C3%87%C4%B1narl%C4%B1_Yeni_Camii.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Gurpinarali",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:%C3%87%C4%B1narl%C4%B1_Yeni_Camii.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q127635173",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "menemen",
+          "kusUcusuM": 830
+        }
+      ]
+    },
+    {
+      "kod": "cinili-cesme",
+      "ad": "Çinili Çeşme",
+      "tur": "anit",
+      "konum": {
+        "enlem": 38.426111,
+        "boylam": 27.144111
+      },
+      "ozet": "İzmir, Türkiye'de çeşme",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/3/34/%C3%87inili_%C3%A7e%C5%9Fme.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/3/34/%C3%87inili_%C3%A7e%C5%9Fme.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "yazar": "Ömerserez",
+        "lisans": "CC BY-SA 3.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:%C3%87inili_%C3%A7e%C5%9Fme.JPG"
+      },
+      "kaynaklar": {
+        "wikidata": "Q122571243",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "hilal",
+          "kusUcusuM": 894
+        },
+        {
+          "kod": "kemer",
+          "kusUcusuM": 1157
+        },
+        {
+          "kod": "alsancak-gar",
+          "kusUcusuM": 1446
+        }
+      ]
+    },
+    {
       "kod": "corakkapi-camii",
       "ad": "Çorakkapı Camii",
       "tur": "cami",
@@ -591,6 +738,37 @@ const TURISTIK_VERI = {
       ]
     },
     {
+      "kod": "emir-sultan-turbesi",
+      "ad": "Emir Sultan Türbesi",
+      "tur": "anit",
+      "konum": {
+        "enlem": 38.418968,
+        "boylam": 27.143168
+      },
+      "ozet": "Konak'ta türbe",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Bursa_Emir_Sultan_T%C3%BCrbesi_7094.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bursa_Emir_Sultan_T%C3%BCrbesi_7094.jpg/960px-Bursa_Emir_Sultan_T%C3%BCrbesi_7094.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Dosseman",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Bursa_Emir_Sultan_T%C3%BCrbesi_7094.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q131390832",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "kemer",
+          "kusUcusuM": 1176
+        },
+        {
+          "kod": "hilal",
+          "kusUcusuM": 1223
+        }
+      ]
+    },
+    {
       "kod": "eski-otogar-camii",
       "ad": "Eski Otogar Camii",
       "tur": "cami",
@@ -598,7 +776,7 @@ const TURISTIK_VERI = {
         "enlem": 38.433888,
         "boylam": 27.169586
       },
-      "ozet": "",
+      "ozet": "Konak'taki bir cami",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/7/7e/Eski_otogar_camii.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/7/7e/Eski_otogar_camii.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
@@ -645,6 +823,33 @@ const TURISTIK_VERI = {
       ]
     },
     {
+      "kod": "gazi-sigla-bey-turbesi",
+      "ad": "Gazi Sığla Bey Türbesi",
+      "tur": "anit",
+      "konum": {
+        "enlem": 37.947754,
+        "boylam": 27.367962
+      },
+      "ozet": "Selçuk'ta türbe",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/0/08/Gazi_S%C4%B1%C4%9Fla_Bey_T%C3%BCrbesi_-_Yan_cephe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Gazi_S%C4%B1%C4%9Fla_Bey_T%C3%BCrbesi_-_Yan_cephe.jpg/960px-Gazi_S%C4%B1%C4%9Fla_Bey_T%C3%BCrbesi_-_Yan_cephe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ozlmktv",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Gazi_S%C4%B1%C4%9Fla_Bey_T%C3%BCrbesi_-_Yan_cephe.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q131391387",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "selcuk",
+          "kusUcusuM": 554
+        }
+      ]
+    },
+    {
       "kod": "halkapinar-i-stiklal-sehitligi",
       "ad": "Halkapınar İstiklal Şehitliği",
       "tur": "anit",
@@ -652,7 +857,7 @@ const TURISTIK_VERI = {
         "enlem": 38.435303,
         "boylam": 27.164705
       },
-      "ozet": "",
+      "ozet": "Konak'ta şehitlik",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/5/5a/Vatan_Namus_Monument_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Vatan_Namus_Monument_01.jpg/960px-Vatan_Namus_Monument_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -676,6 +881,37 @@ const TURISTIK_VERI = {
         {
           "kod": "alsancak-gar",
           "kusUcusuM": 1436
+        }
+      ]
+    },
+    {
+      "kod": "hamza-rustem-fotograf-evi",
+      "ad": "Hamza Rüstem Fotoğraf Evi",
+      "tur": "muze",
+      "konum": {
+        "enlem": 38.479652,
+        "boylam": 27.076096
+      },
+      "ozet": "Karşıyaka'da müze",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Hamza_R%C3%BCstem_Foto%C4%9Fraf_Evi_-_giri%C5%9F.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Hamza_R%C3%BCstem_Foto%C4%9Fraf_Evi_-_giri%C5%9F.jpg/960px-Hamza_R%C3%BCstem_Foto%C4%9Fraf_Evi_-_giri%C5%9F.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ozlmktv",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Hamza_R%C3%BCstem_Foto%C4%9Fraf_Evi_-_giri%C5%9F.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q132681904",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "mavisehir",
+          "kusUcusuM": 663
+        },
+        {
+          "kod": "semikler",
+          "kusUcusuM": 1306
         }
       ]
     },
@@ -745,7 +981,7 @@ const TURISTIK_VERI = {
         "enlem": 38.446389,
         "boylam": 27.171056
       },
-      "ozet": "",
+      "ozet": "İzmir, Türkiye'de bir anıt",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/7/75/Iliad_and_Odyssey_monument_5.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Iliad_and_Odyssey_monument_5.jpg/960px-Iliad_and_Odyssey_monument_5.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -776,7 +1012,7 @@ const TURISTIK_VERI = {
         "enlem": 38.400409,
         "boylam": 27.141868
       },
-      "ozet": "",
+      "ozet": "İzmir, Türkiye'de bir kilise",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/e/e6/%C3%89glise_du_Proph%C3%A8te-%C3%89lie_de_Smyrne_%28fin_XIXe_si%C3%A8cle%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/%C3%89glise_du_Proph%C3%A8te-%C3%89lie_de_Smyrne_%28fin_XIXe_si%C3%A8cle%29.jpg/960px-%C3%89glise_du_Proph%C3%A8te-%C3%89lie_de_Smyrne_%28fin_XIXe_si%C3%A8cle%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -858,8 +1094,8 @@ const TURISTIK_VERI = {
       "ad": "İsa Bey Hamamı",
       "tur": "antik-kent",
       "konum": {
-        "enlem": 37.951092,
-        "boylam": 27.365438
+        "enlem": 37.951111,
+        "boylam": 27.365417
       },
       "ozet": "İsa Bey Hamamı ya da Büyük Hamam, Selçuk'taki eski bir hamamdır.",
       "gorsel": {
@@ -876,7 +1112,34 @@ const TURISTIK_VERI = {
       "duraklar": [
         {
           "kod": "selcuk",
-          "kusUcusuM": 667
+          "kusUcusuM": 669
+        }
+      ]
+    },
+    {
+      "kod": "i-shak-bey-camii-selcuk",
+      "ad": "İshak Bey Camii, Selçuk",
+      "tur": "cami",
+      "konum": {
+        "enlem": 37.949432,
+        "boylam": 27.368786
+      },
+      "ozet": "Selçuk'ta cami",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/8/81/%C4%B0shak_Bey_Camii%2C_Sel%C3%A7uk_-3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/%C4%B0shak_Bey_Camii%2C_Sel%C3%A7uk_-3.jpg/960px-%C4%B0shak_Bey_Camii%2C_Sel%C3%A7uk_-3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ozlmktv",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:%C4%B0shak_Bey_Camii,_Sel%C3%A7uk_-3.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q132134236",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "selcuk",
+          "kusUcusuM": 399
         }
       ]
     },
@@ -915,7 +1178,7 @@ const TURISTIK_VERI = {
         "enlem": 38.421375,
         "boylam": 27.147335
       },
-      "ozet": "",
+      "ozet": "Konak'ta müze",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/7/7f/%C4%B0zmir_m%C9%99tbuat_muzeyi_%281%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/%C4%B0zmir_m%C9%99tbuat_muzeyi_%281%29.jpg/960px-%C4%B0zmir_m%C9%99tbuat_muzeyi_%281%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -946,7 +1209,7 @@ const TURISTIK_VERI = {
         "enlem": 38.429928,
         "boylam": 27.143156
       },
-      "ozet": "",
+      "ozet": "Konak'ta saat kulesi",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/9/9d/Pakistan_Pavilion_Clock_Tower.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Pakistan_Pavilion_Clock_Tower.jpg/960px-Pakistan_Pavilion_Clock_Tower.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1078,7 +1341,7 @@ const TURISTIK_VERI = {
         "enlem": 38.43625,
         "boylam": 27.148184
       },
-      "ozet": "",
+      "ozet": "İzmir'de bir müze",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/f/f0/%C4%B0zmir_Culture_And_Arts_Factory.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/%C4%B0zmir_Culture_And_Arts_Factory.jpg/960px-%C4%B0zmir_Culture_And_Arts_Factory.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1295,7 +1558,7 @@ const TURISTIK_VERI = {
         "enlem": 38.413611,
         "boylam": 27.143056
       },
-      "ozet": "",
+      "ozet": "İzmir, Türkiye'de bir cami",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/3/39/%CE%A3%CE%BC%CF%8D%CF%81%CE%BD%CE%B7_-_%CE%98%CE%AD%CE%B1_%CE%B1%CF%80%CF%8C_%CF%84%CE%BF_Kadife_Kale_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/%CE%A3%CE%BC%CF%8D%CF%81%CE%BD%CE%B7_-_%CE%98%CE%AD%CE%B1_%CE%B1%CF%80%CF%8C_%CF%84%CE%BF_Kadife_Kale_-_panoramio.jpg/960px-%CE%A3%CE%BC%CF%8D%CF%81%CE%BD%CE%B7_-_%CE%98%CE%AD%CE%B1_%CE%B1%CF%80%CF%8C_%CF%84%CE%BF_Kadife_Kale_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1315,6 +1578,33 @@ const TURISTIK_VERI = {
       ]
     },
     {
+      "kod": "karakol-yani-camii",
+      "ad": "Karakol Yanı Camii",
+      "tur": "cami",
+      "konum": {
+        "enlem": 37.947781,
+        "boylam": 27.366192
+      },
+      "ozet": "Selçuk, İzmir'de cami",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/6/69/Karakol_Yan%C4%B1_Camii_-_Yan_cephe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Karakol_Yan%C4%B1_Camii_-_Yan_cephe.jpg/960px-Karakol_Yan%C4%B1_Camii_-_Yan_cephe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ozlmktv",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Karakol_Yan%C4%B1_Camii_-_Yan_cephe.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q127786905",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "selcuk",
+          "kusUcusuM": 684
+        }
+      ]
+    },
+    {
       "kod": "kaskatli-havuz",
       "ad": "Kaskatlı Havuz",
       "tur": "anit",
@@ -1322,7 +1612,7 @@ const TURISTIK_VERI = {
         "enlem": 38.429278,
         "boylam": 27.144806
       },
-      "ozet": "",
+      "ozet": "Konak'ta havuz",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/2/20/TR_Izmir_asv2020-02_img26_K%C3%BClt%C3%BCrpark.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/TR_Izmir_asv2020-02_img26_K%C3%BClt%C3%BCrpark.jpg/960px-TR_Izmir_asv2020-02_img26_K%C3%BClt%C3%BCrpark.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1357,7 +1647,7 @@ const TURISTIK_VERI = {
         "enlem": 38.455694,
         "boylam": 27.118278
       },
-      "ozet": "",
+      "ozet": "İzmir, Türkiye'de bir cami",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/8/89/Izmir_Shopping_street_in_Kar%C5%9F%C4%B1yaka_4047.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Izmir_Shopping_street_in_Kar%C5%9F%C4%B1yaka_4047.jpg/960px-Izmir_Shopping_street_in_Kar%C5%9F%C4%B1yaka_4047.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1416,6 +1706,60 @@ const TURISTIK_VERI = {
       ]
     },
     {
+      "kod": "kuba-camii-i-zmir",
+      "ad": "Kuba Camii (İzmir)",
+      "tur": "anit",
+      "konum": {
+        "enlem": 37.947777,
+        "boylam": 27.369507
+      },
+      "ozet": "Selçuk'ta kümbet, mescit, türbe",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/0/08/Kuba_Camii.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Kuba_Camii.jpg/960px-Kuba_Camii.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ozlmktv",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Kuba_Camii.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q135581994",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "selcuk",
+          "kusUcusuM": 451
+        }
+      ]
+    },
+    {
+      "kod": "kurtulus-yolu-aniti",
+      "ad": "Kurtuluş Yolu Anıtı",
+      "tur": "anit",
+      "konum": {
+        "enlem": 37.950523,
+        "boylam": 27.372124
+      },
+      "ozet": "Selçuk'ta anıt, heykel, rölyef",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/9/96/2019_06_23_Ata-Kurtulu%C5%9F_Yolu_12._G%C3%BCn_%28Bayburt_%E2%80%93_Kop_Da%C4%9F%C4%B1_%E2%80%93_Kop_%C5%9Eehitli%C4%9Fi_%E2%80%93_A%C5%9Fkale%29_%E2%80%93_Ferdimen.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/2019_06_23_Ata-Kurtulu%C5%9F_Yolu_12._G%C3%BCn_%28Bayburt_%E2%80%93_Kop_Da%C4%9F%C4%B1_%E2%80%93_Kop_%C5%9Eehitli%C4%9Fi_%E2%80%93_A%C5%9Fkale%29_%E2%80%93_Ferdimen.jpg/960px-2019_06_23_Ata-Kurtulu%C5%9F_Yolu_12._G%C3%BCn_%28Bayburt_%E2%80%93_Kop_Da%C4%9F%C4%B1_%E2%80%93_Kop_%C5%9Eehitli%C4%9Fi_%E2%80%93_A%C5%9Fkale%29_%E2%80%93_Ferdimen.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ferdimen",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:2019_06_23_Ata-Kurtulu%C5%9F_Yolu_12._G%C3%BCn_(Bayburt_%E2%80%93_Kop_Da%C4%9F%C4%B1_%E2%80%93_Kop_%C5%9Eehitli%C4%9Fi_%E2%80%93_A%C5%9Fkale)_%E2%80%93_Ferdimen.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q134728535",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "selcuk",
+          "kusUcusuM": 83
+        }
+      ]
+    },
+    {
       "kod": "kulturpark",
       "ad": "Kültürpark",
       "tur": "park",
@@ -1447,6 +1791,33 @@ const TURISTIK_VERI = {
         {
           "kod": "alsancak-gar",
           "kusUcusuM": 1253
+        }
+      ]
+    },
+    {
+      "kod": "larissa",
+      "ad": "Larissa",
+      "tur": "antik-kent",
+      "konum": {
+        "enlem": 38.689068,
+        "boylam": 27.033411
+      },
+      "ozet": "Larissa, Larisa Frikonis veya daha eski kaynaklarda çoğu kez Larisa, İzmir'in Menemen ilçesi, Buruncuk köyü yakınında bir antik kenttir. Ege Bölgesi'nin en eski kentlerinden biridir. Bir Helen boyu olan Aiollerin doğu Ege kıyısındaki on iki kentinden biri sayılır.",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Turkey_relief_location_map.jpg?utm_source=tr.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Turkey_relief_location_map.jpg/330px-Turkey_relief_location_map.jpg?utm_source=tr.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+        "yazar": "Vikipedi katkıcıları",
+        "lisans": "bkz. dosya sayfası",
+        "kaynakSayfa": "https://tr.wikipedia.org/wiki/Larissa_(Aiolis)"
+      },
+      "kaynaklar": {
+        "wikidata": "Q628719",
+        "wikipedia": "https://tr.wikipedia.org/wiki/Larissa_(Aiolis)"
+      },
+      "duraklar": [
+        {
+          "kod": "hatundere",
+          "kusUcusuM": 1390
         }
       ]
     },
@@ -1525,6 +1896,72 @@ const TURISTIK_VERI = {
       ]
     },
     {
+      "kod": "merkez-seyh-camii",
+      "ad": "Merkez Şeyh Camii",
+      "tur": "cami",
+      "konum": {
+        "enlem": 38.419304,
+        "boylam": 27.143076
+      },
+      "ozet": "Konak, İzmir'de cami",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/8/8d/%C5%9Eeyhi_%C3%87elebi_Camii_2025_-_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/%C5%9Eeyhi_%C3%87elebi_Camii_2025_-_3.jpg/960px-%C5%9Eeyhi_%C3%87elebi_Camii_2025_-_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "İmmortalance",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:%C5%9Eeyhi_%C3%87elebi_Camii_2025_-_3.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q127787099",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "kemer",
+          "kusUcusuM": 1175
+        },
+        {
+          "kod": "hilal",
+          "kusUcusuM": 1208
+        }
+      ]
+    },
+    {
+      "kod": "muammer-aksoy-parki",
+      "ad": "Muammer Aksoy Parkı",
+      "tur": "park",
+      "konum": {
+        "enlem": 38.4575,
+        "boylam": 27.125556
+      },
+      "ozet": "",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Muammer_Aksoy_Park_in_%C3%87anakkale_05.06.2025_03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Muammer_Aksoy_Park_in_%C3%87anakkale_05.06.2025_03.jpg/960px-Muammer_Aksoy_Park_in_%C3%87anakkale_05.06.2025_03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Wiki leylek",
+        "lisans": "CC BY 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Muammer_Aksoy_Park_in_%C3%87anakkale_05.06.2025_03.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q49529445",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "alaybey",
+          "kusUcusuM": 497
+        },
+        {
+          "kod": "naldoken",
+          "kusUcusuM": 829
+        },
+        {
+          "kod": "karsiyaka",
+          "kusUcusuM": 908
+        }
+      ]
+    },
+    {
       "kod": "naulochon",
       "ad": "Naulochon",
       "tur": "antik-kent",
@@ -1533,7 +1970,13 @@ const TURISTIK_VERI = {
         "boylam": 27.171
       },
       "ozet": "Naulochon, aynı zamanda Palaea Smyrna veya Palaia Smyrna olarak da bilinen, antik Aiolis'teki bir liman kenti ve Smyrna'nın orijinal Aeolian yerleşim yeriydi.",
-      "gorsel": null,
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Turkey_relief_location_map.jpg?utm_source=tr.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Turkey_relief_location_map.jpg/330px-Turkey_relief_location_map.jpg?utm_source=tr.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+        "yazar": "Vikipedi katkıcıları",
+        "lisans": "bkz. dosya sayfası",
+        "kaynakSayfa": "https://tr.wikipedia.org/wiki/Naulochon"
+      },
       "kaynaklar": {
         "wikidata": "Q65070461",
         "wikipedia": "https://tr.wikipedia.org/wiki/Naulochon"
@@ -1599,7 +2042,7 @@ const TURISTIK_VERI = {
         "enlem": 38.427917,
         "boylam": 27.141167
       },
-      "ozet": "",
+      "ozet": "İzmir, Türkiye'de bir heykel",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/3/34/K%C3%BClt%C3%BCrpark%2C_Montr%C3%B6_Kap%C4%B1s%C4%B1_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/K%C3%BClt%C3%BCrpark%2C_Montr%C3%B6_Kap%C4%B1s%C4%B1_-_panoramio.jpg/960px-K%C3%BClt%C3%BCrpark%2C_Montr%C3%B6_Kap%C4%B1s%C4%B1_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1696,7 +2139,7 @@ const TURISTIK_VERI = {
         "enlem": 37.950874,
         "boylam": 27.368642
       },
-      "ozet": "",
+      "ozet": "Selçuk'taki kent tarihi müzesi",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Sel%C3%A7uk_Efes_Kent_Belle%C4%9Fi_M%C3%BCzesi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Sel%C3%A7uk_Efes_Kent_Belle%C4%9Fi_M%C3%BCzesi.jpg/960px-Sel%C3%A7uk_Efes_Kent_Belle%C4%9Fi_M%C3%BCzesi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1712,6 +2155,33 @@ const TURISTIK_VERI = {
         {
           "kod": "selcuk",
           "kusUcusuM": 385
+        }
+      ]
+    },
+    {
+      "kod": "selcuk-efes-kent-bellegi-binasi",
+      "ad": "Selçuk Efes Kent Belleği Binası",
+      "tur": "muze",
+      "konum": {
+        "enlem": 37.950874,
+        "boylam": 27.371181
+      },
+      "ozet": "Selçuk'ta müze",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Efes_antik_kenti.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Efes_antik_kenti.jpg/960px-Efes_antik_kenti.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Arif miletli",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Efes_antik_kenti.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q132681751",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "selcuk",
+          "kusUcusuM": 163
         }
       ]
     },
@@ -1745,7 +2215,7 @@ const TURISTIK_VERI = {
     {
       "kod": "seydikoy-tumulusu",
       "ad": "Seydiköy Tümülüsü",
-      "tur": "kultur-varligi",
+      "tur": "anit",
       "konum": {
         "enlem": 38.337055,
         "boylam": 27.135887
@@ -1834,6 +2304,45 @@ const TURISTIK_VERI = {
       ]
     },
     {
+      "kod": "sogukkuyu-camii-karsiyaka",
+      "ad": "Soğukkuyu Camii (Karşıyaka)",
+      "tur": "cami",
+      "konum": {
+        "enlem": 38.466988,
+        "boylam": 27.115948
+      },
+      "ozet": "Karşıyaka, İzmir'de cami",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/7/76/So%C4%9Fukkuyu_Camii-_minare.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/So%C4%9Fukkuyu_Camii-_minare.jpg/960px-So%C4%9Fukkuyu_Camii-_minare.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ozlmktv",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:So%C4%9Fukkuyu_Camii-_minare.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q127788102",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "alaybey",
+          "kusUcusuM": 856
+        },
+        {
+          "kod": "karsiyaka",
+          "kusUcusuM": 1018
+        },
+        {
+          "kod": "naldoken",
+          "kusUcusuM": 1128
+        },
+        {
+          "kod": "nergiz",
+          "kusUcusuM": 1282
+        }
+      ]
+    },
+    {
       "kod": "st-antuan-katolik-kilisesi",
       "ad": "St. Antuan Katolik Kilisesi",
       "tur": "kilise",
@@ -1842,7 +2351,13 @@ const TURISTIK_VERI = {
         "boylam": 27.164278
       },
       "ozet": "St. Antuan Katolik Kilisesi, Türkiye'nin İzmir şehrinde yer alan bir Katolik kilisesidir. Adını Padovalı Antonio'dan almaktadır.",
-      "gorsel": null,
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Sent_Antuan_Katolik_Kilisesi%2C_Mersin_%283%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Sent_Antuan_Katolik_Kilisesi%2C_Mersin_%283%29.jpg/960px-Sent_Antuan_Katolik_Kilisesi%2C_Mersin_%283%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Cobija",
+        "lisans": "CC BY-SA 3.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Sent_Antuan_Katolik_Kilisesi,_Mersin_(3).jpg"
+      },
       "kaynaklar": {
         "wikidata": "Q6026327",
         "wikipedia": "https://tr.wikipedia.org/wiki/St._Antuan_Katolik_Kilisesi_(%C4%B0zmir)"
@@ -1901,7 +2416,7 @@ const TURISTIK_VERI = {
         "enlem": 37.9525,
         "boylam": 27.367778
       },
-      "ozet": "",
+      "ozet": "Efes'in yukarısı Ayasuluk'ta bulunan kilise binası.",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/7/72/Basilica_of_St._John_in_Ephesus_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Basilica_of_St._John_in_Ephesus_01.jpg/960px-Basilica_of_St._John_in_Ephesus_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1917,6 +2432,60 @@ const TURISTIK_VERI = {
         {
           "kod": "selcuk",
           "kusUcusuM": 501
+        }
+      ]
+    },
+    {
+      "kod": "surp-sarkis-ermeni-kilisesi",
+      "ad": "Surp Sarkis Ermeni Kilisesi",
+      "tur": "kilise",
+      "konum": {
+        "enlem": 38.606457,
+        "boylam": 27.072979
+      },
+      "ozet": "Menemen'de kilise",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/5/59/Surp_Sarkis_Armenian_church_Damascus.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Surp_Sarkis_Armenian_church_Damascus.jpg/960px-Surp_Sarkis_Armenian_church_Damascus.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Jan Smith",
+        "lisans": "CC BY 2.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Surp_Sarkis_Armenian_church_Damascus.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q131539201",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "menemen",
+          "kusUcusuM": 473
+        }
+      ]
+    },
+    {
+      "kod": "sehabeddin-sivasi-turbesi",
+      "ad": "Şehabeddin Sivasi Türbesi",
+      "tur": "anit",
+      "konum": {
+        "enlem": 37.947716,
+        "boylam": 27.368944
+      },
+      "ozet": "Selçuk'ta türbe",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/2/2c/%C5%9Eehabeddin_Sivasi_T%C3%BCrbesi_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/%C5%9Eehabeddin_Sivasi_T%C3%BCrbesi_2.jpg/960px-%C5%9Eehabeddin_Sivasi_T%C3%BCrbesi_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Ozlmktv",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:%C5%9Eehabeddin_Sivasi_T%C3%BCrbesi_2.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q131391558",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "selcuk",
+          "kusUcusuM": 491
         }
       ]
     },
@@ -1948,6 +2517,37 @@ const TURISTIK_VERI = {
       ]
     },
     {
+      "kod": "sehitlik-parki",
+      "ad": "Şehitlik Parkı",
+      "tur": "park",
+      "konum": {
+        "enlem": 38.418333,
+        "boylam": 27.149167
+      },
+      "ozet": "",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Gelibolu_Yar%C4%B1madas%C4%B1_Tarihi_Milli_Park%C4%B1_Sembolik_%C5%9Eehitlikler.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Gelibolu_Yar%C4%B1madas%C4%B1_Tarihi_Milli_Park%C4%B1_Sembolik_%C5%9Eehitlikler.jpg/960px-Gelibolu_Yar%C4%B1madas%C4%B1_Tarihi_Milli_Park%C4%B1_Sembolik_%C5%9Eehitlikler.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Liachiyaa",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Gelibolu_Yar%C4%B1madas%C4%B1_Tarihi_Milli_Park%C4%B1_Sembolik_%C5%9Eehitlikler.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q49584169",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "kemer",
+          "kusUcusuM": 722
+        },
+        {
+          "kod": "hilal",
+          "kusUcusuM": 927
+        }
+      ]
+    },
+    {
       "kod": "tcdd-3-bolge-muze-ve-sanat-galerisi",
       "ad": "TCDD 3. Bölge Müze ve Sanat Galerisi",
       "tur": "muze",
@@ -1957,11 +2557,11 @@ const TURISTIK_VERI = {
       },
       "ozet": "TCDD 3. Bölge Müze ve Sanat Galerisi, İzmir'in Konak ilçesinde Alsancak'ta bulunan Türkiye Cumhuriyeti Devlet Demiryolları tarafından işletilen bir demiryolu müzesidir.",
       "gorsel": {
-        "adres": "https://upload.wikimedia.org/wikipedia/commons/c/c9/TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi_2.jpg/960px-TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/9/96/TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi.jpg/960px-TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
         "yazar": "Bedmento",
         "lisans": "CC BY-SA 4.0",
-        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi_2.jpg"
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi.jpg"
       },
       "kaynaklar": {
         "wikidata": "Q106097718",
@@ -1975,6 +2575,64 @@ const TURISTIK_VERI = {
       ]
     },
     {
+      "kod": "tcdd-i-zmir-muze-ve-sanat-galerisi",
+      "ad": "TCDD İzmir Müze ve Sanat Galerisi",
+      "tur": "muze",
+      "konum": {
+        "enlem": 38.438416,
+        "boylam": 27.14737
+      },
+      "ozet": "Konak'ta müze",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/9/96/TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi.jpg/960px-TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "Bedmento",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:TCDD_3._B%C3%B6lge_M%C3%BCze_ve_Sanat_Galerisi.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q132682079",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "alsancak-gar",
+          "kusUcusuM": 123
+        }
+      ]
+    },
+    {
+      "kod": "turgut-ozal-parki",
+      "ad": "Turgut Özal Parkı",
+      "tur": "park",
+      "konum": {
+        "enlem": 38.458611,
+        "boylam": 27.165556
+      },
+      "ozet": "",
+      "gorsel": {
+        "adres": "https://upload.wikimedia.org/wikipedia/commons/0/04/Turgut_%C3%96zal_Tabiat_Park%C4%B1_G%C3%B6l.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+        "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Turgut_%C3%96zal_Tabiat_Park%C4%B1_G%C3%B6l.jpg/960px-Turgut_%C3%96zal_Tabiat_Park%C4%B1_G%C3%B6l.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "yazar": "L.Versoa",
+        "lisans": "CC BY-SA 4.0",
+        "kaynakSayfa": "https://commons.wikimedia.org/wiki/File:Turgut_%C3%96zal_Tabiat_Park%C4%B1_G%C3%B6l.jpg"
+      },
+      "kaynaklar": {
+        "wikidata": "Q49572445",
+        "wikipedia": null
+      },
+      "duraklar": [
+        {
+          "kod": "bayrakli",
+          "kusUcusuM": 590
+        },
+        {
+          "kod": "salhane",
+          "kusUcusuM": 1065
+        }
+      ]
+    },
+    {
       "kod": "ucan-yunuslar-heykeli",
       "ad": "Uçan Yunuslar Heykeli",
       "tur": "anit",
@@ -1982,7 +2640,7 @@ const TURISTIK_VERI = {
         "enlem": 38.451222,
         "boylam": 27.103722
       },
-      "ozet": "",
+      "ozet": "İzmir, Türkiye'de bir heykel",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Dolphin_sculpture.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Dolphin_sculpture.JPG/960px-Dolphin_sculpture.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -2044,7 +2702,7 @@ const TURISTIK_VERI = {
         "enlem": 38.429167,
         "boylam": 27.144917
       },
-      "ozet": "",
+      "ozet": "İzmir, Türkiye'de bir heykel",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/e/e5/Izmir_Sculpture_in_K%C3%BClt%C3%BCrpark_6202.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Izmir_Sculpture_in_K%C3%BClt%C3%BCrpark_6202.jpg/960px-Izmir_Sculpture_in_K%C3%BClt%C3%BCrpark_6202.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -2079,7 +2737,7 @@ const TURISTIK_VERI = {
         "enlem": 38.429361,
         "boylam": 27.144972
       },
-      "ozet": "",
+      "ozet": "İzmir, Türkiye'de bir heykel",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Swimming_pool_with_girls_in_the_K%C3%BClt%C3%BCrpark.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Swimming_pool_with_girls_in_the_K%C3%BClt%C3%BCrpark.jpg/960px-Swimming_pool_with_girls_in_the_K%C3%BClt%C3%BCrpark.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -2114,7 +2772,7 @@ const TURISTIK_VERI = {
         "enlem": 38.427456,
         "boylam": 27.1399
       },
-      "ozet": "",
+      "ozet": "Konak'ta kilise",
       "gorsel": {
         "adres": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Aya_Fotini_Kilisesi_%28Yeni%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
         "kucukAdres": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Aya_Fotini_Kilisesi_%28Yeni%29.jpg/960px-Aya_Fotini_Kilisesi_%28Yeni%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",

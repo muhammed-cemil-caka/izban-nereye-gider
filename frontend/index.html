@@ -6,7 +6,7 @@
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/stil.css?s=dea1af3c">
+  <link rel="stylesheet" href="css/stil.css?s=5d055ffa">
 </head>
 <body>
   <!-- Açılış ekranı. Marka çizilir, sonra kendini kapatır; sayfa arkada
@@ -65,18 +65,23 @@
         </span>
         <div>
           <h1>İZBAN Nereye Gider?</h1>
-          <p class="marka-alt">Aliağa – Selçuk banliyö hattı yolculuk asistanı</p>
+          <p class="marka-alt" data-ceviri="markaAlt">Aliağa – Selçuk banliyö hattı yolculuk asistanı</p>
         </div>
       </div>
-      <button id="temaDugmesi" class="tema-dugmesi" type="button" aria-label="Temayı değiştir">
-        <span aria-hidden="true">◐</span>
-      </button>
+      <div class="ust-dugmeler">
+        <button id="dilDugmesi" class="tema-dugmesi dil-dugmesi" type="button"
+                data-ceviri-baslik="dilDegistir" aria-label="Switch to English">EN</button>
+        <button id="temaDugmesi" class="tema-dugmesi" type="button"
+                data-ceviri-baslik="temaDegistir" aria-label="Temayı değiştir">
+          <span aria-hidden="true">◐</span>
+        </button>
+      </div>
     </div>
   </header>
 
   <main class="kapsayici">
     <section class="kart konum-karti" id="konumKarti" aria-labelledby="konumBaslik">
-      <h2 id="konumBaslik" class="kart-baslik">Konumun</h2>
+      <h2 id="konumBaslik" class="kart-baslik" data-ceviri="konumBaslik">Konumun</h2>
 
       <div id="konumDurumu" class="konum-durum">
         <span class="konum-simge" aria-hidden="true">◎</span>
@@ -85,29 +90,29 @@
 
       <div id="konumSonucu" hidden>
         <p class="konum-sonuc">
-          En yakın durak:
+          <span data-ceviri="enYakinDurak">En yakın durak:</span>
           <strong id="yakinDurakAd">—</strong>
           <span class="konum-mesafe" id="yakinDurakMesafe">—</span>
         </p>
         <p class="konum-dogruluk" id="konumDogruluk"></p>
 
         <div class="konum-dugmeler">
-          <button type="button" id="binisYapDugmesi" class="dugme dugme--birincil">
+          <button type="button" id="binisYapDugmesi" class="dugme dugme--birincil" data-ceviri="binisDuragiYap">
             Biniş durağı yap
           </button>
-          <button type="button" id="yolTarifiDugmesi" class="dugme dugme--ikincil">
+          <button type="button" id="yolTarifiDugmesi" class="dugme dugme--ikincil" data-ceviri="yuruyerekYolTarifi">
             Yürüyerek yol tarifi
           </button>
-          <button type="button" id="arabaTarifiDugmesi" class="dugme dugme--ikincil">
+          <button type="button" id="arabaTarifiDugmesi" class="dugme dugme--ikincil" data-ceviri="arabaylaYolTarifi">
             Arabayla yol tarifi
           </button>
         </div>
 
         <details class="konum-duzelt" id="konumDuzelt">
-          <summary>Konumum yanlış mı? Yerimi kendim gireyim</summary>
+          <summary data-ceviri="konumDuzelt">Konumum yanlış mı? Yerimi kendim gireyim</summary>
           <div class="konum-duzelt-ic">
             <label for="konumArama" class="gizli">Bulunduğun yeri ara</label>
-            <input type="search" id="konumArama" placeholder="Durak, mahalle veya cadde adı"
+            <input type="search" id="konumArama" placeholder="Durak, mahalle veya cadde adı" data-ceviri-yer="konumAraPlaceholder"
                    autocomplete="off" enterkeyhint="search">
             <p class="konum-arama-durum" id="konumAramaDurum" hidden></p>
             <ul class="konum-arama-liste" id="konumAramaListe"></ul>
@@ -115,12 +120,12 @@
         </details>
 
         <div class="konum-alternatif" id="konumAlternatif" hidden>
-          <p class="konum-alternatif-baslik">Yakındaki diğer duraklar:</p>
+          <p class="konum-alternatif-baslik" data-ceviri="digerDuraklar">Yakındaki diğer duraklar:</p>
           <ul class="konum-alternatif-liste" id="konumAlternatifListe"></ul>
         </div>
       </div>
 
-      <button type="button" id="konumTekrarDugmesi" class="dugme dugme--ikincil" hidden>
+      <button type="button" id="konumTekrarDugmesi" class="dugme dugme--ikincil" hidden data-ceviri="konumumuBul">
         Konumumu bul
       </button>
     </section>
@@ -130,7 +135,7 @@
 
       <div class="secim-satiri">
         <div class="alan">
-          <label for="binisSecim">Nereden biniyorsun?</label>
+          <label for="binisSecim" data-ceviri="nereden">Nereden biniyorsun?</label>
           <select id="binisSecim"></select>
           <button type="button" id="binisYolTarifi" class="satir-baglanti">
             Bu durağa yol tarifi →
@@ -142,7 +147,7 @@
         </button>
 
         <div class="alan">
-          <label for="inisSecim">Nereye gideceksin?</label>
+          <label for="inisSecim" data-ceviri="nereye">Nereye gideceksin?</label>
           <select id="inisSecim"></select>
         </div>
       </div>
@@ -152,7 +157,7 @@
 
     <section class="kart harita-karti" aria-labelledby="haritaBaslik">
       <div class="harita-ust">
-        <h2 id="haritaBaslik" class="kart-baslik">Harita</h2>
+        <h2 id="haritaBaslik" class="kart-baslik" data-ceviri="haritaBaslik">Harita</h2>
         <p class="harita-ipucu">Durağa tıkla · konumunu düzeltmek için işarete 2 sn basılı tut · <span aria-hidden="true">⊕</span> düğmesi konumuna döner</p>
       </div>
       <div class="yonlendirme" id="yonlendirmePaneli" hidden>
@@ -176,7 +181,7 @@
             <input type="checkbox" id="yonlendirmeSes" checked>
             Sesli
           </label>
-          <button type="button" id="yonlendirmeBitir" class="dugme dugme--ikincil">Bitir</button>
+          <button type="button" id="yonlendirmeBitir" class="dugme dugme--ikincil" data-ceviri="bitir">Bitir</button>
         </div>
         <p class="yonlendirme-uyari" id="yonlendirmeUyari" hidden></p>
       </div>
@@ -191,14 +196,14 @@
           <strong id="rotaBaslik">—</strong>
           <span class="rota-olcu" id="rotaOlcu">—</span>
           <div class="rota-kip" role="group" aria-label="Rota kipi">
-            <button type="button" id="rotaKipYuruyus" class="rota-kip-dugme" aria-pressed="true">
+            <button type="button" id="rotaKipYuruyus" class="rota-kip-dugme" aria-pressed="true" data-ceviri="yuruyerek">
               Yürüyerek
             </button>
-            <button type="button" id="rotaKipAraba" class="rota-kip-dugme" aria-pressed="false">
+            <button type="button" id="rotaKipAraba" class="rota-kip-dugme" aria-pressed="false" data-ceviri="arabayla">
               Arabayla
             </button>
           </div>
-          <button type="button" id="yonlendirmeBaslat" class="dugme dugme--birincil dugme--kucuk">
+          <button type="button" id="yonlendirmeBaslat" class="dugme dugme--birincil dugme--kucuk" data-ceviri="basla">
             Başla
           </button>
           <button type="button" id="rotaTemizle" class="rota-kapat" aria-label="Yol tarifini kaldır">×</button>
@@ -212,8 +217,8 @@
 
     <section class="kart gezi-karti" id="geziKarti" aria-labelledby="geziBaslik" hidden>
       <div class="harita-ust">
-        <h2 id="geziBaslik" class="kart-baslik">Gezilecek yerler</h2>
-        <p class="harita-ipucu">Biniş ve iniş durağının çevresi · karta tıkla, yol tarifi çıksın</p>
+        <h2 id="geziBaslik" class="kart-baslik" data-ceviri="geziBaslik">Gezilecek yerler</h2>
+        <p class="harita-ipucu" data-ceviri="geziIpucu">Biniş ve iniş durağının çevresi · karta tıkla, yol tarifi çıksın</p>
       </div>
       <div class="gezi-gruplari" id="geziGruplari"></div>
       <p class="gezi-kaynak">
@@ -226,30 +231,36 @@
     <section id="sonucBolumu" class="sonuc" aria-live="polite">
       <div class="kart ozet-karti">
         <div class="yon-rozeti" id="yonRozeti">—</div>
-        <div class="ozet-kutulari">
+        <div class="sefer-kutusu" id="seferKutusu" hidden>
+        <p class="sefer-baslik" id="seferBaslik">Sıradaki trenler</p>
+        <ul class="sefer-listesi" id="seferListesi"></ul>
+        <p class="sefer-not" id="seferNot"></p>
+      </div>
+
+      <div class="ozet-kutulari">
           <div class="ozet-kutu">
             <span class="ozet-deger" id="sureDegeri">—</span>
-            <span class="ozet-etiket">tahmini süre</span>
+            <span class="ozet-etiket" data-ceviri="ozetSure">tahmini süre</span>
           </div>
           <div class="ozet-kutu">
             <span class="ozet-deger" id="durakDegeri">—</span>
-            <span class="ozet-etiket">durak</span>
+            <span class="ozet-etiket" data-ceviri="ozetDurak">durak</span>
           </div>
           <div class="ozet-kutu">
             <span class="ozet-deger" id="aktarmaDegeri">—</span>
-            <span class="ozet-etiket">aktarma noktası</span>
+            <span class="ozet-etiket" data-ceviri="ozetAktarma">aktarma noktası</span>
           </div>
         </div>
         <p class="ozet-cumle" id="ozetCumle"></p>
       </div>
 
       <div class="kart">
-        <h2 class="kart-baslik">Güzergâh</h2>
+        <h2 class="kart-baslik" data-ceviri="guzergah">Güzergâh</h2>
         <ol class="hat-semasi" id="hatSemasi"></ol>
       </div>
 
       <div class="kart" id="aktarmaKarti" hidden>
-        <h2 class="kart-baslik">Yol üstündeki aktarmalar</h2>
+        <h2 class="kart-baslik" data-ceviri="aktarmalar">Yol üstündeki aktarmalar</h2>
         <ul class="aktarma-listesi" id="aktarmaListesi"></ul>
         <p class="aktarma-sayisi" id="aktarmaSayisi"></p>
       </div>
@@ -266,15 +277,17 @@
 
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="vendor/leaflet/leaflet-rotate.js"></script>
-  <script src="js/turistik.js?s=028e9be2"></script>
-  <script src="js/duraklar.js?s=cc49d008"></script>
+  <script src="js/diller.js?s=d3ecfe82"></script>
+  <script src="js/turistik.js?s=425b3f35"></script>
+  <script src="js/duraklar.js?s=3edcf82e"></script>
   <script src="js/hesap.js?s=42d2777d"></script>
   <script src="js/konum.js?s=dd520dd9"></script>
   <script src="js/harita.js?s=b9a40b04"></script>
+  <script src="js/sefer.js?s=a127317e"></script>
   <script src="js/rota.js?s=8a6615aa"></script>
   <script src="js/yonlendirme.js?s=a7bbad61"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=5c207d96"></script>
+  <script src="js/uygulama.js?s=16614e98"></script>
 </body>
 </html>

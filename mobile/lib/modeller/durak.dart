@@ -62,6 +62,10 @@ class Durak {
   /// Aktarma türlerinin gerçek noktaları (yürüyüş rotası için).
   final List<AktarmaNoktasi> aktarmaNoktalari;
 
+  /// İZBAN resmî istasyon kimliği — sefer saatleri servisinde kullanılır.
+  /// Kaynak: openapi.izmir.bel.tr (bkz. araclar/izban-kimlik-ekle.js)
+  final int? izbanId;
+
   const Durak({
     required this.kod,
     required this.ad,
@@ -72,6 +76,7 @@ class Durak {
     this.aktarma = const [],
     this.otobusHatlari = const [],
     this.aktarmaNoktalari = const [],
+    this.izbanId,
   });
 
   factory Durak.jsondan(Map<String, dynamic> json) {
@@ -88,6 +93,7 @@ class Durak {
       aktarmaNoktalari: ((json['aktarmaNoktalari'] as List<dynamic>?) ?? const [])
           .map((n) => AktarmaNoktasi.jsondan(n as Map<String, dynamic>))
           .toList(),
+      izbanId: (json['izbanId'] as num?)?.toInt(),
     );
   }
 

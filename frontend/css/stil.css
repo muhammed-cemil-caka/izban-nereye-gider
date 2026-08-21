@@ -784,8 +784,26 @@ body.acilis-acik { overflow: hidden; }
   display: block;
   background: var(--vurgu-soluk);
 }
-.gezi-govde { padding: .7rem .8rem .8rem; display: flex; flex-direction: column; gap: .35rem; flex: 1; }
-.gezi-baslik { margin: 0; font-size: .95rem; line-height: 1.3; }
+/* Kart içi hizalama: satırlar ızgarayla sabitlenir. Serbest akışta özeti
+   olmayan kartta düğmeler yukarı kayıyor, başlığı iki satır olan kartta
+   aşağı iniyordu — şeritteki kartlar birbirini tutmuyordu. */
+.gezi-govde {
+  padding: .7rem .8rem .8rem;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: .35rem;
+  flex: 1;
+}
+.gezi-baslik {
+  margin: 0; font-size: .95rem; line-height: 1.3;
+  /* Başlık her kartta iki satır yer kaplar. */
+  min-height: calc(2 * 1.3 * .95rem);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .gezi-mesafe { margin: 0; font-size: .75rem; color: var(--yazi-soluk); }
 
 /* Özet uzun olabiliyor; kart boyları eşit kalsın diye dört satırda kesilir. */
@@ -798,9 +816,17 @@ body.acilis-acik { overflow: hidden; }
   line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* Özeti olmayan kartta da yer ayrılır: düğme satırı hep aynı hizada. */
+  min-height: calc(4 * 1.45 * .82rem);
 }
 
-.gezi-dugmeler { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: auto; padding-top: .5rem; }
+.gezi-dugmeler {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  padding-top: .5rem;
+  /* İki satıra düşen düğme kümesi kartı uzatmasın. */
+  min-height: 3.6rem;
+  align-content: flex-start;
+}
 .gezi-dugme {
   border: 1px solid var(--cizgi);
   border-radius: 999px;
@@ -813,7 +839,19 @@ body.acilis-acik { overflow: hidden; }
 .gezi-dugme:hover { border-color: var(--vurgu); color: var(--vurgu); }
 .gezi-dugme:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
 
-.gezi-lisans { margin: .2rem 0 0; font-size: .68rem; color: var(--yazi-soluk); }
+.gezi-lisans {
+  margin: .2rem 0 0;
+  font-size: .68rem;
+  color: var(--yazi-soluk);
+  /* Kaynak satırı her kartta aynı yükseklikte: kimisinde yalnızca foto,
+     kimisinde foto + Vikipedi yazıyor. */
+  min-height: 2.1em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .gezi-lisans a { color: var(--yazi-soluk); }
 .gezi-kaynak { margin: .9rem 0 0; font-size: .72rem; color: var(--yazi-soluk); }
 .gezi-kaynak a { color: var(--vurgu); }
@@ -821,3 +859,38 @@ body.acilis-acik { overflow: hidden; }
 @media (max-width: 620px) {
   .gezi-kart { flex-basis: 78vw; }
 }
+
+/* ---------- Sefer saatleri ---------- */
+.sefer-kutusu {
+  margin-bottom: 1rem;
+  padding: .85rem .9rem;
+  border: 1px solid var(--cizgi);
+  border-radius: 12px;
+  background: var(--zemin);
+  background-image: var(--kutu-yuzey);
+  box-shadow: var(--golge), var(--kutu-ic-isik);
+}
+.sefer-baslik {
+  margin: 0 0 .55rem;
+  font-size: .78rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--yazi-soluk);
+}
+.sefer-listesi { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+.sefer {
+  display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap;
+  padding: .3rem .5rem;
+  border-radius: 8px;
+}
+/* İlk sefer vurgulanır: kullanıcının yetişeceği tren o. */
+.sefer--ilk { background: var(--vurgu-soluk); }
+.sefer-kalkis { font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; }
+.sefer--ilk .sefer-kalkis { color: var(--vurgu); }
+.sefer-varis { font-size: .85rem; color: var(--yazi-soluk); }
+.sefer-kalan { margin-left: auto; font-size: .78rem; color: var(--yazi-soluk); }
+.sefer--ilk .sefer-kalan { color: var(--vurgu); font-weight: 700; }
+.sefer-not { margin: .5rem 0 0; font-size: .72rem; color: var(--yazi-soluk); }
+
+/* Dil düğmesi üst bantta, tema düğmesinin yanında. */
+.ust-dugmeler { display: flex; gap: .4rem; flex: none; }
+.dil-dugmesi { font-size: .78rem; font-weight: 700; letter-spacing: .04em; }
