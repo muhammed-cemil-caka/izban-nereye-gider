@@ -151,42 +151,129 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   }
 
   var basiliTutmaSayaci = null;
+  var BASILI_TUTMA_MS = 2000;
+
+  /** Basılı tutarken bu kadar pikselden fazla kayma, haritayı kaydırmaktır. */
+  var BASILI_TUTMA_KAYMASI_PX = 14;
 
   /**
-   * İşareti 2 saniye basılı tutunca sürüklenebilir yapar.
+   * İşareti 2 saniye basılı tutunca taşınabilir yapar.
    *
-   * Sürüklemenin sürekli açık olması, haritayı kaydırırken parmağın işarete
+   * Taşımanın sürekli açık olması, haritayı kaydırırken parmağın işarete
    * değmesiyle konumun yanlışlıkla değişmesine yol açıyordu.
+   *
+   * Leaflet'in kendi sürüklemesi kullanılmıyor: `marker.dragging.enable()`
+   * yalnızca BUNDAN SONRAKİ basışı yakalıyor. İki saniye dolduğunda parmak
+   * çoktan basılı olduğu için sürükleme o hareket boyunca hiç başlamıyordu —
+   * "basılı tutunca yeri değişmiyor" bunun sonucuydu. Taşıma bu yüzden
+   * pointer olaylarıyla elle yürütülüyor.
    */
   function basiliTutmayiBagla(isaret) {
     var eleman = isaret.getElement();
     if (!eleman) return;
 
-    function baslat(olay) {
-      if (olay.button === 2) return; // sağ tık
+    // Basılı tutarken parmak oynayınca sayfa kaymasın.
+    eleman.style.touchAction = 'none';
 
-      clearTimeout(basiliTutmaSayaci);
-      basiliTutmaSayaci = setTimeout(function () {
-        isaret.dragging.enable();
-        eleman.classList.add('konum-isareti--hazir');
-        if (navigator.vibrate) navigator.vibrate(30);
-      }, 2000);
+    var isaretciKimligi = null;
+    var basmaNoktasi = null;      // basıldığı andaki kap noktası
+    var sonNokta = null;
+    var baslangicNoktasi = null;  // taşımanın açıldığı andaki kap noktası
+    var baslangicKonumu = null;   // iğnenin o andaki coğrafi konumu
+    var tasimaAktif = false;
+    var igneOynadi = false;
+
+    function kapNoktasi(olay) {
+      return harita.mouseEventToContainerPoint(olay);
     }
 
-    function iptal() {
+    /**
+     * Parmağın kat ettiği yolu iğnenin başlangıç konumuna uygular.
+     *
+     * Parmağın altındaki nokta doğrudan alınmıyor, FARK uygulanıyor:
+     * kullanıcı iğneyi neresinden tuttuysa orası parmağın altında kalır.
+     */
+    function tasinanKonum(nokta) {
+      var baslangicEkran = harita.latLngToContainerPoint(baslangicKonumu);
+      return harita.containerPointToLatLng(
+        baslangicEkran.add(nokta.subtract(baslangicNoktasi))
+      );
+    }
+
+    function bas(olay) {
+      if (olay.button === 2) return; // sağ tık
+      birak();
+
+      isaretciKimligi = olay.pointerId;
+      basmaNoktasi = kapNoktasi(olay);
+      sonNokta = basmaNoktasi;
+
+      // İşaretçi yakalanır: iğne parmağın altından kaysa da olaylar gelmeye
+      // devam etsin.
+      try {
+        if (eleman.setPointerCapture) eleman.setPointerCapture(olay.pointerId);
+      } catch (sorun) { /* yakalanamayan işaretçi: olaylar yine de gelir */ }
+
+      basiliTutmaSayaci = setTimeout(function () {
+        tasimaAktif = true;
+        igneOynadi = false;
+        baslangicNoktasi = sonNokta;
+        baslangicKonumu = isaret.getLatLng();
+        eleman.classList.add('konum-isareti--hazir');
+        // Taşıma sırasında harita parmakla birlikte kaymasın.
+        harita.dragging.disable();
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, BASILI_TUTMA_MS);
+    }
+
+    function oynat(olay) {
+      if (olay.pointerId !== isaretciKimligi) return;
+      sonNokta = kapNoktasi(olay);
+
+      if (!tasimaAktif) {
+        // Parmak kayıyorsa kullanıcı haritayı kaydırmak istiyordur.
+        if (sonNokta.distanceTo(basmaNoktasi) > BASILI_TUTMA_KAYMASI_PX) birak();
+        return;
+      }
+
+      olay.preventDefault();
+      igneOynadi = true;
+      isaret.setLatLng(tasinanKonum(sonNokta));
+    }
+
+    function kaldir(olay) {
+      if (olay.pointerId !== isaretciKimligi) return;
+
+      var tasindi = tasimaAktif && igneOynadi;
+      var yer = isaret.getLatLng();
+      birak();
+
+      // Yalnızca gerçekten taşındıysa bildir: iki saniye basıp bırakmak
+      // konumu değiştirmemeli.
+      if (tasindi) konumSuruklendi({ enlem: yer.lat, boylam: yer.lng });
+    }
+
+    function birak() {
       clearTimeout(basiliTutmaSayaci);
       basiliTutmaSayaci = null;
+      if (tasimaAktif) harita.dragging.enable();
+
+      isaretciKimligi = null;
+      basmaNoktasi = null;
+      sonNokta = null;
+      baslangicNoktasi = null;
+      baslangicKonumu = null;
+      tasimaAktif = false;
+      igneOynadi = false;
+      eleman.classList.remove('konum-isareti--hazir');
     }
 
-    eleman.addEventListener('pointerdown', baslat);
-    eleman.addEventListener('pointerup', iptal);
-    eleman.addEventListener('pointercancel', iptal);
-    eleman.addEventListener('pointerleave', iptal);
-  }
-
-  function isaretiSakinlestir() {
-    var eleman = konumIsareti && konumIsareti.getElement();
-    if (eleman) eleman.classList.remove('konum-isareti--hazir');
+    eleman.addEventListener('pointerdown', bas);
+    eleman.addEventListener('pointermove', oynat);
+    eleman.addEventListener('pointerup', kaldir);
+    eleman.addEventListener('pointercancel', function (olay) {
+      if (olay.pointerId === isaretciKimligi) birak();
+    });
   }
 
   /**
@@ -218,6 +305,8 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
    */
   function konumuGoster(konum, secenekler) {
     var yonlendirmede = Boolean(secenekler && secenekler.yonlendirme);
+    sonGosterilenKonum = { enlem: konum.enlem, boylam: konum.boylam };
+    konumaDonGorunurlugunuTazele();
     var aci = secenekler && typeof secenekler.aci === 'number' ? secenekler.aci : 0;
 
     // Mod değiştiyse işaret baştan kurulur: Leaflet'te bir işaretin
@@ -244,16 +333,7 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
         { direction: 'top' }
       );
 
-      if (!yonlendirmede) {
-        basiliTutmayiBagla(konumIsareti);
-
-        konumIsareti.on('dragend', function () {
-          var yer = konumIsareti.getLatLng();
-          konumIsareti.dragging.disable();
-          isaretiSakinlestir();
-          konumSuruklendi({ enlem: yer.lat, boylam: yer.lng });
-        });
-      }
+      if (!yonlendirmede) basiliTutmayiBagla(konumIsareti);
 
       konumIsaretiYonlendirmede = yonlendirmede;
     } else {
@@ -380,6 +460,67 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     });
   }
 
+  /* ---------- Konuma dön ---------- */
+
+  var sonGosterilenKonum = null;
+  var konumaDonDenetimi = null;
+
+  /**
+   * Haritanın köşesinde duran "konumuma dön" düğmesi.
+   *
+   * Kullanıcı hattın başka bir yerine bakmak için haritayı kaydırdığında
+   * konumuna dönmek için geri kaydırmak zorunda kalmasın.
+   */
+  function konumaDonDugmesiniKur() {
+    var Dugme = L.Control.extend({
+      options: { position: 'topright' },
+      onAdd: function () {
+        var kutu = L.DomUtil.create('div', 'leaflet-bar konuma-don');
+        var baglanti = L.DomUtil.create('a', '', kutu);
+
+        baglanti.href = '#';
+        baglanti.title = 'Konumuma dön';
+        baglanti.setAttribute('role', 'button');
+        baglanti.setAttribute('aria-label', 'Konumuma dön');
+        baglanti.innerHTML =
+          '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+          '<path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" ' +
+          'stroke-width="2" stroke-linecap="round" fill="none"/>' +
+          '<circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="2" fill="none"/>' +
+          '<circle cx="12" cy="12" r="2.2" fill="currentColor"/></svg>';
+
+        // Konum bilinmiyorsa dönülecek yer de yok.
+        kutu.style.display = sonGosterilenKonum ? '' : 'none';
+
+        L.DomEvent.disableClickPropagation(kutu);
+        L.DomEvent.on(baglanti, 'click', function (olay) {
+          L.DomEvent.stop(olay);
+          konumaGeriDon();
+        });
+
+        return kutu;
+      }
+    });
+
+    konumaDonDenetimi = new Dugme();
+    konumaDonDenetimi.addTo(harita);
+  }
+
+  function konumaDonGorunurlugunuTazele() {
+    var kutu = konumaDonDenetimi && konumaDonDenetimi.getContainer();
+    if (kutu) kutu.style.display = sonGosterilenKonum ? '' : 'none';
+  }
+
+  /** Kamerayı kullanıcının konumuna geri getirir. */
+  function konumaGeriDon() {
+    if (!sonGosterilenKonum) return;
+
+    // Gürültü eşiği yalnızca kendiliğinden gelen ölçümler içindir; düğmeye
+    // basıldığında kamera her hâlükârda konuma dönmeli.
+    sonKameraHedefi = null;
+    konumaOdaklan(sonGosterilenKonum, 16);
+  }
+
   /** Kap boyutu değiştiğinde çağrılmalı. */
   function boyutuTazele() {
     harita.invalidateSize();
@@ -395,6 +536,8 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     window.addEventListener('resize', bekleyeniUygula);
   }
 
+  konumaDonDugmesiniKur();
+
   // İlk yerleşim tamamlandıktan sonra bir kez daha ölç.
   setTimeout(bekleyeniUygula, 0);
 
@@ -408,6 +551,7 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     konumuGoster: konumuGoster,
     guzergahaOdaklan: guzergahaOdaklan,
     konumaOdaklan: konumaOdaklan,
+    konumaGeriDon: konumaGeriDon,
     boyutuTazele: boyutuTazele
   };
 }

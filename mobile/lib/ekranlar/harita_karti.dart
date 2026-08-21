@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'dart:async';
 import 'dart:math' as matematik;
 import 'package:flutter_compass/flutter_compass.dart';
@@ -83,6 +84,10 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
 
   static const _yonlendirmeYakinligi = 17.0;
 
+  /// "Konumuma dön" düğmesinin en az açacağı yakınlık. Kullanıcı daha
+  /// yakındaysa yakınlığı bozmayız.
+  static const _konumaDonYakinligi = 16.0;
+
   /// Sürekli takip: kamera her karede hedefe doğru yaklaşır.
   ///
   /// Her ölçümde yeni bir animasyon başlatmak, hız sıfırlandığı için takılma
@@ -113,6 +118,38 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   /// Haritayı gidiş yönüne çevirme eşiği. Küçük açı oynamalarında harita
   /// döndürülürse baş döndürücü olur.
   static const _donusEsigiDerece = 8.0;
+
+  /* ---------- İğneyi elle taşıma ---------- */
+
+  /// Sürükleme neden LongPressDraggable ile yapılmıyor:
+  /// FlutterMap kendi LongPressGestureRecognizer'ını kuruyor ve o, jesti
+  /// **500 ms**'de kazanıyor. Arena çözülünce 2 saniyelik sürükleyici
+  /// reddediliyor ve iğne hiç kımıldamıyordu — "2 saniye basılı tutunca yeri
+  /// değişmiyor" bunun sebebiydi. Listener ham pointer olaylarını dinler,
+  /// arenaya hiç girmez; jesti kimin kazandığından etkilenmez.
+  ///
+  /// Yan fayda: haritanın kendisi de uzun basışta jesti kazandığı için
+  /// parmak kayarken harita kaymıyor, iğne serbestçe taşınıyor.
+  static const _basiliTutmaSuresi = Duration(seconds: 2);
+
+  /// Basılı tutarken bu kadar pikselden fazla kayma, kullanıcının haritayı
+  /// kaydırmak istediği anlamına gelir; taşıma açılmaz.
+  static const _basiliTutmaKaymasiPx = 14.0;
+
+  Timer? _basiliTutmaSayaci;
+  int? _basiliIsaretci;
+  Offset? _basmaNoktasi;
+  Offset? _sonIsaretciNoktasi;
+
+  /// Taşımanın açıldığı andaki parmak noktası ve iğnenin konumu.
+  Offset? _tasimaBaslangicNoktasi;
+  Konum? _tasimaBaslangicKonumu;
+  bool _tasimaAktif = false;
+  bool _igneOynadi = false;
+
+  /// Taşıma sürerken iğnenin gösterileceği konum. Ayrı tutuluyor: bu sırada
+  /// gelen GPS ölçümü parmağın altındaki iğneyi geri çekmesin.
+  final _tasinanKonum = ValueNotifier<Konum?>(null);
 
 
   /// Pusula yalnızca haritayı döndürmek için dinleniyor. Döndürme imperatif
@@ -230,6 +267,8 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   void dispose() {
     _pusula?.cancel();
     widget.konumDurumu.removeListener(_konumDegisti);
+    _basiliTutmaSayaci?.cancel();
+    _tasinanKonum.dispose();
     _takibiDurdur();
     super.dispose();
   }
@@ -395,94 +434,125 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
           ),
           SizedBox(
             height: 320,
-            child: FlutterMap(
-              mapController: _denetleyici,
-              options: MapOptions(
-                initialCameraFit: CameraFit.bounds(
-                  bounds: LatLngBounds.fromPoints(noktalar),
-                  padding: const EdgeInsets.all(24),
-                ),
-                minZoom: 7,
-                maxZoom: 18,
-                onMapReady: () {
-                  _haritaHazir = true;
-                  // Kart, rota hazırken kurulmuş olabilir.
-                  if (widget.yuruyusRotasi != null &&
-                      !widget.konumDurumu.value.yonlendirmede) {
-                    _rotayiCercevele();
-                  }
-                },
-                // Haritayı sürüklerken sayfanın kaymaması için dönüşler sınırlı.
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.pinchZoom |
-                      InteractiveFlag.drag |
-                      InteractiveFlag.doubleTapZoom,
-                ),
-              ),
+            child: Stack(
               children: [
-                TileLayer(
-                  urlTemplate: HaritaKarti.dosemeAdresi,
-                  userAgentPackageName: HaritaKarti.uygulamaKimligi,
-                  maxZoom: 19,
-                ),
-                PolylineLayer(polylines: [
-                  Polyline(points: noktalar, color: _hatRengi, strokeWidth: 3),
-                  if (widget.yolculuk != null)
-                    Polyline(
-                      points: widget.yolculuk!.guzergah
-                          .where((d) => d.konum.gecerli)
-                          .map((d) => LatLng(d.konum.enlem, d.konum.boylam))
-                          .toList(),
-                      color: _guzergahRengi,
-                      strokeWidth: 5,
+                FlutterMap(
+                  mapController: _denetleyici,
+                  options: MapOptions(
+                    initialCameraFit: CameraFit.bounds(
+                      bounds: LatLngBounds.fromPoints(noktalar),
+                      padding: const EdgeInsets.all(24),
                     ),
-                ]),
-
-                // Yürüyüş rotası ayrı katmanda: kat edilen kısım soluklaşsın
-                // diye konum değiştikçe yalnızca bu katman yeniden çiziliyor.
-                ValueListenableBuilder<KonumDurumu>(
-                  valueListenable: widget.konumDurumu,
-                  builder: (context, durum, _) {
-                    final rota = widget.yuruyusRotasi;
-                    if (rota == null) return const SizedBox.shrink();
-
-                    final (gecilen, kalan) =
-                        _rotayiBol(rota.noktalar, durum.katEdilenM);
-
-                    return PolylineLayer(polylines: [
-                      if (gecilen.length > 1)
+                    minZoom: 7,
+                    maxZoom: 18,
+                    onMapReady: () {
+                      _haritaHazir = true;
+                      // Kart, rota hazırken kurulmuş olabilir.
+                      if (widget.yuruyusRotasi != null &&
+                          !widget.konumDurumu.value.yonlendirmede) {
+                        _rotayiCercevele();
+                      }
+                    },
+                    // Haritayı sürüklerken sayfa kaymasın diye dönüşler
+                    // sınırlı.
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.pinchZoom |
+                          InteractiveFlag.drag |
+                          InteractiveFlag.doubleTapZoom,
+                    ),
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: HaritaKarti.dosemeAdresi,
+                      userAgentPackageName: HaritaKarti.uygulamaKimligi,
+                      maxZoom: 19,
+                    ),
+                    PolylineLayer(polylines: [
+                      Polyline(
+                        points: noktalar,
+                        color: _hatRengi,
+                        strokeWidth: 3,
+                      ),
+                      if (widget.yolculuk != null)
                         Polyline(
-                          points: gecilen,
-                          color: _yuruyusRengi.withValues(alpha: .28),
+                          points: widget.yolculuk!.guzergah
+                              .where((d) => d.konum.gecerli)
+                              .map((d) => LatLng(d.konum.enlem, d.konum.boylam))
+                              .toList(),
+                          color: _guzergahRengi,
                           strokeWidth: 5,
-                          pattern: StrokePattern.dotted(),
                         ),
-                      if (kalan.length > 1)
-                        Polyline(
-                          points: kalan,
-                          color: _yuruyusRengi,
-                          strokeWidth: 5,
-                          pattern: StrokePattern.dotted(),
+                    ]),
+
+                    // Yürüyüş rotası ayrı katmanda: kat edilen kısım
+                    // soluklaşsın diye konum değiştikçe yalnızca bu katman
+                    // yeniden çiziliyor.
+                    ValueListenableBuilder<KonumDurumu>(
+                      valueListenable: widget.konumDurumu,
+                      builder: (context, durum, _) {
+                        final rota = widget.yuruyusRotasi;
+                        if (rota == null) return const SizedBox.shrink();
+
+                        final (gecilen, kalan) =
+                            _rotayiBol(rota.noktalar, durum.katEdilenM);
+
+                        return PolylineLayer(polylines: [
+                          if (gecilen.length > 1)
+                            Polyline(
+                              points: gecilen,
+                              color: _yuruyusRengi.withValues(alpha: .28),
+                              strokeWidth: 5,
+                              pattern: StrokePattern.dotted(),
+                            ),
+                          if (kalan.length > 1)
+                            Polyline(
+                              points: kalan,
+                              color: _yuruyusRengi,
+                              strokeWidth: 5,
+                              pattern: StrokePattern.dotted(),
+                            ),
+                        ]);
+                      },
+                    ),
+                    MarkerLayer(markers: _durakIsaretleri()),
+                    ValueListenableBuilder<KonumDurumu>(
+                      valueListenable: widget.konumDurumu,
+                      builder: (context, durum, _) {
+                        // Taşıma sürerken iğne parmağı takip eder; o
+                        // sırada gelen GPS ölçümü iğneyi geri çekmesin.
+                        return ValueListenableBuilder<Konum?>(
+                          valueListenable: _tasinanKonum,
+                          builder: (context, tasinan, _) {
+                            final konum = tasinan ?? durum.konum;
+                            if (konum == null) return const SizedBox.shrink();
+                            return MarkerLayer(markers: [
+                              _konumIsareti(durum, konum,
+                                  tasiniyor: tasinan != null),
+                            ]);
+                          },
+                        );
+                      },
+                    ),
+                    RichAttributionWidget(
+                      attributions: [
+                        TextSourceAttribution(
+                          'OpenStreetMap katkıcıları',
+                          onTap: () {},
                         ),
-                    ]);
-                  },
-                ),
-                MarkerLayer(markers: _durakIsaretleri()),
-                ValueListenableBuilder<KonumDurumu>(
-                  valueListenable: widget.konumDurumu,
-                  builder: (context, durum, _) {
-                    final konum = durum.konum;
-                    if (konum == null) return const SizedBox.shrink();
-                    return MarkerLayer(markers: [_konumIsareti(durum, konum)]);
-                  },
-                ),
-                RichAttributionWidget(
-                  attributions: [
-                    TextSourceAttribution(
-                      'OpenStreetMap katkıcıları',
-                      onTap: () {},
+                      ],
                     ),
                   ],
+                ),
+
+                // Haritayı kaydırıp uzaklaşınca konuma dönmek için geri
+                // kaydırmaya gerek kalmasın.
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: _KonumaDonDugmesi(
+                    konumDurumu: widget.konumDurumu,
+                    basildi: _konumaGeriDon,
+                  ),
                 ),
               ],
             ),
@@ -532,10 +602,14 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
 
   /// Konum işareti.
   ///
-  /// Normalde sürüklenebilir bir iğne — GPS şaştığında yeri elle düzeltmenin
-  /// yolu. Yönlendirme sırasında yön okuna dönüşür ve sürüklenemez olur;
-  /// yürürken yanlışlıkla taşınmasın.
-  Marker _konumIsareti(KonumDurumu durum, Konum konum) {
+  /// Normalde taşınabilir bir iğne — GPS şaştığında yeri elle düzeltmenin
+  /// yolu. Yönlendirme sırasında yön okuna dönüşür ve taşınamaz olur;
+  /// yürürken yanlışlıkla yeri değişmesin.
+  Marker _konumIsareti(
+    KonumDurumu durum,
+    Konum konum, {
+    required bool tasiniyor,
+  }) {
     if (durum.yonlendirmede) {
       return Marker(
         point: LatLng(konum.enlem, konum.boylam),
@@ -558,29 +632,189 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
       alignment: Alignment.topCenter,
       // 2 saniye basılı tutmadan taşınamaz: haritayı kaydırırken parmak
       // işarete değince yanlışlıkla yer değiştiriyordu.
-      child: LongPressDraggable<bool>(
-        delay: const Duration(seconds: 2),
-        feedback: const Icon(Icons.place, size: 52, color: _guzergahRengi),
-        childWhenDragging: const SizedBox.shrink(),
-        onDragEnd: (ayrinti) => _isaretiTasi(ayrinti.offset),
-        child: Tooltip(
-          message: 'Yerini düzeltmek için 2 saniye basılı tut',
-          child: const Icon(Icons.place, size: 44, color: _guzergahRengi),
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: _isaretePasildi,
+        onPointerMove: _isaretteHareket,
+        onPointerUp: _isaretBirakildi,
+        onPointerCancel: _isaretIptalEdildi,
+        child: Semantics(
+          label: 'Konumun. Yerini düzeltmek için 2 saniye basılı tut.',
+          // Taşımaya açıldığında iğne renk değiştirir: kullanıcı iki saniyenin
+          // dolduğunu titreşimin yanında gözle de görsün.
+          child: Icon(
+            Icons.place,
+            size: 44,
+            color: tasiniyor ? _inisRengi : _guzergahRengi,
+            shadows: tasiniyor
+                ? const [Shadow(color: Colors.black45, blurRadius: 12)]
+                : null,
+          ),
         ),
       ),
     );
   }
 
-  /// Ekran koordinatını coğrafi koordinata çevirip yukarı bildirir.
-  void _isaretiTasi(Offset ekranNoktasi) {
-    final kutu = context.findRenderObject() as RenderBox?;
-    if (kutu == null) return;
+  void _isaretePasildi(PointerDownEvent olay) {
+    _basiliTutmayiBirak();
+    _basiliIsaretci = olay.pointer;
+    _basmaNoktasi = olay.position;
+    _sonIsaretciNoktasi = olay.position;
+    _basiliTutmaSayaci = Timer(_basiliTutmaSuresi, _tasimayiAc);
+  }
 
-    // Draggable global koordinat verir; ikonun sol üstü değil UCU esas alınır.
-    // Sürüklerken ikon 52 piksel gösteriliyor, uç alt ortada.
-    final yerel = kutu.globalToLocal(ekranNoktasi + const Offset(26, 50));
-    final nokta = _denetleyici.camera.screenOffsetToLatLng(yerel);
-    widget.konumTasindi(Konum(enlem: nokta.latitude, boylam: nokta.longitude));
+  /// İki saniye dolunca iğne taşımaya açılır.
+  void _tasimayiAc() {
+    // Başlangıç, basma anı değil AÇILMA anı: o iki saniyede gelen GPS ölçümü
+    // iğneyi kaydırmış olabilir.
+    final konum = widget.konumDurumu.value.konum;
+    if (_basiliIsaretci == null || konum == null) return;
+
+    _tasimaAktif = true;
+    _igneOynadi = false;
+    _tasimaBaslangicNoktasi = _sonIsaretciNoktasi ?? _basmaNoktasi;
+    _tasimaBaslangicKonumu = konum;
+    _tasinanKonum.value = konum;
+    HapticFeedback.mediumImpact();
+  }
+
+  void _isaretteHareket(PointerMoveEvent olay) {
+    if (olay.pointer != _basiliIsaretci) return;
+    _sonIsaretciNoktasi = olay.position;
+
+    if (!_tasimaAktif) {
+      // Parmak kayıyorsa kullanıcı haritayı kaydırmak istiyordur.
+      final basma = _basmaNoktasi;
+      if (basma != null &&
+          (olay.position - basma).distance > _basiliTutmaKaymasiPx) {
+        _basiliTutmayiBirak();
+      }
+      return;
+    }
+
+    final yeni = _ekrandanKonum(olay.position);
+    if (yeni == null) return;
+    _igneOynadi = true;
+    _tasinanKonum.value = yeni;
+  }
+
+  void _isaretBirakildi(PointerUpEvent olay) {
+    if (olay.pointer != _basiliIsaretci) return;
+
+    final tasindi = _tasimaAktif && _igneOynadi;
+    final yeniKonum = _tasinanKonum.value;
+    _basiliTutmayiBirak();
+
+    // Yalnızca gerçekten taşındıysa bildir: iki saniye basıp bırakmak konumu
+    // değiştirmemeli.
+    if (tasindi && yeniKonum != null) widget.konumTasindi(yeniKonum);
+  }
+
+  void _isaretIptalEdildi(PointerCancelEvent olay) {
+    if (olay.pointer == _basiliIsaretci) _basiliTutmayiBirak();
+  }
+
+  void _basiliTutmayiBirak() {
+    _basiliTutmaSayaci?.cancel();
+    _basiliTutmaSayaci = null;
+    _basiliIsaretci = null;
+    _basmaNoktasi = null;
+    _sonIsaretciNoktasi = null;
+    _tasimaBaslangicNoktasi = null;
+    _tasimaBaslangicKonumu = null;
+    _tasimaAktif = false;
+    _igneOynadi = false;
+    _tasinanKonum.value = null;
+  }
+
+  /// Parmağın kat ettiği yolu iğnenin başlangıç konumuna uygular.
+  ///
+  /// Parmağın altındaki nokta doğrudan alınmıyor, FARK uygulanıyor: kullanıcı
+  /// iğneyi neresinden tuttuysa orası parmağın altında kalır, iğne ele alınır
+  /// alınmaz zıplamaz.
+  Konum? _ekrandanKonum(Offset isaretci) {
+    final baslangicNokta = _tasimaBaslangicNoktasi;
+    final baslangicKonum = _tasimaBaslangicKonumu;
+    if (!_haritaHazir || baslangicNokta == null || baslangicKonum == null) {
+      return null;
+    }
+
+    // latLngToScreenOffset ile screenOffsetToLatLng birbirinin tersi; ikisi de
+    // haritanın kendi kutusuna göre çalışır ve dönüşü hesaba katar.
+    final kamera = _denetleyici.camera;
+    final ekran = kamera.latLngToScreenOffset(
+      LatLng(baslangicKonum.enlem, baslangicKonum.boylam),
+    );
+    final nokta = kamera.screenOffsetToLatLng(
+      ekran + (isaretci - baslangicNokta),
+    );
+    return Konum(enlem: nokta.latitude, boylam: nokta.longitude);
+  }
+
+  /// Kamerayı kullanıcının konumuna geri getirir.
+  ///
+  /// Kullanıcı hattın başka bir yerine bakmak için haritayı kaydırdığında
+  /// konumuna dönmek için geri kaydırmak zorunda kalmasın. Animasyon yok:
+  /// düğmeye basınca beklenen şey anında orada olmaktır.
+  void _konumaGeriDon() {
+    final konum = widget.konumDurumu.value.konum;
+    if (konum == null || !_haritaHazir) return;
+
+    final hedef = LatLng(konum.enlem, konum.boylam);
+    final mevcutYakinlik = _denetleyici.camera.zoom;
+    final yakinlik = mevcutYakinlik < _konumaDonYakinligi
+        ? _konumaDonYakinligi
+        : mevcutYakinlik;
+
+    // Süren takip animasyonu araya girip kamerayı geri çekmesin.
+    _takibiDurdur();
+    _kameraHedefNoktasi = hedef;
+    _kameraKonumu = hedef;
+    _kameraHedefi = konum;
+    _denetleyici.move(hedef, yakinlik);
+  }
+}
+
+/// Haritanın üstünde duran "konumuma dön" düğmesi.
+///
+/// Kullanıcı hattın başka bir yerine bakmak için haritayı kaydırdığında
+/// konumuna dönmek için geri kaydırmak zorunda kalmasın.
+class _KonumaDonDugmesi extends StatelessWidget {
+  final ValueListenable<KonumDurumu> konumDurumu;
+  final VoidCallback basildi;
+
+  const _KonumaDonDugmesi({required this.konumDurumu, required this.basildi});
+
+  @override
+  Widget build(BuildContext context) {
+    final renkler = Theme.of(context).colorScheme;
+
+    return ValueListenableBuilder<KonumDurumu>(
+      valueListenable: konumDurumu,
+      builder: (context, durum, _) {
+        // Konum yoksa dönülecek yer de yok.
+        if (durum.konum == null) return const SizedBox.shrink();
+
+        return Material(
+          color: renkler.surface,
+          elevation: 3,
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: basildi,
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: Semantics(
+                button: true,
+                label: 'Konumuma dön',
+                child: Icon(Icons.my_location, size: 22, color: renkler.primary),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

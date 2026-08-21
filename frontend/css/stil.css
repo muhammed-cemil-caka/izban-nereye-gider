@@ -331,6 +331,14 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
 }
 .leaflet-tooltip-top::before { border-top-color: var(--cizgi); }
 
+/* Konumuma dön düğmesi (harita üstü) */
+.konuma-don a {
+  display: grid !important;
+  place-items: center;
+  color: var(--vurgu) !important;
+}
+.konuma-don a svg { display: block; }
+
 /* Koyu temada döşemeler göz yormasın. */
 :root[data-tema="koyu"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.92); }
 @media (prefers-color-scheme: dark) {

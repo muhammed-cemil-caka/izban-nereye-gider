@@ -220,15 +220,41 @@ yeşil / iniş turuncu gösterilir. Durağa tıklamak onu biniş durağı yapar.
 Kullanıcı konumu **sürüklenebilir** bir işaretle gösterilir — masaüstünde şaşan
 tarayıcı konumunu düzeltmenin en doğrudan yolu budur.
 
-Konum iğnesi yalnızca **2 saniye basılı tutunca** sürüklenebilir. Sürekli
+Konum iğnesi yalnızca **2 saniye basılı tutunca** taşınabilir. Sürekli
 açık olması, haritayı kaydırırken parmağın işarete değmesiyle konumun
 yanlışlıkla değişmesine yol açıyordu. Webde işaret hazır olunca parlar,
-mobilde titreşimle haber verilir.
+mobilde titreşimle haber verilir ve iğne renk değiştirir.
+
+**Taşıma neden hazır sürükleme bileşenleriyle yapılmıyor:** her iki tarafta da
+"iki saniye bekle, sonra sürükle" hareketi hiç başlamıyordu.
+
+- *Mobilde* `LongPressDraggable`, jest arenasında `FlutterMap`'in kendi
+  `LongPressGestureRecognizer`'ıyla yarışıyor. O tanıyıcı **500 ms**'de jesti
+  kazanıyor, arena çözülünce 2 saniyelik sürükleyici reddediliyor ve iğne hiç
+  kımıldamıyor.
+- *Webde* `marker.dragging.enable()` yalnızca **bundan sonraki** basışı
+  yakalıyor. İki saniye dolduğunda parmak zaten basılı olduğu için sürükleme
+  o hareket boyunca hiç başlamıyor; kullanıcının bırakıp yeniden basması
+  gerekiyordu.
+
+Taşıma bu yüzden iki tarafta da ham işaretçi olaylarıyla yürütülüyor (mobilde
+`Listener`, webde `pointerdown/move/up`) — arenaya girmedikleri için jesti
+kimin kazandığından etkilenmiyorlar. Parmağın altındaki nokta doğrudan
+alınmaz, basılan noktadan itibaren **fark** uygulanır: iğne ele alınır almaz
+zıplamaz. İki saniye basıp hiç oynatmadan bırakmak konumu değiştirmez.
 
 Konum iğnesinin **ucu** konumu gösterir (`Marker.alignment: topCenter`).
 Varsayılan hizalama işareti noktanın ortasına koyuyor; o zaman uç aşağıda
 kalıyor ve yakınlaştırma değiştikçe kayma büyüyor. Webde Leaflet'in
 varsayılan `iconAnchor: [12, 41]` değeri zaten ucu işaret ediyor.
+
+### Konuma dön düğmesi
+
+Haritanın sağ üst köşesindeki hedef simgesi kamerayı kullanıcının konumuna
+geri getirir. Hattın başka bir yerine bakmak için harita kaydırıldığında geri
+dönmek için elle kaydırmak gerekmiyor. Konum bilinmiyorsa düğme görünmez.
+Kendiliğinden gelen ölçümler için konulan gürültü eşiği (8 m) bu düğmeye
+uygulanmaz: basıldığında kamera her hâlükârda konuma döner.
 
 ### Yürüyüş yol tarifi
 
@@ -342,7 +368,7 @@ testlidir: `frontend/js/yonlendirme.js` · `mobile/lib/servisler/yonlendirme_ser
 Her iki istemcide de: yürüme mesafesine göre en yakın durak, adım adım
 yönlendirme, gidiş yönüne dönen harita, ekranda dik duran yön oku, ilerleme
 çubuğu, kat edilen yolun soluklaşması, 2 saniye basılı tutunca taşınan konum
-iğnesi ve pusula.
+iğnesi, konuma dön düğmesi ve pusula.
 
 Leaflet haritayı döndürmeyi yerleşik desteklemediği için web tarafında
 `leaflet-rotate` eklentisi kullanılır (`frontend/vendor/leaflet/`, MIT).
