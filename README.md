@@ -103,10 +103,24 @@ cd backend/functions && GOOGLE_APPLICATION_CREDENTIALS=/yol/anahtar.json node ar
 ### Frontend
 
 ```bash
-python3 araclar/gelistirme-sunucusu.py
+npm start
 ```
 
 Sonra <http://localhost:5173> adresini açın.
+
+`npm start` yalnızca aşağıdaki betiği çağıran bir kısayoldur — sitenin
+bağımlılığı ve derleme adımı yok, `npm install` gerekmez:
+
+```bash
+python3 araclar/gelistirme-sunucusu.py
+```
+
+Konum servisi güvenli bağlam istediği için HTTPS gereken durumlarda
+(Safari, telefondan yerel ağ adresi):
+
+```bash
+npm run start:https
+```
 
 `python3 -m http.server` yerine bu betik kullanılır: o sunucu önbellek başlığı
 göndermediği için tarayıcı düzenlenen dosyaların eski sürümünü tutuyor ve
