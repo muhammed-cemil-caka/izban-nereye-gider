@@ -15,8 +15,7 @@
  */
 const OTOBUS_YAKINLIK_M = 400;
 
-// İzmir ve çevresi (İZBAN hattının tamamını kapsar).
-const SINIR = { guney: 37.90, bati: 26.90, kuzey: 38.85, dogu: 27.60 };
+
 
 /**
  * Bir otobüs rotası ESHOT sayılır mı?
@@ -56,14 +55,28 @@ function hatSirala(a, b) {
   return a.localeCompare(b, 'tr');
 }
 
-/** Tek sorgu: hat ilişkileri + üye düğümleri. */
-function sorguKur(sinir = SINIR) {
-  const kutu = `${sinir.guney},${sinir.bati},${sinir.kuzey},${sinir.dogu}`;
+/**
+ * Tek sorgu: İZBAN duraklarının çevresindeki otobüs durakları ve onlara
+ * uğrayan hat ilişkileri.
+ *
+ * Bütün İzmir'in hatlarını üye düğümleriyle indirmek ağır kalıyor (aynalar
+ * zaman aşımına uğruyor). Burada yalnızca 41 durağın çevresi soruluyor:
+ * birkaç yüz düğüm, birkaç yüz ilişki.
+ *
+ * @param {Array<{enlem: number, boylam: number}>} duraklar
+ */
+function sorguKur(duraklar, yakinlikM = OTOBUS_YAKINLIK_M) {
+  const cevreler = duraklar
+    .map((d) => `node(around:${yakinlikM},${d.enlem},${d.boylam})["highway"="bus_stop"];`)
+    .join('\n      ');
+
   return `
-    [out:json][timeout:600];
-    rel["type"="route"]["route"="bus"](${kutu})->.hatlar;
+    [out:json][timeout:300];
+    (
+      ${cevreler}
+    )->.duraklar;
+    rel(bn.duraklar)["type"="route"]["route"="bus"]->.hatlar;
     .hatlar out body;
-    node(r.hatlar)->.duraklar;
     .duraklar out skel qt;
   `;
 }
@@ -143,6 +156,5 @@ module.exports = {
   hatSirala,
   sorguKur,
   metreUzaklik,
-  OTOBUS_YAKINLIK_M,
-  SINIR
+  OTOBUS_YAKINLIK_M
 };

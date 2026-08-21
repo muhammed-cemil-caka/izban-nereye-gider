@@ -1,14 +1,15 @@
 // OTOMATİK ÜRETİLDİ — elle düzenlemeyin.
 // Kaynak: backend/veri/duraklar.json — değişiklik sonrası: node araclar/veri-dagit.js
 const HAT_VERISI = {
-  "surum": "2.0.0",
-  "guncellemeTarihi": "2026-08-19",
+  "surum": "2.1.0",
+  "guncellemeTarihi": "2026-08-21",
   "uyari": "Durak sırası, koordinatlar ve aktarmalar OpenStreetMap verisinden üretilmiştir. SÜRELER TAHMİNİDİR: gerçek mesafeden hesaplanır, resmî tarife değildir. Gerçek varış saatleri için izban.com.tr tarifesi kullanılmalıdır.",
   "kaynak": {
     "duraklar": "OpenStreetMap rota ilişkileri 15423228 ve 16191185",
     "lisans": "ODbL — © OpenStreetMap katkıcıları",
     "ilce": "Nominatim ters coğrafi kodlama",
-    "sureModeli": "65 km/sa ortalama hız, 1.08× ray katsayısı, durak başına 0.6 dk bekleme"
+    "sureModeli": "65 km/sa ortalama hız, 1.08× ray katsayısı, durak başına 0.6 dk bekleme",
+    "otobus": "OpenStreetMap — durağa 400 m'den yakın ESHOT otobüs hatları (type=route, route=bus ilişkileri)"
   },
   "hat": {
     "ad": "İZBAN Banliyö Hattı",
@@ -26,7 +27,16 @@ const HAT_VERISI = {
         "enlem": 38.788773,
         "boylam": 26.967164
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "834",
+        "835",
+        "837",
+        "849",
+        "936"
+      ]
     },
     {
       "kod": "bicerova",
@@ -38,7 +48,12 @@ const HAT_VERISI = {
         "enlem": 38.749225,
         "boylam": 26.960827
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "745"
+      ]
     },
     {
       "kod": "hatundere",
@@ -49,8 +64,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.689897,
         "boylam": 27.017432
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "menemen",
@@ -62,7 +76,12 @@ const HAT_VERISI = {
         "enlem": 38.603221,
         "boylam": 27.076514
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "749"
+      ]
     },
     {
       "kod": "egekent-2",
@@ -73,8 +92,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.560558,
         "boylam": 27.044252
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "ulukent",
@@ -86,7 +104,12 @@ const HAT_VERISI = {
         "enlem": 38.547782,
         "boylam": 27.035451
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "850"
+      ]
     },
     {
       "kod": "egekent",
@@ -99,7 +122,15 @@ const HAT_VERISI = {
         "boylam": 27.045912
       },
       "aktarma": [
+        "ESHOT",
         "Tramvay"
+      ],
+      "otobusHatlari": [
+        "535",
+        "595",
+        "596",
+        "817",
+        "912"
       ]
     },
     {
@@ -113,7 +144,13 @@ const HAT_VERISI = {
         "boylam": 27.053177
       },
       "aktarma": [
+        "ESHOT",
         "Tramvay"
+      ],
+      "otobusHatlari": [
+        "535",
+        "595",
+        "912"
       ]
     },
     {
@@ -127,7 +164,13 @@ const HAT_VERISI = {
         "boylam": 27.063423
       },
       "aktarma": [
+        "ESHOT",
         "Tramvay"
+      ],
+      "otobusHatlari": [
+        "535",
+        "817",
+        "912"
       ]
     },
     {
@@ -140,7 +183,13 @@ const HAT_VERISI = {
         "enlem": 38.482184,
         "boylam": 27.082995
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "535",
+        "912"
+      ]
     },
     {
       "kod": "semikler",
@@ -151,8 +200,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.474955,
         "boylam": 27.089842
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "demirkopru",
@@ -163,8 +211,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.468094,
         "boylam": 27.096235
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "nergiz",
@@ -176,7 +223,17 @@ const HAT_VERISI = {
         "enlem": 38.459542,
         "boylam": 27.104702
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "258",
+        "430",
+        "435",
+        "487",
+        "532",
+        "847"
+      ]
     },
     {
       "kod": "karsiyaka",
@@ -218,7 +275,20 @@ const HAT_VERISI = {
         "boylam": 27.12853
       },
       "aktarma": [
+        "ESHOT",
         "Tramvay"
+      ],
+      "otobusHatlari": [
+        "77",
+        "78",
+        "147",
+        "148",
+        "240",
+        "330",
+        "335",
+        "434",
+        "543",
+        "912"
       ]
     },
     {
@@ -231,7 +301,21 @@ const HAT_VERISI = {
         "enlem": 38.466765,
         "boylam": 27.149061
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "77",
+        "78",
+        "147",
+        "148",
+        "240",
+        "330",
+        "335",
+        "434",
+        "543",
+        "912"
+      ]
     },
     {
       "kod": "bayrakli",
@@ -243,7 +327,27 @@ const HAT_VERISI = {
         "enlem": 38.463843,
         "boylam": 27.164418
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "77",
+        "78",
+        "102",
+        "147",
+        "148",
+        "240",
+        "330",
+        "335",
+        "434",
+        "501",
+        "502",
+        "503",
+        "504",
+        "543",
+        "599",
+        "912"
+      ]
     },
     {
       "kod": "salhane",
@@ -255,7 +359,20 @@ const HAT_VERISI = {
         "enlem": 38.450557,
         "boylam": 27.172182
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "77",
+        "78",
+        "125",
+        "140",
+        "147",
+        "148",
+        "240",
+        "338",
+        "434"
+      ]
     },
     {
       "kod": "halkapinar",
@@ -268,8 +385,23 @@ const HAT_VERISI = {
         "boylam": 27.168837
       },
       "aktarma": [
+        "ESHOT",
         "Metro",
         "Tramvay"
+      ],
+      "otobusHatlari": [
+        "53",
+        "102",
+        "154",
+        "168",
+        "501",
+        "502",
+        "503",
+        "504",
+        "543",
+        "555",
+        "564",
+        "599"
       ]
     },
     {
@@ -283,7 +415,16 @@ const HAT_VERISI = {
         "boylam": 27.148762
       },
       "aktarma": [
+        "ESHOT",
         "Tramvay"
+      ],
+      "otobusHatlari": [
+        "63",
+        "70",
+        "565",
+        "912",
+        "930",
+        "963"
       ]
     },
     {
@@ -311,7 +452,15 @@ const HAT_VERISI = {
         "boylam": 27.156184
       },
       "aktarma": [
+        "ESHOT",
         "Metro"
+      ],
+      "otobusHatlari": [
+        "54",
+        "59",
+        "249",
+        "348",
+        "367"
       ]
     },
     {
@@ -324,7 +473,13 @@ const HAT_VERISI = {
         "enlem": 38.391941,
         "boylam": 27.147142
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "515",
+        "838"
+      ]
     },
     {
       "kod": "kosu",
@@ -336,7 +491,12 @@ const HAT_VERISI = {
         "enlem": 38.383636,
         "boylam": 27.147495
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "171"
+      ]
     },
     {
       "kod": "inkilap",
@@ -347,8 +507,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.368872,
         "boylam": 27.141503
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "semt-garaji",
@@ -360,7 +519,12 @@ const HAT_VERISI = {
         "enlem": 38.357007,
         "boylam": 27.136608
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "610"
+      ]
     },
     {
       "kod": "esbas",
@@ -372,7 +536,12 @@ const HAT_VERISI = {
         "enlem": 38.336941,
         "boylam": 27.136454
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "204"
+      ]
     },
     {
       "kod": "gaziemir",
@@ -383,8 +552,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.326327,
         "boylam": 27.139891
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "sarnic",
@@ -396,7 +564,12 @@ const HAT_VERISI = {
         "enlem": 38.312123,
         "boylam": 27.144581
       },
-      "aktarma": []
+      "aktarma": [
+        "ESHOT"
+      ],
+      "otobusHatlari": [
+        "204"
+      ]
     },
     {
       "kod": "havalimani",
@@ -407,8 +580,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.291261,
         "boylam": 27.147718
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "cumaovasi",
@@ -419,8 +591,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.264131,
         "boylam": 27.162903
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "develi",
@@ -431,8 +602,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.203284,
         "boylam": 27.166602
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "tekeli",
@@ -443,8 +613,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.181005,
         "boylam": 27.185652
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "pancar",
@@ -455,8 +624,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.197416,
         "boylam": 27.239537
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "kuscuburun",
@@ -467,8 +635,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.209128,
         "boylam": 27.309317
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "torbali",
@@ -479,8 +646,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.169825,
         "boylam": 27.347025
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "tepekoy",
@@ -491,8 +657,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.147225,
         "boylam": 27.36133
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "saglik",
@@ -503,8 +668,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.084974,
         "boylam": 27.400596
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "belevi",
@@ -515,8 +679,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.031431,
         "boylam": 27.433077
-      },
-      "aktarma": []
+      }
     },
     {
       "kod": "selcuk",
@@ -527,8 +690,7 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 37.950734,
         "boylam": 27.373029
-      },
-      "aktarma": []
+      }
     }
   ]
 };

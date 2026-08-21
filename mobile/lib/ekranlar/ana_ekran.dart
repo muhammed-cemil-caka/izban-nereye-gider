@@ -411,6 +411,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     _yonlendirmeNotifier.dispose();
     _takipAboneligi?.cancel();
     _yonlendirmeAboneligi?.cancel();
+    // Ekran kapanırken okunan talimat sürüyorsa kesilsin.
+    _ses.sustur();
     super.dispose();
   }
 

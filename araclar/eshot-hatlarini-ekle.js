@@ -27,53 +27,94 @@ const {
   OTOBUS_YAKINLIK_M
 } = require('./eshot-hatlari.js');
 
-const SUNUCU = 'https://overpass-api.de/api/interpreter';
+// Overpass sunucuları sırayla denenir. Ana sunucu (overpass-api.de) yoğun
+// dönemlerde bağlantıyı tamamen kesiyor; diğerleri OSM wiki'de listelenen
+// halka açık aynalar.
+//
+// DİKKAT: her ayna dünya verisini tutmuyor. overpass.osm.ch yalnızca İsviçre
+// çıkartmasıyla çalışıyor ve Türkiye sorgularına 200 + BOŞ sonuç dönüyor —
+// yani "hat yok" gibi görünüp veriyi siliyor. Bu yüzden her sunucu, veri
+// çekilmeden önce SONDA sorgusuyla sınanıyor.
+const SUNUCULAR = [
+  'https://overpass-api.de/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter'
+];
+
+// Halkapınar çevresinde otobüs hattı olduğu biliniyor; boş dönen sunucu
+// Türkiye verisi tutmuyor demektir.
+const SONDA_SORGUSU = `
+  [out:json][timeout:60];
+  node(around:400,38.43519,27.168837)["highway"="bus_stop"];
+  rel(bn)["type"="route"]["route"="bus"];
+  out tags;
+`;
+
 const KIMLIK = 'izban-nereye-gider/1.0 (data setup script)';
-const DENEME_SAYISI = 8;
+const DENEME_SAYISI = 3;
 
 const bekle = (ms) => new Promise((c) => setTimeout(c, ms));
 
-/** Tek büyük sorgu; geçici hatalarda artan bekleyişle tekrarlanır. */
+/** Tek sorguyu verilen sunucuda çalıştırır; sorun varsa null döner. */
+async function sorgula(adres, sorgu, zamanAsimiMs = 300000) {
+  try {
+    const yanit = await fetch(adres, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': KIMLIK
+      },
+      body: 'data=' + encodeURIComponent(sorgu),
+      signal: AbortSignal.timeout(zamanAsimiMs)
+    });
+
+    if (!yanit.ok) {
+      console.log(`    ${yanit.status}`);
+      return null;
+    }
+
+    const veri = await yanit.json();
+
+    // Tuzak: Overpass zaman aşımında da 200 döndürüyor, hata gövdedeki
+    // "remark" alanında yazıyor. Böyle yanıtı geçerli saymak veriyi
+    // sessizce siliyordu.
+    if (veri && typeof veri.remark === 'string' &&
+        /error|timed out|out of memory/i.test(veri.remark)) {
+      console.log(`    uyarı: ${veri.remark.slice(0, 70)}`);
+      return null;
+    }
+    if (!veri || !Array.isArray(veri.elements) || !veri.elements.length) {
+      console.log('    boş yanıt');
+      return null;
+    }
+
+    return veri;
+  } catch (sorun) {
+    console.log(`    ${sorun.message}`);
+    return null;
+  }
+}
+
+/**
+ * Çalışan ve Türkiye verisi tutan bir sunucu bulup büyük sorguyu orada
+ * çalıştırır. Sunucular sırayla denenir; her tur arasında beklenir.
+ */
 async function overpass(sorgu) {
-  for (let deneme = 0; deneme < DENEME_SAYISI; deneme++) {
-    if (deneme > 0) {
-      const saniye = Math.min(20 * deneme, 90);
-      console.log(`  ${saniye} sn bekleniyor, sonra ${deneme + 1}. deneme...`);
+  for (let tur = 0; tur < DENEME_SAYISI; tur++) {
+    if (tur > 0) {
+      const saniye = 30 * tur;
+      console.log(`  ${saniye} sn bekleniyor, sonra ${tur + 1}. tur...`);
       await bekle(saniye * 1000);
     }
 
-    try {
-      const yanit = await fetch(SUNUCU, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': KIMLIK
-        },
-        body: 'data=' + encodeURIComponent(sorgu)
-      });
+    for (const adres of SUNUCULAR) {
+      console.log(`  ${new URL(adres).host} sınanıyor...`);
+      if (!(await sorgula(adres, SONDA_SORGUSU, 60000))) continue;
 
-      if (!yanit.ok) {
-        console.log(`  Overpass ${yanit.status}`);
-        continue;
-      }
-
-      const veri = await yanit.json();
-
-      // Tuzak: Overpass zaman aşımında da 200 döndürüyor, gövdede "remark"
-      // alanıyla. Böyle yanıtı geçerli saymak veriyi sessizce siliyordu.
-      if (veri && typeof veri.remark === 'string' &&
-          /error|timed out|out of memory/i.test(veri.remark)) {
-        console.log(`  Overpass uyarısı: ${veri.remark.slice(0, 80)}`);
-        continue;
-      }
-      if (!veri || !Array.isArray(veri.elements) || !veri.elements.length) {
-        console.log('  Boş yanıt geldi');
-        continue;
-      }
-
-      return veri;
-    } catch (sorun) {
-      console.log(`  Bağlantı hatası: ${sorun.message}`);
+      console.log(`  ${new URL(adres).host} uygun, veri indiriliyor...`);
+      const veri = await sorgula(adres, sorgu);
+      if (veri) return veri;
     }
   }
 
@@ -92,7 +133,7 @@ function surumuArtir(surum) {
   const veri = JSON.parse(fs.readFileSync(hedefYolu, 'utf8'));
 
   console.log('İzmir çevresindeki otobüs hatları indiriliyor (tek istek)...');
-  const yanit = await overpass(sorguKur());
+  const yanit = await overpass(sorguKur(veri.duraklar.map((d) => d.konum)));
 
   if (!yanit) {
     console.error('\nOverpass yanıt vermedi. Veri DEĞİŞTİRİLMEDİ; '
