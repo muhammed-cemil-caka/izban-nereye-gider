@@ -906,7 +906,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
               ],
               const SizedBox(height: 16),
               if (yolculuk == null)
-                const _UyariKarti(mesaj: 'Biniş ve iniş durağı aynı olamaz.')
+                _UyariKarti(mesaj: ceviri('ayniDurak'))
               else ...[
                 _OzetKarti(yolculuk: yolculuk),
                 const SizedBox(height: 16),
@@ -942,8 +942,9 @@ class _AnaEkranDurumu extends State<AnaEkran> {
               ],
               const SizedBox(height: 24),
               Text(
-                'Durak sırası ve süreler tahminidir, resmî kaynak değildir.\n'
-                'Veri sürümü: ${_servis.surum} · Kaynak: ${_servis.kaynakEtiketi}',
+                '${ceviri('tarifeUyarisi')}\n'
+                '${ceviri('veriSurumu')}: ${_servis.surum} · '
+                '${ceviri('kaynak')}: ${_servis.kaynakEtiketi}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -1175,6 +1176,7 @@ class _GuzergahKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ceviri = Diller.of(context);
     final tema = Theme.of(context);
 
     return Card(
@@ -1183,7 +1185,7 @@ class _GuzergahKarti extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('GÜZERGÂH', style: tema.textTheme.labelMedium),
+            Text(ceviri('guzergah'), style: tema.textTheme.labelMedium),
             const SizedBox(height: 8),
             ...yolculuk.guzergah.asMap().entries.map((girdi) {
               final sira = girdi.key;
@@ -1437,6 +1439,7 @@ class _GeziKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ceviri = Diller.of(context);
     final tema = Theme.of(context);
 
     final gruplar = <(String, List<({TuristikYer yer, double mesafeM})>)>[];
@@ -1458,10 +1461,10 @@ class _GeziKarti extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('GEZİLECEK YERLER', style: tema.textTheme.labelMedium),
+                  Text(ceviri('geziBaslik'), style: tema.textTheme.labelMedium),
                   const SizedBox(height: 2),
                   Text(
-                    'Biniş ve iniş durağının çevresi · karttaki düğmeler yol tarifi çizer',
+                    ceviri('geziIpucu'),
                     style: tema.textTheme.bodySmall,
                   ),
                 ],
@@ -1493,7 +1496,7 @@ class _GeziKarti extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: Text(
-                'Metin ve görseller: Wikidata · Vikipedi (CC BY-SA) · Wikimedia Commons',
+                ceviri('geziKaynak'),
                 style: tema.textTheme.bodySmall?.copyWith(
                   color: tema.textTheme.bodySmall?.color?.withValues(alpha: .7),
                 ),
@@ -1537,6 +1540,7 @@ class _YerKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ceviri = Diller.of(context);
     final tema = Theme.of(context);
     final renkler = tema.colorScheme;
     final yer = kayit.yer;
@@ -1591,16 +1595,16 @@ class _YerKarti extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Duraktan ${_mesafe(kayit.mesafeM)}',
+                      '${ceviri('duraktan')} ${_mesafe(kayit.mesafeM)}',
                       style: tema.textTheme.labelSmall?.copyWith(
                         color: renkler.onSurface.withValues(alpha: .6),
                       ),
                     ),
-                    if (yer.ozet.isNotEmpty) ...[
+                    if (yer.ozetDilde(ceviri.kod).isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Expanded(
                         child: Text(
-                          yer.ozet,
+                          yer.ozetDilde(ceviri.kod),
                           maxLines: 4,
                           overflow: TextOverflow.ellipsis,
                           style: tema.textTheme.bodySmall,
@@ -1615,17 +1619,17 @@ class _YerKarti extends StatelessWidget {
                       children: [
                         _GeziDugmesi(
                           simge: Icons.directions_walk,
-                          etiket: 'Yürü',
+                          etiket: ceviri('yuru'),
                           basildi: () => yolTarifi(yer, RotaKipi.yuruyus),
                         ),
                         _GeziDugmesi(
                           simge: Icons.directions_car,
-                          etiket: 'Araba',
+                          etiket: ceviri('araba'),
                           basildi: () => yolTarifi(yer, RotaKipi.araba),
                         ),
                         _GeziDugmesi(
                           simge: Icons.directions_transit,
-                          etiket: 'Toplu',
+                          etiket: ceviri('toplu'),
                           basildi: () => topluTasima(yer),
                         ),
                       ],
@@ -1633,7 +1637,8 @@ class _YerKarti extends StatelessWidget {
                     if (yer.gorsel != null) ...[
                       const SizedBox(height: 6),
                       Text(
-                        'Foto: ${yer.gorsel!.yazar} (${yer.gorsel!.lisans})',
+                        '${ceviri.kod == 'en' ? 'Photo' : 'Foto'}: '
+                        '${yer.gorsel!.yazar} (${yer.gorsel!.lisans})',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: tema.textTheme.labelSmall?.copyWith(
@@ -1876,6 +1881,7 @@ class _AktarmaKartiDurumu extends State<_AktarmaKarti> {
 
   @override
   Widget build(BuildContext context) {
+    final ceviri = Diller.of(context);
     final tema = Theme.of(context);
     final duraklar = widget.yolculuk.aktarmaliDuraklar;
     if (duraklar.isEmpty) return const SizedBox.shrink();
@@ -1896,7 +1902,7 @@ class _AktarmaKartiDurumu extends State<_AktarmaKarti> {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 8,
           children: [
-            Text('YOL ÜSTÜNDEKİ AKTARMALAR', style: tema.textTheme.labelMedium),
+            Text(ceviri('aktarmalar'), style: tema.textTheme.labelMedium),
             if (kaydirmali)
               SizedBox(
                 height: pencere,
@@ -1980,6 +1986,7 @@ class _KonumKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ceviri = Diller.of(context);
     final tema = Theme.of(context);
 
     return Card(
@@ -1988,7 +1995,7 @@ class _KonumKarti extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('KONUMUN', style: tema.textTheme.labelMedium),
+            Text(ceviri('konumBaslik'), style: tema.textTheme.labelMedium),
             const SizedBox(height: 8),
             if (araniyor)
               const Row(
@@ -2013,6 +2020,7 @@ class _KonumKarti extends StatelessWidget {
   }
 
   List<Widget> _sonuc(BuildContext context, ThemeData tema, YakinDurak yakin) {
+    final ceviri = Diller.of(context);
     return [
       Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -2051,17 +2059,17 @@ class _KonumKarti extends StatelessWidget {
         children: [
           FilledButton(
             onPressed: () => binisYap(yakin.durak),
-            child: const Text('Biniş durağı yap'),
+            child: Text(ceviri('binisDuragiYap')),
           ),
           OutlinedButton.icon(
             onPressed: () => yolTarifiAc(yakin, RotaKipi.yuruyus),
             icon: const Icon(Icons.directions_walk, size: 18),
-            label: const Text('Yürüyerek'),
+            label: Text(ceviri('yuruyerek')),
           ),
           OutlinedButton.icon(
             onPressed: () => yolTarifiAc(yakin, RotaKipi.araba),
             icon: const Icon(Icons.directions_car, size: 18),
-            label: const Text('Arabayla'),
+            label: Text(ceviri('arabayla')),
           ),
         ],
       ),
@@ -2159,6 +2167,7 @@ class _RotaKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ceviri = Diller.of(context);
     final tema = Theme.of(context);
 
     if (araniyor) {
@@ -2216,7 +2225,7 @@ class _RotaKarti extends StatelessWidget {
                         ? Theme.of(context).colorScheme.error
                         : null,
                   ),
-                  child: Text(yonlendirmede ? 'Bitir' : 'Başla'),
+                  child: Text(ceviri(yonlendirmede ? 'bitir' : 'basla')),
                 ),
                 IconButton(
                   onPressed: temizle,

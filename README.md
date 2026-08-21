@@ -770,9 +770,14 @@ node araclar/izban-kimlik-ekle.js
 41 durağın 41'i eşleşiyor; ikisi ad farkıyla: "Alsancak Gar" → *Alsancak*,
 "Havalimanı" → *Adnan Menderes Havalimanı*.
 
-**Kapsam sınırı:** servis Aliağa – Tepeköy arasını veriyor. Selçuk uzantısında
-(Sağlık, Belevi, Selçuk) boş liste dönüyor; uydurma saat basmak yerine
-"bu durak çifti için resmî sefer verisi yayınlanmıyor" yazılır.
+**Kapsam sınırı ve yedek:** servis Aliağa – Tepeköy arasını veriyor, Selçuk
+uzantısında (Sağlık, Belevi, Selçuk) boş liste dönüyor. Bu durumda **yön
+üzerindeki bir sonraki durağın** kalkışları gösterilir ve bunun ne olduğu
+yazılır: o yöne giden her tren o duraktan geçiyor, dolayısıyla "durağıma tren
+ne zaman geliyor" sorusunun doğru cevabı bu.
+
+Uzak bir uç seçmek (ör. Tepeköy) yanıltıcı olurdu: Aliağa'dan Tepeköy'e günde
+yalnızca 4 direkt sefer var, komşu duraktan ise 45.
 
 Tarife gün içinde değişmediği için yanıt oturum boyu saklanır — durak seçimi
 her değiştiğinde yeniden istenmez.
@@ -783,10 +788,17 @@ her değiştiğinde yeniden istenmez.
 `shared_preferences` (mobil) ile hatırlanır. Seçim yoksa cihaz dili kullanılır,
 Türkçe değilse İngilizce.
 
-Çevrilen: arayüz metinleri (başlıklar, düğmeler, etiketler, durum mesajları).
-**Çevrilmeyen:** durak ve turistik yer adları (özel isim) ve turistik özetler —
-metin Türkçe Vikipedi'den geliyor. İngilizce özet istenirse üretim betiğinin
-`en.wikipedia.org` özetini de çekmesi gerekir.
+**Çevrilmeyen tek şey özel isimler:** durak ve turistik yer adları. Bunun
+dışındaki her metin çevriliyor — başlıklar, düğmeler, durum mesajları, yön
+etiketi (`Selçuk yönü` / `towards Selçuk`), süre birimleri (`2 sa 28 dk` /
+`2 h 28 min`), rozetler (`BİNİŞ` / `BOARD`) ve **turistik özetler**: veri hem
+Türkçe hem İngilizce Vikipedi'den çekiliyor (`ozet` ve `ozetEn`), 95 yerin
+90'ında İngilizce metin var.
+
+Kelime sırası dilden dile değiştiği için metin parçaları birleştirilmiyor,
+`{yer}` tutucularıyla şablon kullanılıyor:
+`'{binis} durağından {yon} yönündeki trene bin'` ↔
+`'Board at {binis} towards {yon}'`.
 
 Sözlükler: `frontend/js/diller.js` · `mobile/lib/diller.dart` — aynı anahtarlar.
 Webde çevrilecek metinler HTML'de `data-ceviri` ile işaretli; mobilde

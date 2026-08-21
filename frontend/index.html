@@ -6,7 +6,7 @@
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/stil.css?s=5d055ffa">
+  <link rel="stylesheet" href="css/stil.css?s=6d91afde">
 </head>
 <body>
   <!-- Açılış ekranı. Marka çizilir, sonra kendini kapatır; sayfa arkada
@@ -131,7 +131,7 @@
     </section>
 
     <section class="kart secim-karti" aria-labelledby="secimBaslik">
-      <h2 id="secimBaslik" class="gizli">Yolculuk seçimi</h2>
+      <h2 id="secimBaslik" class="gizli" data-ceviri="yolculukSecimi">Yolculuk seçimi</h2>
 
       <div class="secim-satiri">
         <div class="alan">
@@ -221,11 +221,7 @@
         <p class="harita-ipucu" data-ceviri="geziIpucu">Biniş ve iniş durağının çevresi · karta tıkla, yol tarifi çıksın</p>
       </div>
       <div class="gezi-gruplari" id="geziGruplari"></div>
-      <p class="gezi-kaynak">
-        Metin ve görseller: <a href="https://www.wikidata.org" target="_blank" rel="noopener noreferrer">Wikidata</a> ·
-        <a href="https://tr.wikipedia.org" target="_blank" rel="noopener noreferrer">Vikipedi</a> (CC BY-SA) ·
-        <a href="https://commons.wikimedia.org" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
-      </p>
+      <p class="gezi-kaynak" data-ceviri="geziKaynakTam">Metin ve görseller: Wikidata · Vikipedi (CC BY-SA) · Wikimedia Commons</p>
     </section>
 
     <section id="sonucBolumu" class="sonuc" aria-live="polite">
@@ -269,18 +265,18 @@
 
   <footer class="alt-bant">
     <div class="kapsayici">
-      <p><strong>Uyarı:</strong> Durak sırası ve süreler tahminidir, resmî kaynak değildir.
-         Güncel tarife için <a href="https://www.izban.com.tr" target="_blank" rel="noopener noreferrer">izban.com.tr</a> adresine bakın.</p>
-      <p class="surum">Veri sürümü: <span id="veriSurumu">—</span> · Kaynak: <span id="veriKaynagi">yerel kopya</span></p>
+      <p><strong data-ceviri="uyari">Uyarı:</strong> <span data-ceviri="uyariMetin">Durak sırası ve süreler tahminidir, resmî kaynak değildir.</span>
+         <a href="https://www.izban.com.tr" target="_blank" rel="noopener noreferrer">izban.com.tr</a></p>
+      <p class="surum"><span data-ceviri="veriSurumu">Veri sürümü:</span> <span id="veriSurumu">—</span> · <span data-ceviri="kaynak">Kaynak:</span> <span id="veriKaynagi">yerel kopya</span></p>
     </div>
   </footer>
 
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="vendor/leaflet/leaflet-rotate.js"></script>
-  <script src="js/diller.js?s=d3ecfe82"></script>
-  <script src="js/turistik.js?s=425b3f35"></script>
+  <script src="js/diller.js?s=691b0d6c"></script>
+  <script src="js/turistik.js?s=e25e037b"></script>
   <script src="js/duraklar.js?s=3edcf82e"></script>
-  <script src="js/hesap.js?s=42d2777d"></script>
+  <script src="js/hesap.js?s=1b10aac2"></script>
   <script src="js/konum.js?s=dd520dd9"></script>
   <script src="js/harita.js?s=b9a40b04"></script>
   <script src="js/sefer.js?s=a127317e"></script>
@@ -288,6 +284,6 @@
   <script src="js/yonlendirme.js?s=a7bbad61"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=16614e98"></script>
+  <script src="js/uygulama.js?s=fc3c0feb"></script>
 </body>
 </html>

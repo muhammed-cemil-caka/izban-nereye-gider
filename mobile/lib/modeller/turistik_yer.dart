@@ -43,8 +43,10 @@ class TuristikYer {
   final String tur;
   final Konum konum;
   final String ozet;
+  final String ozetEn;
   final TuristikGorsel? gorsel;
   final String? wikipedia;
+  final String? wikipediaEn;
   final List<YerDurakBagi> duraklar;
 
   const TuristikYer({
@@ -53,8 +55,10 @@ class TuristikYer {
     required this.tur,
     required this.konum,
     required this.ozet,
+    required this.ozetEn,
     required this.gorsel,
     required this.wikipedia,
+    required this.wikipediaEn,
     required this.duraklar,
   });
 
@@ -68,8 +72,10 @@ class TuristikYer {
       tur: json['tur'] as String? ?? 'gezi-noktasi',
       konum: Konum.jsondan(json['konum'] as Map<String, dynamic>?),
       ozet: json['ozet'] as String? ?? '',
+      ozetEn: json['ozetEn'] as String? ?? '',
       gorsel: gorselJson == null ? null : TuristikGorsel.jsondan(gorselJson),
       wikipedia: kaynaklar['wikipedia'] as String?,
+      wikipediaEn: kaynaklar['wikipediaEn'] as String?,
       duraklar: ((json['duraklar'] as List<dynamic>?) ?? const [])
           .map((d) => YerDurakBagi(
                 (d as Map<String, dynamic>)['kod'] as String? ?? '',
@@ -78,6 +84,10 @@ class TuristikYer {
           .toList(),
     );
   }
+
+  /// Arayüz diline göre özet; o dilde yoksa eldeki metin.
+  String ozetDilde(String dilKodu) =>
+      dilKodu == 'en' ? (ozetEn.isNotEmpty ? ozetEn : ozet) : (ozet.isNotEmpty ? ozet : ozetEn);
 
   /// Verilen durağa kuş uçuşu uzaklık (metre); bağ yoksa null.
   double? durakUzakligi(String durakKodu) {

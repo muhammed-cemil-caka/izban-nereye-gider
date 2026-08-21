@@ -86,9 +86,18 @@
   var dilKodu = typeof dilKodunuBul === 'function' ? dilKodunuBul() : 'tr';
 
   /** Sözlükten metin. Anahtar yoksa anahtarın kendisi döner (gözden kaçmasın). */
-  function ceviri(anahtar) {
+  function ceviri(anahtar, degerler) {
     var sozluk = (typeof DILLER !== 'undefined' && DILLER[dilKodu]) || {};
-    return sozluk[anahtar] || anahtar;
+    var metin = sozluk[anahtar] || anahtar;
+
+    // {anahtar} yer tutucuları: dilden dile kelime sırası değiştiği için
+    // metin parçalarını birleştirmek yerine şablon kullanılıyor.
+    if (degerler) {
+      Object.keys(degerler).forEach(function (k) {
+        metin = metin.split('{' + k + '}').join(degerler[k]);
+      });
+    }
+    return metin;
   }
 
   /**
@@ -125,6 +134,22 @@
     if (sonKonum && tumAdaylar.length) {
       yakinDuragiGoster(tumAdaylar, sonDogruluk.dogrulukM, true);
     }
+  }
+
+  /** 148 → "2 sa 28 dk" / "2 h 28 min" */
+  function sureMetniCevir(dakika) {
+    var d = Math.max(0, Math.round(dakika));
+    if (d < 60) return d + ' ' + ceviri('dakika');
+    var saat = Math.floor(d / 60);
+    var kalan = d % 60;
+    return kalan === 0
+      ? saat + ' ' + ceviri('saat')
+      : saat + ' ' + ceviri('saat') + ' ' + kalan + ' ' + ceviri('dakika');
+  }
+
+  /** "Selçuk yönü" / "towards Selçuk" */
+  function yonEtiketi(sonuc) {
+    return ceviri('yonEtiketi', { durak: sonuc.yonDurakAdi || sonuc.yonEtiketi });
   }
 
   function dilDegistir() {
@@ -212,9 +237,9 @@
       ilce.textContent = durak.ilce;
       satir.appendChild(ilce);
 
-      if (sira === 0) satir.appendChild(rozetYap('BİNİŞ'));
-      if (sira === sonuc.guzergah.length - 1) satir.appendChild(rozetYap('İNİŞ'));
-      if (durak.aktarma && durak.aktarma.length) satir.appendChild(rozetYap('AKTARMA'));
+      if (sira === 0) satir.appendChild(rozetYap(ceviri('binis')));
+      if (sira === sonuc.guzergah.length - 1) satir.appendChild(rozetYap(ceviri('inis')));
+      if (durak.aktarma && durak.aktarma.length) satir.appendChild(rozetYap(ceviri('aktarma')));
 
       oge.hatSemasi.appendChild(satir);
     });
@@ -332,7 +357,7 @@
     oge.seferNot.textContent = '';
 
     if (seferOnbellegi[anahtar]) {
-      seferleriYaz(seferOnbellegi[anahtar]);
+      seferleriYaz(seferOnbellegi[anahtar].seferler, seferOnbellegi[anahtar].yedek);
       return;
     }
 
@@ -342,8 +367,28 @@
     seferleriAl(binis.izbanId, inis.izbanId)
       .then(function (seferler) {
         if (istek !== seferIstegi) return;   // kullanıcı seçimi değiştirdi
-        seferOnbellegi[anahtar] = seferler;
-        seferleriYaz(seferler);
+        if (seferler.length) {
+          seferOnbellegi[anahtar] = { seferler: seferler, yedek: null };
+          seferleriYaz(seferler, null);
+          return;
+        }
+
+        // Kapsam dışı çift (Selçuk uzantısı): aynı yöndeki kapsanan uca
+        // düşülür. Kullanıcı "trenim ne zaman" diye soruyor; o tren en
+        // azından oraya kadar aynı tren.
+        var yedek = yedekVaris(binis, inis);
+        if (!yedek) {
+          seferOnbellegi[anahtar] = { seferler: [], yedek: null };
+          seferleriYaz([], null);
+          return;
+        }
+
+        return seferleriAl(binis.izbanId, yedek.izbanId).then(function (liste) {
+          if (istek !== seferIstegi) return;
+          var kayit = { seferler: liste, yedek: liste.length ? yedek : null };
+          seferOnbellegi[anahtar] = kayit;
+          seferleriYaz(kayit.seferler, kayit.yedek);
+        });
       })
       .catch(function () {
         if (istek !== seferIstegi) return;
@@ -352,7 +397,27 @@
       });
   }
 
-  function seferleriYaz(seferler) {
+  /**
+   * Kapsam dışı çift için yedek varış: yön üzerindeki BİR SONRAKİ durak.
+   *
+   * Servis Aliağa – Tepeköy arasını veriyor, Selçuk uzantısı boş dönüyor.
+   * Uzak bir uç seçmek (ör. Tepeköy) yanıltıyor: Aliağa'dan Tepeköy'e günde
+   * yalnızca 4 direkt sefer var. Komşu durak ise o yöne giden HER trenin
+   * uğradığı yer, dolayısıyla "durağıma tren ne zaman geliyor" sorusunun
+   * gerçek cevabı.
+   */
+  function yedekVaris(binis, inis) {
+    var kodlar = aktifDuraklar.map(function (d) { return d.kod; });
+    var binisSira = kodlar.indexOf(binis.kod);
+    var inisSira = kodlar.indexOf(inis.kod);
+    if (binisSira < 0 || inisSira < 0 || binisSira === inisSira) return null;
+
+    var yon = inisSira > binisSira ? 1 : -1;
+    var komsu = aktifDuraklar[binisSira + yon];
+    return komsu && komsu.izbanId ? komsu : null;
+  }
+
+  function seferleriYaz(seferler, yedekDurak) {
     oge.seferListesi.textContent = '';
 
     if (!seferler.length) {
@@ -385,8 +450,11 @@
       oge.seferListesi.appendChild(satir);
     });
 
-    oge.seferNot.textContent =
-      seferler.length + ' ' + ceviri('sefer') + ' · ' + ceviri('seferKaynak');
+    var not = seferler.length + ' ' + ceviri('sefer') + ' · ' + ceviri('seferKaynak');
+    if (yedekDurak) {
+      not = ceviri('seferYedek').replace('{durak}', yedekDurak.ad) + ' · ' + not;
+    }
+    oge.seferNot.textContent = not;
   }
 
   /* ---------- Gezilecek yerler ---------- */
@@ -446,7 +514,8 @@
 
     var ozet = document.createElement('p');
     ozet.className = 'gezi-ozet';
-    ozet.textContent = yer.ozet || '';
+    // Arayüz dili İngilizceyse İngilizce özet; yoksa eldeki metin.
+    ozet.textContent = (dilKodu === 'en' ? (yer.ozetEn || yer.ozet) : yer.ozet) || '';
     govde.appendChild(ozet);
 
     var dugmeler = document.createElement('div');
@@ -477,12 +546,15 @@
       var kaynak = document.createElement('p');
       kaynak.className = 'gezi-lisans';
 
-      if (yer.kaynaklar.wikipedia) {
+      var makale = dilKodu === 'en'
+        ? (yer.kaynaklar.wikipediaEn || yer.kaynaklar.wikipedia)
+        : (yer.kaynaklar.wikipedia || yer.kaynaklar.wikipediaEn);
+      if (makale) {
         var vp = document.createElement('a');
-        vp.href = yer.kaynaklar.wikipedia;
+        vp.href = makale;
         vp.target = '_blank';
         vp.rel = 'noopener noreferrer';
-        vp.textContent = 'Vikipedi';
+        vp.textContent = dilKodu === 'en' ? 'Wikipedia' : 'Vikipedi';
         kaynak.appendChild(vp);
       }
 
@@ -492,7 +564,8 @@
         foto.href = yer.gorsel.kaynakSayfa;
         foto.target = '_blank';
         foto.rel = 'noopener noreferrer';
-        foto.textContent = 'Foto: ' + yer.gorsel.yazar + ' (' + yer.gorsel.lisans + ')';
+        foto.textContent = (dilKodu === 'en' ? 'Photo: ' : 'Foto: ') +
+          yer.gorsel.yazar + ' (' + yer.gorsel.lisans + ')';
         kaynak.appendChild(foto);
       }
 
@@ -548,9 +621,7 @@
    */
   function yereYolTarifi(yer, kip) {
     var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
-    rotaDurumuYaz(secilenKip === 'araba'
-      ? 'En yakın durak araç ağına göre seçiliyor…'
-      : 'En yakın durak yürüyüş ağına göre seçiliyor…');
+    rotaDurumuYaz(ceviri(secilenKip === 'araba' ? 'durakSeciliyorAraba' : 'durakSeciliyorYuruyus'));
 
     yereEnYakinDurak(yer, secilenKip).then(function (durak) {
       // Haritada o durağı seçili getir.
@@ -574,7 +645,7 @@
         haritayaKaydir();
       });
     }).catch(function (sorun) {
-      rotaDurumuYaz(sorun.message || 'Rota alınamadı.', 'hata');
+      rotaDurumuYaz(sorun.message || ceviri('rotaAlinamadi'), 'hata');
     });
   }
 
@@ -587,7 +658,7 @@
    */
   function yereEnYakinDurak(yer, kip) {
     var adaylar = enYakinDuraklar(aktifDuraklar, yer.konum, 6);
-    if (!adaylar.length) return Promise.reject(new Error('Durak bulunamadı.'));
+    if (!adaylar.length) return Promise.reject(new Error(ceviri('durakBulunamadi')));
 
     if (typeof mesafeleriAl !== 'function') return Promise.resolve(adaylar[0].durak);
 
@@ -625,15 +696,12 @@
     var hatlar = (durak.otobusHatlari || []).slice(0, 6).join(', ');
     var aktarmalar = (durak.aktarma || []).join(' · ');
 
-    var satirlar = [
-      'İZBAN ile ' + durak.ad + ' durağına gel.',
-      aktarmalar ? durak.ad + ' aktarmaları: ' + aktarmalar : null,
-      hatlar ? 'ESHOT hatları: ' + hatlar : null,
-      'Oradan ' + yer.ad + ' için "Yürüyerek" düğmesini kullan.',
-      'Sefer saati veremiyorum: elimizde tarife verisi yok.'
-    ].filter(Boolean);
-
-    rotaDurumuYaz(satirlar.join(' · '));
+    rotaDurumuYaz(ceviri('topluTasimaAnlat', {
+      durak: durak.ad,
+      aktarma: aktarmalar || '—',
+      hatlar: hatlar || '—',
+      yer: yer.ad
+    }));
   }
 
   function aktarmalariCiz(sonuc) {
@@ -698,21 +766,23 @@
     oge.aktarmaKarti.hidden = false;
     aktarmaYuksekliginiAyarla(sonuc.aktarmalar.length);
 
-    oge.aktarmaSayisi.textContent = sonuc.aktarmalar.length > GORUNUR_AKTARMA
-      ? sonuc.aktarmalar.length + ' aktarma noktası · listeyi kaydırarak devamını gör'
-      : sonuc.aktarmalar.length + ' aktarma noktası';
+    oge.aktarmaSayisi.textContent = sonuc.aktarmalar.length + ' ' + ceviri('aktarmaNoktasi') +
+      (sonuc.aktarmalar.length > GORUNUR_AKTARMA ? ' · ' + ceviri('kaydirarakGor') : '');
   }
 
   function sonucuGoster(sonuc) {
-    oge.yonRozeti.textContent = sonuc.yonEtiketi;
+    oge.yonRozeti.textContent = yonEtiketi(sonuc);
     oge.yonRozeti.setAttribute('data-yon', sonuc.yon);
-    oge.sure.textContent = sonuc.sureMetni;
+    oge.sure.textContent = sureMetniCevir(sonuc.dakika);
     oge.durak.textContent = sonuc.durakSayisi;
     oge.aktarmaSayisi.textContent = sonuc.aktarmalar.length;
-    oge.ozetCumle.textContent =
-      sonuc.binis.ad + ' durağından bindin: ' + sonuc.yonEtiketi + 'ndeki trene binmelisin. ' +
-      sonuc.durakSayisi + ' durak sonra, yaklaşık ' + sonuc.sureMetni + ' içinde ' +
-      sonuc.inis.ad + ' durağındasın.';
+    oge.ozetCumle.textContent = ceviri('ozetCumle', {
+      binis: sonuc.binis.ad,
+      yon: sonuc.yonDurakAdi || sonuc.yonEtiketi,
+      durak: sonuc.durakSayisi,
+      sure: sureMetniCevir(sonuc.dakika),
+      inis: sonuc.inis.ad
+    });
 
     hatSemasiniCiz(sonuc);
     aktarmalariCiz(sonuc);
@@ -865,9 +935,8 @@
     oge.rotaSonucu.hidden = false;
     adimYuksekliginiAyarla();
 
-    oge.rotaAdimSayisi.textContent = rota.adimlar.length > GORUNUR_ADIM
-      ? rota.adimlar.length + ' adım · listeyi kaydırarak devamını gör'
-      : rota.adimlar.length + ' adım';
+    oge.rotaAdimSayisi.textContent = rota.adimlar.length + ' ' + ceviri('adim') +
+      (rota.adimlar.length > GORUNUR_ADIM ? ' · ' + ceviri('kaydirarakGor') : '');
   }
 
   /** Kullanıcının konumundan verilen durağa yürüyüş rotası çizer. */
@@ -887,9 +956,7 @@
     sonRotaKip = secilenKip;
     kipDugmeleriniTazele();
 
-    rotaDurumuYaz(secilenKip === 'araba'
-      ? 'Araba rotası hesaplanıyor…'
-      : 'Yürüyüş rotası hesaplanıyor…');
+    rotaDurumuYaz(ceviri(secilenKip === 'araba' ? 'arabaHesaplaniyor' : 'yuruyusHesaplaniyor'));
     oge.rotaSonucu.hidden = true;
 
     rotaAl(sonKonum, durak.konum, secilenKip)
@@ -973,8 +1040,8 @@
       var kayitli = elleKonumuOku();
       oge.konumDogruluk.setAttribute('data-kaba', 'hayir');
       oge.konumDogruluk.textContent = kayitli && kayitli.etiket
-        ? 'Konum senin girdiğin yere göre: ' + kayitli.etiket.split(',')[0]
-        : 'Konum senin girdiğin yere göre hesaplandı.';
+        ? ceviri('elleKonum', { etiket: kayitli.etiket.split(',')[0] })
+        : ceviri('elleKonumSade');
       return;
     }
 
@@ -984,11 +1051,11 @@
     var metin = kaba
       ? 'Konum ±' + Math.round(dogrulukM) + ' m doğrulukla alındı — en yakın durak ' +
         'şaşabilir, aşağıdan seçebilirsin.'
-      : 'Konum doğruluğu ±' + Math.round(dogrulukM) + ' m';
+      : ceviri('dogruluk', { m: Math.round(dogrulukM) });
 
     // İzleme sürdüğü sürece konum iyileşmeye devam edebilir.
-    if (!kesinMi) metin += ' · iyileştiriliyor…';
-    else if (takibiDurdur) metin += ' · canlı takip açık';
+    if (!kesinMi) metin += ' · ' + ceviri('iyilestiriliyor');
+    else if (takibiDurdur) metin += ' · ' + ceviri('canliTakip');
 
     oge.konumDogruluk.textContent = metin;
   }
@@ -1373,7 +1440,7 @@
     oge.yonlendirmePaneli.hidden = false;
     oge.yonlendirmeManevra.textContent = sonRota.adimlar[0]
       ? sonRota.adimlar[0].metin
-      : 'Yola çık';
+      : ceviri('yolaCik');
     oge.yonlendirmeMesafe.textContent = '—';
     oge.yonlendirmeKalan.textContent =
       mesafeBicimle(sonRota.mesafeM) + ' · ' + rotaSuresiBicimle(sonRota.sureSn);
@@ -1477,7 +1544,7 @@
         if (sebep === 'varildi') {
           oge.yonlendirmeManevra.textContent = sonRotaHedefi.ad + ' durağına vardın.';
           oge.yonlendirmeMesafe.textContent = '✓';
-          oge.yonlendirmeKalan.textContent = 'Yolculuk başlasın.';
+          oge.yonlendirmeKalan.textContent = ceviri('yolculukBaslasin');
           yonlendirmeUyarisiYaz('');
         } else if (sebep === 'hata') {
           yonlendirmeUyarisiYaz('Konum alınamadı, yönlendirme durduruldu.');
@@ -1682,12 +1749,12 @@
 
         oge.veriSurumu.textContent = sonuc.surum;
         oge.veriKaynagi.textContent =
-          sonuc.kaynak === 'onbellek' ? 'Firebase (önbellek)' : 'Firebase';
+          sonuc.kaynak === 'onbellek' ? ceviri('firebaseOnbellek') : 'Firebase';
       })
       .catch(function (sorun) {
         // Ağ yoksa, kurallar engelliyorsa veya belge yoksa buraya düşer.
         console.warn('Firestore okunamadı, yerel kopya kullanılıyor:', sorun.message);
-        oge.veriKaynagi.textContent = 'yerel kopya';
+        oge.veriKaynagi.textContent = ceviri('yerelKopya');
       });
   }
 

@@ -59,10 +59,15 @@ Widget _uygulama({KonumSonucu? konum}) => IzbanUygulamasi(
 
 /// Ekranı uzun tutar: ListView tembel çizdiği için kısa ekranda alttaki
 /// kartlar hiç oluşturulmuyor ve testler onları bulamıyor.
+///
+/// Dil de sabitlenir: uygulama seçim yoksa cihaz dilini kullanıyor, test
+/// ortamının dili İngilizce ve metinler İngilizce çıkıyordu.
 void _uzunEkran(WidgetTester tester) {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(1000, 2600);
+  tester.platformDispatcher.localeTestValue = const Locale('tr');
   addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearLocaleTestValue);
 }
 
 void main() {

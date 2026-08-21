@@ -68,6 +68,34 @@ class Diller {
     'aktarmaNoktasi': 'aktarma noktası',
     'kaydirarakGor': 'listeyi kaydırarak devamını gör',
     'adim': 'adım',
+    'ozetCumle': '{binis} durağından {yon} yönündeki trene bin. {durak} durak sonra, yaklaşık {sure} içinde {inis} durağındasın.',
+    'yonEtiketi': '{durak} yönü',
+    'saat': 'sa',
+    'dakika': 'dk',
+    'dogruluk': 'Konum doğruluğu ±{m} m',
+    'dogrulukKaba': 'Konum ±{m} m doğrulukla alındı — en yakın durak şaşabilir, aşağıdan seçebilirsin.',
+    'yonlendirmeSasabilir': 'Konum ±{m} m — yönlendirme şaşabilir.',
+    'konumYok': 'Konum alınamadı.',
+    'konumYokYonlendirme': 'Konum alınamadı, yönlendirme durdu.',
+    'ayarlariAc': 'Ayarları aç',
+    'durakBulunamadi': 'Durak bulunamadı.',
+    'rotaAlinamadi': '{kip} rotası alınamadı.',
+    'vardin': 'Vardın.',
+    'varildi': '{durak} durağına vardın.',
+    'duragina': 'durağına',
+    'yuruyus': 'yürüyüş',
+    'arabaIle': 'araba ile',
+    'topluBaslik': '{yer} — toplu taşıma',
+    'topluAdim1': 'İZBAN ile {durak} durağına gel.',
+    'topluAdim2': '{durak} aktarmaları: {aktarma}',
+    'topluAdim3': 'ESHOT hatları: {hatlar}',
+    'topluAdim4': 'Oradan "Yürüyerek" ile {yer}.',
+    'topluNot': 'Sefer saati veremiyorum: elimizde tarife verisi yok, uydurulmuş bir süre yanıltır.',
+    'tamam': 'Tamam',
+    'aktarmayaTarif': '{tur} aktarmasına yürüyüş yol tarifi',
+    'veriOkunamadi': 'Durak verisi okunamadı',
+    'veriSurumu': 'Veri sürümü',
+    'kaynak': 'Kaynak',
     'ayniDurak': 'Biniş ve iniş durağı aynı olamaz.',
     'tarifeUyarisi': 'Durak sırası ve süreler tahminidir, resmî kaynak değildir.',
   };
@@ -134,6 +162,34 @@ class Diller {
     'aktarmaNoktasi': 'interchange points',
     'kaydirarakGor': 'scroll the list for more',
     'adim': 'steps',
+    'ozetCumle': 'Board at {binis} towards {yon}. After {durak} stations, about {sure}, you arrive at {inis}.',
+    'yonEtiketi': 'towards {durak}',
+    'saat': 'h',
+    'dakika': 'min',
+    'dogruluk': 'Location accuracy ±{m} m',
+    'dogrulukKaba': 'Location taken with ±{m} m accuracy — the nearest station may be off, pick one below.',
+    'yonlendirmeSasabilir': 'Location ±{m} m — guidance may be off.',
+    'konumYok': 'Location unavailable.',
+    'konumYokYonlendirme': 'Location unavailable, guidance stopped.',
+    'ayarlariAc': 'Open settings',
+    'durakBulunamadi': 'No station found.',
+    'rotaAlinamadi': 'Could not get the {kip} route.',
+    'vardin': 'You have arrived.',
+    'varildi': 'You have arrived at {durak}.',
+    'duragina': 'station',
+    'yuruyus': 'walking',
+    'arabaIle': 'by car',
+    'topluBaslik': '{yer} — public transport',
+    'topluAdim1': 'Take İZBAN to {durak}.',
+    'topluAdim2': 'Interchanges at {durak}: {aktarma}',
+    'topluAdim3': 'ESHOT lines: {hatlar}',
+    'topluAdim4': 'From there use "Walking" for {yer}.',
+    'topluNot': 'No departure times: we have no timetable data, and an invented one would mislead.',
+    'tamam': 'OK',
+    'aktarmayaTarif': 'Walking directions to the {tur} interchange',
+    'veriOkunamadi': 'Could not read station data',
+    'veriSurumu': 'Data version',
+    'kaynak': 'Source',
     'ayniDurak': 'Departure and arrival stations cannot be the same.',
     'tarifeUyarisi': 'Station order and times are estimates, not an official source.',
   };
@@ -145,7 +201,28 @@ class Diller {
   Map<String, String> get _sozluk => kod == 'en' ? en : tr;
 
   /// Sözlükten metin. Anahtar yoksa anahtarın kendisi döner (gözden kaçmasın).
-  String call(String anahtar) => _sozluk[anahtar] ?? anahtar;
+  ///
+  /// {anahtar} yer tutucuları: dilden dile kelime sırası değiştiği için metin
+  /// parçalarını birleştirmek yerine şablon kullanılıyor.
+  String call(String anahtar, [Map<String, Object?>? degerler]) {
+    var metin = _sozluk[anahtar] ?? anahtar;
+    if (degerler != null) {
+      degerler.forEach((k, v) {
+        metin = metin.replaceAll('{$k}', '$v');
+      });
+    }
+    return metin;
+  }
+
+  /// 148 -> "2 sa 28 dk" / "2 h 28 min"
+  String sure(int dakika) {
+    final d = dakika < 0 ? 0 : dakika;
+    if (d < 60) return '$d ${call('dakika')}';
+    final saat = d ~/ 60;
+    final kalan = d % 60;
+    if (kalan == 0) return '$saat ${call('saat')}';
+    return '$saat ${call('saat')} $kalan ${call('dakika')}';
+  }
 
   static Diller of(BuildContext context) =>
       DilKapsami.of(context)?.diller ?? const Diller('tr');

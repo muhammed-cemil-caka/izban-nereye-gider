@@ -62,6 +62,8 @@ function yolculukHesapla(duraklar, binisKod, inisKod) {
     yonEtiketi: guneyeGidiyor
       ? duraklar[duraklar.length - 1].ad + ' yönü'
       : duraklar[0].ad + ' yönü',
+    // Arayüz dili değişince etiket yeniden kurulabilsin diye ham ad da taşınır.
+    yonDurakAdi: guneyeGidiyor ? duraklar[duraklar.length - 1].ad : duraklar[0].ad,
     durakSayisi: son - ilk,
     dakika: dakika,
     sureMetni: sureBicimle(dakika),

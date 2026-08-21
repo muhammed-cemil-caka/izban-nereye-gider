@@ -19,7 +19,8 @@ const fs = require('fs');
 const path = require('path');
 
 const SPARQL = 'https://query.wikidata.org/sparql';
-const WIKIPEDIA = 'https://tr.wikipedia.org/api/rest_v1/page/summary/';
+const WIKIPEDIA_TR = 'https://tr.wikipedia.org/api/rest_v1/page/summary/';
+const WIKIPEDIA_EN = 'https://en.wikipedia.org/api/rest_v1/page/summary/';
 const COMMONS = 'https://commons.wikimedia.org/w/api.php';
 const KIMLIK = 'izban-nereye-gider/1.0 (https://github.com/muhammed-cemil-caka/izban-nereye-gider)';
 
@@ -82,7 +83,7 @@ async function getir(adres, secenekler = {}, deneme = 0) {
 async function yerleriGetir() {
   const turSatiri = Object.keys(TURLER).map((k) => `wd:${k}`).join(' ');
   const sorgu = `
-    SELECT ?yer ?yerLabel ?koord ?tur ?gorsel ?makale ?aciklama WHERE {
+    SELECT ?yer ?yerLabel ?koord ?tur ?gorsel ?makale ?makaleEn ?aciklama ?aciklamaEn WHERE {
       SERVICE wikibase:box {
         ?yer wdt:P625 ?koord .
         bd:serviceParam wikibase:cornerSouthWest "Point(${KUTU.bati} ${KUTU.guney})"^^geo:wktLiteral .
@@ -96,6 +97,11 @@ async function yerleriGetir() {
         ?makale schema:about ?yer ;
                 schema:isPartOf <https://tr.wikipedia.org/> .
       }
+      OPTIONAL {
+        ?makaleEn schema:about ?yer ;
+                  schema:isPartOf <https://en.wikipedia.org/> .
+      }
+      OPTIONAL { ?yer schema:description ?aciklamaEn . FILTER(LANG(?aciklamaEn) = "en") }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "tr,en". }
     }
   `;
@@ -125,12 +131,13 @@ function kodUret(ad) {
     .slice(0, 48);
 }
 
-/** Wikipedia özeti (varsa). */
+/** Wikipedia özeti (varsa). Dil, makale adresine göre seçilir. */
 async function ozetGetir(makaleAdresi) {
   const baslik = decodeURIComponent(makaleAdresi.split('/wiki/')[1] || '');
   if (!baslik) return null;
 
-  const yanit = await getir(WIKIPEDIA + encodeURIComponent(baslik));
+  const taban = makaleAdresi.includes('en.wikipedia.org') ? WIKIPEDIA_EN : WIKIPEDIA_TR;
+  const yanit = await getir(taban + encodeURIComponent(baslik));
   if (!yanit) return null;
 
   const veri = await yanit.json();
@@ -271,7 +278,9 @@ async function gorselBilgileri(dosyalar) {
       konum,
       gorselDosya: satir.gorsel ? decodeURIComponent(satir.gorsel.value.split('/').pop()) : null,
       makale: satir.makale?.value || null,
-      aciklama: (satir.aciklama?.value || '').trim()
+      makaleEn: satir.makaleEn?.value || null,
+      aciklama: (satir.aciklama?.value || '').trim(),
+      aciklamaEn: (satir.aciklamaEn?.value || '').trim()
     });
   }
 
@@ -299,13 +308,22 @@ async function gorselBilgileri(dosyalar) {
     let metin = null;
     if (yer.makale) {
       metin = await ozetGetir(yer.makale);
-      await bekle(400);
+      await bekle(350);
+    }
+
+    // İngilizce özet: arayüz dili İngilizce seçildiğinde kartlar da
+    // İngilizce olsun. Makale yoksa Wikidata açıklamasına düşülür.
+    let metinEn = null;
+    if (yer.makaleEn) {
+      metinEn = await ozetGetir(yer.makaleEn);
+      await bekle(350);
     }
 
     // Görsel önceliği: Wikidata P18 (lisansı Commons'tan geliyor) → makale
     // görseli. Özet: Wikipedia metni → Wikidata açıklaması.
     let gorsel = (yer.gorselDosya ? gorseller.get(yer.gorselDosya) : null)
       || metin?.gorsel
+      || metinEn?.gorsel
       || null;
 
     // Hiçbiri yoksa Commons'ta adıyla aranır.
@@ -320,10 +338,12 @@ async function gorselBilgileri(dosyalar) {
       tur: yer.tur,
       konum: { enlem: +yer.konum.enlem.toFixed(6), boylam: +yer.konum.boylam.toFixed(6) },
       ozet: metin?.ozet || yer.aciklama || '',
+      ozetEn: metinEn?.ozet || yer.aciklamaEn || '',
       gorsel,
       kaynaklar: {
         wikidata: yer.kimlik,
-        wikipedia: metin?.adres || null
+        wikipedia: metin?.adres || null,
+        wikipediaEn: metinEn?.adres || null
       },
       duraklar: yer.duraklar
     });
@@ -335,7 +355,7 @@ async function gorselBilgileri(dosyalar) {
   // Vikipedi makalesi varsa (yani kayda değerse) kalır — yoksa liste
   // fotoğrafsız çeşme/türbe kayıtlarıyla doluyor ve kartlar boş görünüyor.
   const kullanilabilir = cikti.filter(
-    (y) => y.gorsel || (y.ozet && y.kaynaklar.wikipedia)
+    (y) => y.gorsel || ((y.ozet || y.ozetEn) && (y.kaynaklar.wikipedia || y.kaynaklar.wikipediaEn))
   );
 
   const veri = {

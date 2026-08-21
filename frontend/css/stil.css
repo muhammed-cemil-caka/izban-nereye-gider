@@ -796,8 +796,10 @@ body.acilis-acik { overflow: hidden; }
 }
 .gezi-baslik {
   margin: 0; font-size: .95rem; line-height: 1.3;
-  /* Başlık her kartta iki satır yer kaplar. */
-  min-height: calc(2 * 1.3 * .95rem);
+  /* Başlık her kartta tam iki satır. min-height yetmiyor: bazı adlarda
+     yedek yazı tipi devreye girip satır kutusunu büyütüyor ve kartlar
+     birbirini tutmuyor. Sabit yükseklik + taşmayı gizle. */
+  height: calc(2 * 1.3 * .95rem);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -815,9 +817,11 @@ body.acilis-acik { overflow: hidden; }
   -webkit-line-clamp: 4;
   line-clamp: 4;
   -webkit-box-orient: vertical;
+  /* Sabit dört satır. Ölçüldü: min-height ile kimi kartta 87 px, kimide
+     76 px oluyordu (harf metrikleri satır kutusunu büyütüyor) ve düğmeler
+     11 px kayıyordu. */
+  height: calc(4 * 1.45 * .82rem);
   overflow: hidden;
-  /* Özeti olmayan kartta da yer ayrılır: düğme satırı hep aynı hizada. */
-  min-height: calc(4 * 1.45 * .82rem);
 }
 
 .gezi-dugmeler {
@@ -845,7 +849,7 @@ body.acilis-acik { overflow: hidden; }
   color: var(--yazi-soluk);
   /* Kaynak satırı her kartta aynı yükseklikte: kimisinde yalnızca foto,
      kimisinde foto + Vikipedi yazıyor. */
-  min-height: 2.1em;
+  height: 2.1em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
