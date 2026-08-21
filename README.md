@@ -202,6 +202,13 @@ açıksa süre kısalır.
 Ekran, uygulamanın **üstünde** durur — altında değil. Sayfa/uygulama arkada
 veriyi okuyup konumu istemeye başlar, kullanıcı animasyonu beklemez.
 
+**Webde harita açılış ekranının üstüne taşıyordu.** Leaflet katmanları 200–800
+arası `z-index` kullanıyor; harita kabı yığın bağlamı kurmadığı için bu
+değerler kök bağlamda geçerli oluyor ve hat çizgisiyle durak işaretleri
+kaplamanın üzerine biniyordu. İki yerden düzeltildi: `.harita` artık
+`isolation: isolate` ile kendi yığın bağlamını kuruyor, açılış ekranı da
+`z-index: 2000` kullanıyor.
+
 Mobilde zamanlamanın tamamı tek bir `AnimationController`'a bağlı,
 zamanlayıcıya değil: widget testleri `pumpAndSettle` ile animasyonu sonuna
 kadar sarabiliyor. Zamanlayıcı kullanılsaydı açılış ekranı testlerde açık
@@ -255,6 +262,12 @@ Bunun önüne geçmek için:
 - Her iki istemcide de **en yakın dört durak** listelenir; GPS şaşarsa kullanıcı
   doğru durağı kendisi seçebilir.
 - Sıralama **gerçek yürüme mesafesine** göre yapılır, kuş uçuşuna göre değil.
+  Sıralama **ilk ölçümde** devreye girer, kesin ölçüm beklenmez. Önce yalnızca
+  "kesin" sayılan ölçümde sıralanıyordu; masaüstünde konum Wi-Fi tabanlı
+  olduğu için ±30 m hedefine hiç inilmiyor ve kesin ölçüm ancak 45 saniyelik
+  izleme süresi dolunca geliyordu — kullanıcı o zamana kadar kuş uçuşu
+  sıralamayı görüyordu. İstek sayısı 150 m'lik tazeleme eşiğiyle sınırlı:
+  kullanıcı bu kadar yol yürümedikçe yeni istek gitmez.
   Kuş uçuşu yanıltıyor: dere, otoyol veya demiryolu araya girdiğinde yakın
   görünen durak yürüyerek çok daha uzak olabiliyor. Ölçüldü: Çiğli kuş uçuşu
   daha yakın ama yürüyüşle **2,5 km**; Mavişehir **1,4 km**. Mesafeler OSRM'in
@@ -313,6 +326,12 @@ faturalandırma hesabı gerektirmez.
 kutu kapatıldı (`attributionControl: false` / `RichAttributionWidget`
 kaldırıldı) ve ibare kartın içine, haritanın hemen altına alındı. İbare
 **kaldırılamaz**: veri ODbL lisanslı, gösterilmesi zorunlu.
+
+**Aktarmalar iki yerde yazar.** Güzergâh listesinde aktarmalı duraklarda
+"AKTARMA" rozeti, altındaki **"Yol üstündeki aktarmalar"** kartında da hangi
+durakta hangi hatlara geçildiği (`Halkapınar — Metro · Tramvay`) görünür. Mobilde
+önce yalnızca bir simge vardı ve hat adları ancak simgeye basılı tutunca çıkan
+ipucunda görünüyordu; artık iki istemci de aynı bilgiyi aynı yerde gösteriyor.
 
 Haritada hat çizilir, 41 durak işaretlenir, seçili güzergâh vurgulanır, biniş
 yeşil / iniş turuncu gösterilir. Durağa tıklamak onu biniş durağı yapar.

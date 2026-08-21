@@ -412,6 +412,9 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
   border: 1px solid var(--cizgi);
   overflow: hidden;
   background: var(--zemin);
+  /* Leaflet'in kendi z-index'leri (döşeme 200, işaret 600, denetim 800)
+     kabın dışına çıkmasın; yoksa üstteki kaplamaların üzerine biniyorlar. */
+  isolation: isolate;
 }
 
 /* Leaflet'in kendi kutuları site temasına uysun. */
@@ -586,7 +589,11 @@ button.satir-baglanti {
    doğrudan çizgi olarak çizilemiyor — maske kullanılıyor), en son kelime
    belirir. Toplam ~2 saniye; dokunmak/tuşa basmak hemen geçer. */
 .acilis {
-  position: fixed; inset: 0; z-index: 60;
+  position: fixed; inset: 0;
+  /* Leaflet katmanları 200–800 arası z-index kullanıyor ve harita kabı yığın
+     bağlamı kurmadığı için bunlar kök bağlamda çiziliyordu: hat çizgisi ve
+     durak işaretleri açılış ekranının üstüne taşıyordu. */
+  z-index: 2000;
   display: grid; place-items: center;
   background: var(--acilis-zemin);
   opacity: 1;

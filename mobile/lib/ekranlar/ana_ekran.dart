@@ -597,6 +597,10 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 _OzetKarti(yolculuk: yolculuk),
                 const SizedBox(height: 16),
                 _GuzergahKarti(yolculuk: yolculuk),
+                if (yolculuk.aktarmaliDuraklar.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _AktarmaKarti(yolculuk: yolculuk),
+                ],
               ],
               const SizedBox(height: 24),
               Text(
@@ -867,19 +871,102 @@ class _GuzergahKarti extends StatelessWidget {
                             : tema.textTheme.bodyMedium,
                       ),
                     ),
-                    if (durak.aktarmaVar)
-                      Tooltip(
-                        message: durak.aktarma.join(' · '),
-                        child: Icon(
-                          Icons.alt_route,
-                          size: 16,
-                          color: tema.colorScheme.secondary,
-                        ),
-                      ),
+                    // Simge + Tooltip yerine okunur rozet: hangi aktarma
+                    // olduğunu görmek için basılı tutmak gerekiyordu, hatların
+                    // adı hiç görünmüyordu. Hat adları aşağıdaki aktarma
+                    // kartında yazıyor — webdeki düzenin aynısı.
+                    if (durak.aktarmaVar) const _Rozet('AKTARMA'),
                   ],
                 ),
               );
             }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Küçük etiket — webdeki .rozet karşılığı.
+class _Rozet extends StatelessWidget {
+  final String metin;
+
+  const _Rozet(this.metin);
+
+  @override
+  Widget build(BuildContext context) {
+    final renkler = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: renkler.primary.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        metin,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: .5,
+          color: renkler.primary,
+        ),
+      ),
+    );
+  }
+}
+
+/// Yol üstündeki aktarma noktaları ve hangi hatlara aktarma yapıldığı.
+///
+/// Özet kutusunda yalnızca sayı yazıyordu ("2 aktarma"); hangi durakta hangi
+/// hatta geçileceği görünmüyordu. Webdeki "Yol üstündeki aktarmalar" kartının
+/// karşılığı.
+class _AktarmaKarti extends StatelessWidget {
+  final Yolculuk yolculuk;
+
+  const _AktarmaKarti({required this.yolculuk});
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final duraklar = yolculuk.aktarmaliDuraklar;
+    if (duraklar.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 8,
+          children: [
+            Text('YOL ÜSTÜNDEKİ AKTARMALAR', style: tema.textTheme.labelMedium),
+            ...duraklar.map(
+              (durak) => KabarikKutu(
+                dolgu: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                cocuk: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        durak.ad,
+                        style: tema.textTheme.bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        durak.aktarma.join(' · '),
+                        textAlign: TextAlign.end,
+                        style: tema.textTheme.bodySmall?.copyWith(
+                          color: tema.textTheme.bodySmall?.color
+                              ?.withValues(alpha: .8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

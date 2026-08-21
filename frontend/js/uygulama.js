@@ -601,7 +601,14 @@
     if (harita) harita.konumuGoster(konum);
 
     // Kuş uçuşu sıralama anında gösterilir; yürüme mesafesi gelince düzeltilir.
-    if (kesinMi && !yonlendirmeOturumu) {
+    //
+    // Burada "kesin ölçüm" BEKLENMEZ. Önce yalnızca kesinMi=true iken
+    // sıralanıyordu; masaüstünde konum Wi-Fi tabanlı olduğu için ±30 m hedefine
+    // hiç inilmiyor ve kesin ölçüm ancak 45 saniyelik izleme süresi dolunca
+    // geliyordu — kullanıcı o zamana kadar kuş uçuşu sıralamayı görüyordu.
+    // Mobil taraf da ilk ölçümde sıralıyor; iki istemci artık aynı davranıyor.
+    // İstek sayısı, aşağıdaki 150 m'lik tazeleme eşiğiyle sınırlı kalıyor.
+    if (!yonlendirmeOturumu) {
       sonYuruyusKonumu = { enlem: konum.enlem, boylam: konum.boylam };
       adaylariYuruyuseGoreSirala(sonKonum, adaylar);
     }
