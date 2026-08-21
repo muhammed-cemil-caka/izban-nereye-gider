@@ -1158,7 +1158,11 @@ class _Rozet extends StatelessWidget {
 /// Özet kutusunda yalnızca sayı yazıyordu ("2 aktarma"); hangi durakta hangi
 /// hatta geçileceği görünmüyordu. Webdeki "Yol üstündeki aktarmalar" kartının
 /// karşılığı.
-class _AktarmaKarti extends StatelessWidget {
+class _AktarmaKarti extends StatefulWidget {
+  /// Aynı anda görünecek en fazla aktarma satırı. Uzun bir yolculukta 29
+  /// aktarma oluyor ve kart sayfayı ekran boyu uzatıyordu.
+  static const gorunurAktarma = 10;
+
   final Yolculuk yolculuk;
 
   /// Aktarma noktasına dokunulunca oraya yürüyüş rotası + canlı yönlendirme.
@@ -1167,10 +1171,73 @@ class _AktarmaKarti extends StatelessWidget {
   const _AktarmaKarti({required this.yolculuk, required this.aktarmayaGit});
 
   @override
+  State<_AktarmaKarti> createState() => _AktarmaKartiDurumu();
+}
+
+class _AktarmaKartiDurumu extends State<_AktarmaKarti> {
+  final _kaydirma = ScrollController();
+
+  @override
+  void dispose() {
+    _kaydirma.dispose();
+    super.dispose();
+  }
+
+  /// Tek bir aktarma satırı: durak adı, tür çipleri, ESHOT hat numaraları.
+  Widget _satir(ThemeData tema, Durak durak) {
+    return KabarikKutu(
+      dolgu: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      cocuk: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            durak.ad,
+            style:
+                tema.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          // Türler alt alta sıkışan bir metin yerine hizalı çipler:
+          // "ESHOT · Metro · Tramvay" tek satıra sığmadığında ortadan
+          // kırpılıyordu. Noktası bilinen tür tıklanabilir.
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final tur in durak.aktarma)
+                _AktarmaTuru(
+                  tur: tur,
+                  nokta: durak.aktarmaNoktalari
+                      .where((n) => n.tur == tur)
+                      .firstOrNull,
+                  basildi: widget.aktarmayaGit,
+                ),
+            ],
+          ),
+          // ESHOT aktarması varsa hangi hatlar olduğu yazılır; "ESHOT" tek
+          // başına hangi otobüse binileceğini söylemiyor.
+          if (durak.otobusHatlari.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _OtobusHatlari(hatlar: durak.otobusHatlari),
+          ],
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    final duraklar = yolculuk.aktarmaliDuraklar;
+    final duraklar = widget.yolculuk.aktarmaliDuraklar;
     if (duraklar.isEmpty) return const SizedBox.shrink();
+
+    // Satır yükseklikleri değişken (hat numaraları sarabiliyor), o yüzden
+    // pencere ekranın yarısıyla sınırlanıyor: kart hiçbir durumda sayfayı
+    // ekran boyu uzatmasın.
+    final kaydirmali = duraklar.length > _AktarmaKarti.gorunurAktarma;
+    final pencere = MediaQuery.sizeOf(context).height * .5;
+    final soluk = tema.textTheme.bodySmall?.copyWith(
+      color: tema.textTheme.bodySmall?.color?.withValues(alpha: .6),
+    );
 
     return Card(
       child: Padding(
@@ -1180,44 +1247,29 @@ class _AktarmaKarti extends StatelessWidget {
           spacing: 8,
           children: [
             Text('YOL ÜSTÜNDEKİ AKTARMALAR', style: tema.textTheme.labelMedium),
-            ...duraklar.map(
-              (durak) => KabarikKutu(
-                dolgu: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                cocuk: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      durak.ad,
-                      style: tema.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 8),
-                    // Türler alt alta sıkışan bir metin yerine hizalı çipler:
-                    // "ESHOT · Metro · Tramvay" tek satıra sığmadığında
-                    // ortadan kırpılıyordu. Noktası bilinen tür tıklanabilir.
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        for (final tur in durak.aktarma)
-                          _AktarmaTuru(
-                            tur: tur,
-                            nokta: durak.aktarmaNoktalari
-                                .where((n) => n.tur == tur)
-                                .firstOrNull,
-                            basildi: aktarmayaGit,
-                          ),
-                      ],
-                    ),
-                    // ESHOT aktarması varsa hangi hatlar olduğu yazılır;
-                    // "ESHOT" tek başına hangi otobüse bineceğini söylemiyor.
-                    if (durak.otobusHatlari.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      _OtobusHatlari(hatlar: durak.otobusHatlari),
-                    ],
-                  ],
+            if (kaydirmali)
+              SizedBox(
+                height: pencere,
+                child: Scrollbar(
+                  controller: _kaydirma,
+                  thumbVisibility: true,
+                  child: ListView.separated(
+                    controller: _kaydirma,
+                    padding: const EdgeInsets.only(right: 10),
+                    itemCount: duraklar.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, sira) => _satir(tema, duraklar[sira]),
+                  ),
                 ),
-              ),
+              )
+            else
+              ...duraklar.map((durak) => _satir(tema, durak)),
+            Text(
+              kaydirmali
+                  ? '${duraklar.length} aktarma noktası · listeyi kaydırarak '
+                      'devamını gör'
+                  : '${duraklar.length} aktarma noktası',
+              style: soluk,
             ),
           ],
         ),

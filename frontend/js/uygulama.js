@@ -26,6 +26,7 @@
     hatSemasi: document.getElementById('hatSemasi'),
     aktarmaKarti: document.getElementById('aktarmaKarti'),
     aktarmaListesi: document.getElementById('aktarmaListesi'),
+    aktarmaSayisi: document.getElementById('aktarmaSayisi'),
     veriSurumu: document.getElementById('veriSurumu'),
     veriKaynagi: document.getElementById('veriKaynagi'),
     konumKarti: document.getElementById('konumKarti'),
@@ -218,8 +219,27 @@
     return kutu;
   }
 
+  // Aktarma listesinde aynı anda görünecek en fazla satır. Uzun bir
+  // yolculukta 29 aktarma oluyor ve kart sayfayı ekran boyu uzatıyordu.
+  var GORUNUR_AKTARMA = 10;
+
+  /** Aktarma listesini tam 10 satıra sabitler (adım listesindeki yöntem). */
+  function aktarmaYuksekliginiAyarla(adet) {
+    var liste = oge.aktarmaListesi;
+    liste.style.removeProperty('--aktarma-yukseklik');
+    if (adet <= GORUNUR_AKTARMA) return;
+
+    var ilk = liste.children[0];
+    var sonrasi = liste.children[GORUNUR_AKTARMA];
+    if (!ilk || !sonrasi) return;
+
+    var yukseklik = sonrasi.offsetTop - ilk.offsetTop;
+    if (yukseklik > 0) liste.style.setProperty('--aktarma-yukseklik', yukseklik + 'px');
+  }
+
   function aktarmalariCiz(sonuc) {
     oge.aktarmaListesi.textContent = '';
+    oge.aktarmaSayisi.textContent = '';
     if (!sonuc.aktarmalar.length) {
       oge.aktarmaKarti.hidden = true;
       return;
@@ -277,6 +297,11 @@
       oge.aktarmaListesi.appendChild(satir);
     });
     oge.aktarmaKarti.hidden = false;
+    aktarmaYuksekliginiAyarla(sonuc.aktarmalar.length);
+
+    oge.aktarmaSayisi.textContent = sonuc.aktarmalar.length > GORUNUR_AKTARMA
+      ? sonuc.aktarmalar.length + ' aktarma noktası · listeyi kaydırarak devamını gör'
+      : sonuc.aktarmalar.length + ' aktarma noktası';
   }
 
   function sonucuGoster(sonuc) {

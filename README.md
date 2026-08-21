@@ -156,6 +156,18 @@ Sonuç: **41 durağın 34'ünde** ESHOT aktarması var, 21'inde hat numaralarıy
 Aktarması olmayan 7 durak: Hatundere, İnkılap, Cumaovası, Develi, Tekeli,
 Kuşçuburun, Belevi.
 
+### Aktarma listesi en fazla 10 satır
+
+Uzun bir yolculukta yol üstünde 29–34 aktarma noktası oluyor ve kart sayfayı
+ekran boyu uzatıyordu. Liste artık kendi içinde kaydırılıyor; altında
+"34 aktarma noktası · listeyi kaydırarak devamını gör" yazar.
+
+Pencere iki sınırın küçüğü: **10 satırın yüksekliği** ve **ekranın yarısı**.
+İkincisi gerekli — 10 aktarma satırı (durak adı + tür çipleri + hat numaraları)
+telefon ekranından uzun. Webde 10 satırın yüksekliği 11. satırın üst kenarı
+ölçülerek bulunur (adım listesindeki yöntem), mobilde satır yükseklikleri
+değişken olduğu için doğrudan ekran oranı kullanılır.
+
 ### Aktarmaları doğrulama
 
 Dosyadaki aktarma bilgisini OSM'e karşı sınar; hiçbir şey yazmaz:

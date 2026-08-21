@@ -270,8 +270,28 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
   background: var(--vurgu-soluk); color: var(--vurgu);
 }
 
-/* Aktarmalar */
-.aktarma-listesi { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+/* Aktarmalar
+
+   Liste kendi içinde kaydırılır: uzun bir yolculukta 29 aktarma satırı kartı
+   ekran boyu uzatıyordu. En fazla 10 satır görünür; kesin yükseklik JS ile
+   ölçülür (--aktarma-yukseklik), ekranın yarısını da geçmez. */
+.aktarma-listesi {
+  list-style: none; margin: 0; padding: 0 .4rem 0 0;
+  display: grid; gap: .6rem;
+  /* En fazla 10 satır (JS ölçer) ama ekranın yarısını da geçmesin.
+     Taban sınır: çok kısa pencerede liste tamamen kapanmasın. */
+  max-height: max(220px, min(var(--aktarma-yukseklik, 60vh), 60vh));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+.aktarma-listesi::-webkit-scrollbar { width: 8px; }
+.aktarma-listesi::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--yazi-soluk) 35%, transparent);
+  border-radius: 999px;
+}
+.aktarma-sayisi { margin: .6rem 0 0; font-size: .75rem; color: var(--yazi-soluk); }
 .aktarma-listesi li {
   display: flex; flex-direction: column; gap: .15rem;
   padding: .65rem .8rem; border-radius: 11px;
