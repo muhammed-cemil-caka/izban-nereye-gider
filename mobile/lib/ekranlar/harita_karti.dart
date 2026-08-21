@@ -174,6 +174,11 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   static const _inisRengi = Color(0xFFB3541E);
   static const _yuruyusRengi = Color(0xFFB3541E);
 
+  /// Araba rotası: kesintisiz mavi şerit. Yürüyüş noktalı çiziliyor;
+  /// araç rotasının noktalı olması hem sürerken okunmuyor hem de iki kip
+  /// haritada birbirinden ayırt edilemiyordu.
+  static const _arabaRengi = Color(0xFF0C4CA3);
+
   List<LatLng> get _hatNoktalari => widget.duraklar
       .where((d) => d.konum.gecerli)
       .map((d) => LatLng(d.konum.enlem, d.konum.boylam))
@@ -529,20 +534,29 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
                         final (gecilen, kalan) =
                             _rotayiBol(rota.noktalar, durum.katEdilenM);
 
+                        // Araba kesintisiz kalın mavi şerit, yürüyüş noktalı
+                        // turuncu: haritaya bakınca hangi kipte olunduğu
+                        // anlaşılsın, sürerken çizgi kopuk görünmesin.
+                        final arabaMi = rota.kip == RotaKipi.araba;
+                        final renk = arabaMi ? _arabaRengi : _yuruyusRengi;
+                        final kalinlik = arabaMi ? 6.0 : 5.0;
+                        final desen =
+                            arabaMi ? const StrokePattern.solid() : StrokePattern.dotted();
+
                         return PolylineLayer(polylines: [
                           if (gecilen.length > 1)
                             Polyline(
                               points: gecilen,
-                              color: _yuruyusRengi.withValues(alpha: .28),
-                              strokeWidth: 5,
-                              pattern: StrokePattern.dotted(),
+                              color: renk.withValues(alpha: .28),
+                              strokeWidth: kalinlik,
+                              pattern: desen,
                             ),
                           if (kalan.length > 1)
                             Polyline(
                               points: kalan,
-                              color: _yuruyusRengi,
-                              strokeWidth: 5,
-                              pattern: StrokePattern.dotted(),
+                              color: renk,
+                              strokeWidth: kalinlik,
+                              pattern: desen,
                             ),
                         ]);
                       },
