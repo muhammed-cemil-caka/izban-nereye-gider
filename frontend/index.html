@@ -6,13 +6,63 @@
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/stil.css?s=89f15a26">
+  <link rel="stylesheet" href="css/stil.css?s=19093562">
 </head>
 <body>
+  <!-- Açılış ekranı. Marka çizilir, sonra kendini kapatır; sayfa arkada
+       hazırlanmaya devam eder. Logo gövdesi araclar/logo-uret.py tarafından
+       iki işaret arasına yazılır — elle düzenlemeyin. -->
+  <div class="acilis" id="acilisEkrani">
+    <div class="acilis-ic">
+      <div class="acilis-plaka">
+        <svg class="acilis-logo" viewBox="0 0 200 200" role="img" aria-label="İZBAN">
+          <!-- izban-logo:baslangic -->
+          <defs>
+            <linearGradient id="izbanKirmiziCanli" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ED1B24" stop-opacity="0"/>
+              <stop offset=".5" stop-color="#ED1B24" stop-opacity=".62"/>
+              <stop offset="1" stop-color="#ED1B24"/>
+            </linearGradient>
+            <linearGradient id="izbanMaviCanli" x1="1" y1="0" x2="0" y2="0">
+              <stop offset="0" stop-color="#0C4CA3" stop-opacity="0"/>
+              <stop offset=".5" stop-color="#0C4CA3" stop-opacity=".62"/>
+              <stop offset="1" stop-color="#0C4CA3"/>
+            </linearGradient>
+            <!-- Süpürme: orta çizgi boyunca kalın bir çizgi, kesik deseniyle açılır.
+                 Yay uca doğru inceldiği için doğrudan çizgi olarak çizilemiyor. -->
+            <mask id="izbanSupurmeKirmizi">
+              <path class="acilis-supurge" d="M 74.61 47.94 L 76.53 47.05 L 78.47 46.23 L 80.45 45.48 L 82.45 44.81 L 84.48 44.20 L 86.52 43.67 L 88.59 43.22 L 90.67 42.84 L 92.76 42.54 L 94.86 42.31 L 96.97 42.16 L 99.08 42.09 L 101.19 42.10 L 103.31 42.18 L 105.41 42.34 L 107.51 42.57 L 109.60 42.89 L 111.68 43.27 L 113.74 43.74 L 115.79 44.28 L 117.81 44.89 L 119.81 45.58 L 121.78 46.34 L 123.72 47.17 L 125.64 48.07 L 127.51 49.04 L 129.36 50.07 L 131.16 51.18 L 132.92 52.35 L 134.63 53.58 L 136.31 54.87 L 137.93 56.23 L 139.50 57.64 L 141.02 59.11 L 142.48 60.64 L 143.89 62.21 L 145.24 63.84 L 146.53 65.51 L 147.76 67.23 L 148.92 69.00 L 150.02 70.80 L 151.05 72.65 L 152.01 74.53 L 152.91 76.44" stroke="#fff" stroke-width="34" fill="none"/>
+            </mask>
+            <mask id="izbanSupurmeMavi">
+              <path class="acilis-supurge" d="M 121.70 153.70 L 119.64 154.49 L 117.55 155.19 L 115.43 155.82 L 113.30 156.37 L 111.14 156.83 L 108.97 157.22 L 106.78 157.52 L 104.59 157.73 L 102.39 157.87 L 100.18 157.92 L 97.98 157.88 L 95.78 157.76 L 93.58 157.56 L 91.39 157.27 L 89.22 156.90 L 87.06 156.45 L 84.92 155.92 L 82.80 155.30 L 80.71 154.61 L 78.65 153.84 L 76.61 152.98 L 74.61 152.06 L 72.65 151.05 L 70.72 149.97 L 68.84 148.82 L 67.01 147.60 L 65.22 146.31 L 63.48 144.95 L 61.80 143.53 L 60.17 142.04 L 58.59 140.50 L 57.08 138.89 L 55.63 137.23 L 54.25 135.51 L 52.93 133.74 L 51.68 131.93 L 50.50 130.07 L 49.39 128.16 L 48.35 126.21 L 47.39 124.23 L 46.51 122.21 L 45.70 120.15 L 44.98 118.07 L 44.33 115.96" stroke="#fff" stroke-width="34" fill="none"/>
+            </mask>
+          </defs>
+
+          <path mask="url(#izbanSupurmeKirmizi)" fill="url(#izbanKirmiziCanli)" d="M 165.85 70.68 L 164.50 68.41 L 163.07 66.21 L 161.57 64.06 L 159.99 61.98 L 158.34 59.97 L 156.63 58.02 L 154.86 56.15 L 153.02 54.35 L 151.12 52.63 L 149.17 50.98 L 147.17 49.41 L 145.12 47.93 L 143.02 46.52 L 140.89 45.20 L 138.71 43.96 L 136.50 42.81 L 134.25 41.75 L 131.98 40.77 L 129.68 39.88 L 127.36 39.08 L 125.01 38.37 L 122.66 37.75 L 120.29 37.21 L 117.91 36.77 L 115.53 36.42 L 113.15 36.15 L 110.77 35.97 L 108.39 35.89 L 106.02 35.89 L 103.66 35.98 L 101.32 36.15 L 98.99 36.41 L 96.69 36.75 L 94.40 37.18 L 92.15 37.69 L 89.92 38.28 L 87.73 38.95 L 85.57 39.69 L 83.45 40.52 L 81.37 41.41 L 79.34 42.38 L 77.35 43.42 L 75.41 44.53 L 73.52 45.70 L 75.71 50.19 L 77.65 49.58 L 79.60 49.05 L 81.56 48.58 L 83.53 48.20 L 85.50 47.89 L 87.48 47.65 L 89.45 47.49 L 91.41 47.40 L 93.37 47.39 L 95.32 47.44 L 97.25 47.57 L 99.17 47.77 L 101.07 48.04 L 102.95 48.38 L 104.81 48.79 L 106.64 49.26 L 108.44 49.80 L 110.21 50.40 L 111.95 51.06 L 113.66 51.78 L 115.33 52.57 L 116.96 53.41 L 118.55 54.30 L 120.09 55.25 L 121.60 56.25 L 123.05 57.30 L 124.46 58.40 L 125.82 59.54 L 127.13 60.73 L 128.38 61.96 L 129.59 63.23 L 130.73 64.53 L 131.83 65.87 L 132.86 67.24 L 133.84 68.64 L 134.76 70.07 L 135.62 71.52 L 136.43 73.00 L 137.17 74.50 L 137.85 76.01 L 138.47 77.54 L 139.03 79.09 L 139.53 80.64 L 139.97 82.21 Z"/>
+          <path mask="url(#izbanSupurmeMavi)" fill="url(#izbanMaviCanli)" d="M 30.71 119.87 L 31.77 122.41 L 32.92 124.90 L 34.16 127.33 L 35.49 129.71 L 36.90 132.02 L 38.40 134.27 L 39.98 136.46 L 41.63 138.57 L 43.36 140.61 L 45.15 142.57 L 47.02 144.46 L 48.94 146.27 L 50.93 147.99 L 52.98 149.63 L 55.07 151.19 L 57.22 152.65 L 59.42 154.03 L 61.66 155.32 L 63.93 156.52 L 66.24 157.62 L 68.59 158.63 L 70.96 159.55 L 73.35 160.37 L 75.77 161.09 L 78.20 161.72 L 80.64 162.25 L 83.10 162.69 L 85.55 163.02 L 88.01 163.27 L 90.47 163.42 L 92.92 163.47 L 95.36 163.43 L 97.79 163.29 L 100.20 163.07 L 102.59 162.75 L 104.96 162.34 L 107.29 161.84 L 109.60 161.26 L 111.88 160.59 L 114.11 159.84 L 116.31 159.00 L 118.47 158.08 L 120.57 157.09 L 122.63 156.02 L 120.76 151.38 L 118.70 151.89 L 116.63 152.31 L 114.56 152.65 L 112.48 152.90 L 110.41 153.08 L 108.34 153.18 L 106.27 153.19 L 104.22 153.13 L 102.19 152.99 L 100.17 152.76 L 98.17 152.47 L 96.19 152.10 L 94.24 151.65 L 92.32 151.13 L 90.43 150.54 L 88.57 149.88 L 86.75 149.15 L 84.96 148.36 L 83.22 147.50 L 81.52 146.58 L 79.87 145.60 L 78.26 144.57 L 76.71 143.47 L 75.20 142.32 L 73.75 141.13 L 72.36 139.88 L 71.02 138.59 L 69.74 137.25 L 68.52 135.87 L 67.36 134.45 L 66.26 133.00 L 65.22 131.51 L 64.25 130.00 L 63.34 128.45 L 62.50 126.88 L 61.73 125.29 L 61.02 123.67 L 60.38 122.04 L 59.80 120.40 L 59.30 118.74 L 58.86 117.08 L 58.49 115.41 L 58.18 113.73 L 57.94 112.06 Z"/>
+
+          <g class="acilis-kelime" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="900">
+            <text x="30.8" y="120" font-size="57" textLength="40.5" lengthAdjust="spacingAndGlyphs"
+                  fill="#0C4CA3" stroke="#0C4CA3" stroke-width="1.6" paint-order="stroke">İZ</text>
+            <text x="72.5" y="120" font-size="57" textLength="95.8" lengthAdjust="spacingAndGlyphs"
+                  fill="#ED1B24" stroke="#ED1B24" stroke-width="1.6" paint-order="stroke">BAN</text>
+            <text class="acilis-alt-yazi" x="100" y="131" font-size="7.6" font-weight="700" text-anchor="middle"
+                  textLength="112" lengthAdjust="spacing" fill="#0C4CA3">İZMİR BANLİYÖ SİSTEMİ</text>
+          </g>
+          <!-- izban-logo:bitis -->
+        </svg>
+      </div>
+      <p class="acilis-ad">İZBAN Nereye Gider?</p>
+      <p class="acilis-alt">Aliağa – Selçuk banliyö hattı yolculuk asistanı</p>
+    </div>
+  </div>
+
   <header class="ust-bant">
     <div class="kapsayici ust-bant-ic">
       <div class="marka">
-        <span class="marka-simge" aria-hidden="true">İZ</span>
+        <span class="marka-plaka">
+          <img src="gorseller/izban-logo.svg" alt="" width="200" height="200" loading="eager">
+        </span>
         <div>
           <h1>İZBAN Nereye Gider?</h1>
           <p class="marka-alt">Aliağa – Selçuk banliyö hattı yolculuk asistanı</p>
@@ -129,6 +179,9 @@
       </div>
 
       <div id="harita" class="harita"></div>
+      <p class="harita-katki">
+        Harita verisi © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> katkıcıları
+      </p>
 
       <div class="rota-sonuc" id="rotaSonucu" hidden>
         <div class="rota-ozet">
@@ -140,6 +193,7 @@
           <button type="button" id="rotaTemizle" class="rota-kapat" aria-label="Yol tarifini kaldır">×</button>
         </div>
         <ol class="rota-adimlar" id="rotaAdimlar"></ol>
+        <p class="rota-adim-sayisi" id="rotaAdimSayisi"></p>
       </div>
 
       <p class="rota-durum" id="rotaDurum" hidden></p>
@@ -190,11 +244,11 @@
   <script src="js/duraklar.js?s=d90b4a80"></script>
   <script src="js/hesap.js?s=69e91242"></script>
   <script src="js/konum.js?s=1fc6e630"></script>
-  <script src="js/harita.js?s=14ba692e"></script>
+  <script src="js/harita.js?s=e5e0e047"></script>
   <script src="js/rota.js?s=e75d483d"></script>
   <script src="js/yonlendirme.js?s=a7bbad61"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=f818db72"></script>
+  <script src="js/uygulama.js?s=0a151609"></script>
 </body>
 </html>

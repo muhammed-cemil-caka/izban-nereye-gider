@@ -1,49 +1,95 @@
-/* İZBAN Nereye Gider? — tema değişkenleri (açık tema varsayılan) */
+/* İZBAN Nereye Gider? — tema değişkenleri (açık tema varsayılan)
+
+   Palet markadan geliyor: resmî logodan örneklenen #0C4CA3 (mavi) ve
+   #ED1B24 (kırmızı). Yön renkleri de bunlar — kuzey mavi, güney kırmızı.
+   Kutucukların 3 boyutlu görünümü üç değişkenle kurulur: --golge (kartın
+   altındaki katmanlı gölge), --kabartma (üst kenardaki ışık çizgisi) ve
+   --kutu-yuzey (yüzeydeki eğim). Tema değişince üçü birlikte değişir. */
 :root {
-  --zemin: #f4f6fa;
+  --zemin: #eef2f9;
   --zemin-kart: #ffffff;
-  --yazi: #16202e;
-  --yazi-soluk: #5c6b80;
-  --cizgi: #dfe5ee;
-  --vurgu: #0b5fa5;
-  --vurgu-soluk: #e6f0fa;
+  --yazi: #101f33;
+  --yazi-soluk: #5a6b85;
+  --cizgi: #d8e1ef;
+  --vurgu: #0c4ca3;
+  --vurgu-soluk: #e7effb;
   --vurgu-yazi: #ffffff;
-  --guney: #b3541e;
-  --kuzey: #0b7a63;
-  --hata: #b3261e;
-  --golge: 0 1px 2px rgba(16, 32, 46, .06), 0 8px 24px rgba(16, 32, 46, .07);
+  --marka-kirmizi: #ed1b24;
+  --marka-mavi: #0c4ca3;
+  --guney: #d2141c;
+  --kuzey: #0c4ca3;
+  --hata: #c41720;
+  --golge:
+    0 1px 2px rgba(11, 31, 58, .07),
+    0 10px 22px -10px rgba(11, 31, 58, .22),
+    0 26px 46px -28px rgba(11, 31, 58, .28);
+  --golge-kabarik:
+    0 2px 4px rgba(11, 31, 58, .09),
+    0 16px 30px -12px rgba(11, 31, 58, .3),
+    0 34px 60px -30px rgba(11, 31, 58, .32);
+  --kabartma: linear-gradient(90deg, transparent, rgba(255, 255, 255, .95), transparent);
+  --kutu-yuzey: linear-gradient(165deg, #ffffff 0%, #f2f6fc 100%);
+  --kutu-ic-isik: inset 0 1px 0 rgba(255, 255, 255, .9);
+  --plaka: #ffffff;
+  --acilis-zemin: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #e3ecf9 55%, #cfdcf1 100%);
   --yuvarlak: 14px;
 }
 
 :root[data-tema="koyu"] {
-  --zemin: #0e141c;
-  --zemin-kart: #161f2b;
-  --yazi: #e8edf5;
-  --yazi-soluk: #98a6b9;
-  --cizgi: #26313f;
-  --vurgu: #62a9e8;
-  --vurgu-soluk: #1b2938;
-  --vurgu-yazi: #0e141c;
-  --guney: #e8a06a;
-  --kuzey: #6ecdb4;
-  --hata: #f2857c;
-  --golge: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .35);
+  --zemin: #0a1626;
+  --zemin-kart: #10203a;
+  --yazi: #e9eff8;
+  --yazi-soluk: #93a6c0;
+  --cizgi: #1e3149;
+  --vurgu: #5b9df0;
+  --vurgu-soluk: #16294a;
+  --vurgu-yazi: #06121f;
+  --marka-kirmizi: #ff5a53;
+  --marka-mavi: #5b9df0;
+  --guney: #ff6b63;
+  --kuzey: #5b9df0;
+  --hata: #ff7c73;
+  --golge:
+    0 1px 2px rgba(0, 0, 0, .5),
+    0 12px 26px -12px rgba(0, 0, 0, .7),
+    0 30px 54px -30px rgba(0, 0, 0, .8);
+  --golge-kabarik:
+    0 2px 6px rgba(0, 0, 0, .55),
+    0 18px 34px -14px rgba(0, 0, 0, .75),
+    0 38px 66px -32px rgba(0, 0, 0, .85);
+  --kabartma: linear-gradient(90deg, transparent, rgba(255, 255, 255, .16), transparent);
+  --kutu-yuzey: linear-gradient(165deg, #16294a 0%, #0d1c33 100%);
+  --kutu-ic-isik: inset 0 1px 0 rgba(255, 255, 255, .07);
+  --acilis-zemin: radial-gradient(120% 90% at 50% 0%, #143059 0%, #0b1c33 55%, #060f1d 100%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="acik"]) {
-    --zemin: #0e141c;
-    --zemin-kart: #161f2b;
-    --yazi: #e8edf5;
-    --yazi-soluk: #98a6b9;
-    --cizgi: #26313f;
-    --vurgu: #62a9e8;
-    --vurgu-soluk: #1b2938;
-    --vurgu-yazi: #0e141c;
-    --guney: #e8a06a;
-    --kuzey: #6ecdb4;
-    --hata: #f2857c;
-    --golge: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .35);
+    --zemin: #0a1626;
+    --zemin-kart: #10203a;
+    --yazi: #e9eff8;
+    --yazi-soluk: #93a6c0;
+    --cizgi: #1e3149;
+    --vurgu: #5b9df0;
+    --vurgu-soluk: #16294a;
+    --vurgu-yazi: #06121f;
+    --marka-kirmizi: #ff5a53;
+    --marka-mavi: #5b9df0;
+    --guney: #ff6b63;
+    --kuzey: #5b9df0;
+    --hata: #ff7c73;
+    --golge:
+      0 1px 2px rgba(0, 0, 0, .5),
+      0 12px 26px -12px rgba(0, 0, 0, .7),
+      0 30px 54px -30px rgba(0, 0, 0, .8);
+    --golge-kabarik:
+      0 2px 6px rgba(0, 0, 0, .55),
+      0 18px 34px -14px rgba(0, 0, 0, .75),
+      0 38px 66px -32px rgba(0, 0, 0, .85);
+    --kabartma: linear-gradient(90deg, transparent, rgba(255, 255, 255, .16), transparent);
+    --kutu-yuzey: linear-gradient(165deg, #16294a 0%, #0d1c33 100%);
+    --kutu-ic-isik: inset 0 1px 0 rgba(255, 255, 255, .07);
+    --acilis-zemin: radial-gradient(120% 90% at 50% 0%, #143059 0%, #0b1c33 55%, #060f1d 100%);
   }
 }
 
@@ -66,15 +112,32 @@ body {
 .gizli { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
 /* Üst bant */
-.ust-bant { background: var(--zemin-kart); border-bottom: 1px solid var(--cizgi); }
+.ust-bant {
+  position: relative;
+  background: var(--zemin-kart);
+  border-bottom: 1px solid var(--cizgi);
+  box-shadow: 0 6px 18px -14px rgba(11, 31, 58, .5);
+}
+/* İnce marka şeridi: mavi → kırmızı. */
+.ust-bant::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 3px;
+  background: linear-gradient(90deg, var(--marka-mavi), var(--marka-kirmizi));
+}
 .ust-bant-ic { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; }
 .marka { display: flex; align-items: center; gap: .85rem; }
-.marka-simge {
+
+/* Logo beyaz bir plakanın üstünde durur: marka renkleri koyu temada da
+   okunur kalsın ve kabartma his kartlarla aynı dilde olsun. */
+.marka-plaka {
   display: grid; place-items: center;
-  width: 44px; height: 44px; flex: none;
-  background: var(--vurgu); color: var(--vurgu-yazi);
-  border-radius: 12px; font-weight: 700; letter-spacing: .02em;
+  width: 52px; height: 52px; flex: none;
+  padding: 3px;
+  background: var(--plaka, #fff);
+  border: 1px solid var(--cizgi);
+  border-radius: 14px;
+  box-shadow: var(--golge);
 }
+.marka-plaka img { width: 100%; height: 100%; display: block; }
 .marka h1 { margin: 0; font-size: 1.15rem; letter-spacing: -.01em; }
 .marka-alt { margin: 0; font-size: .82rem; color: var(--yazi-soluk); }
 
@@ -86,15 +149,31 @@ body {
 }
 .tema-dugmesi:hover { border-color: var(--vurgu); color: var(--vurgu); }
 
-/* Kartlar */
+/* Kartlar — kabartma kutucuklar.
+   Derinlik üç katmandan geliyor: yüzeydeki eğim (--kutu-yuzey), üst kenardaki
+   ışık çizgisi (--kabartma) ve altındaki katmanlı gölge (--golge). */
 main { padding: 1.5rem 0 2.5rem; }
 .kart {
+  position: relative;
   background: var(--zemin-kart);
+  background-image: var(--kutu-yuzey);
   border: 1px solid var(--cizgi);
   border-radius: var(--yuvarlak);
-  box-shadow: var(--golge);
+  box-shadow: var(--golge), var(--kutu-ic-isik);
   padding: 1.25rem;
   margin-bottom: 1rem;
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.kart::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 1px;
+  border-radius: var(--yuvarlak) var(--yuvarlak) 0 0;
+  background: var(--kabartma);
+  pointer-events: none;
+}
+.kart:hover { box-shadow: var(--golge-kabarik), var(--kutu-ic-isik); }
+
+@media (prefers-reduced-motion: reduce) {
+  .kart, .ozet-kutu { transition: none; }
 }
 .kart-baslik { margin: 0 0 .9rem; font-size: .95rem; text-transform: uppercase; letter-spacing: .06em; color: var(--yazi-soluk); }
 
@@ -144,11 +223,23 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
 
 .ozet-kutulari { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
 .ozet-kutu {
+  position: relative;
   display: flex; flex-direction: column; gap: .15rem;
-  padding: .85rem; border-radius: 10px; background: var(--zemin);
+  padding: .9rem .85rem;
+  border-radius: 12px;
+  background: var(--zemin);
+  background-image: var(--kutu-yuzey);
   border: 1px solid var(--cizgi);
+  box-shadow: var(--golge), var(--kutu-ic-isik);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
-.ozet-deger { font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; }
+.ozet-kutu::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 1px;
+  border-radius: 12px 12px 0 0;
+  background: var(--kabartma);
+}
+.ozet-kutu:hover { transform: translateY(-2px); box-shadow: var(--golge-kabarik), var(--kutu-ic-isik); }
+.ozet-deger { font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; color: var(--vurgu); }
 .ozet-etiket { font-size: .78rem; color: var(--yazi-soluk); }
 .ozet-cumle { margin: 1rem 0 0; color: var(--yazi-soluk); font-size: .92rem; }
 
@@ -183,8 +274,11 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
 .aktarma-listesi { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
 .aktarma-listesi li {
   display: flex; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
-  padding: .6rem .75rem; border-radius: 10px;
-  background: var(--zemin); border: 1px solid var(--cizgi);
+  padding: .65rem .8rem; border-radius: 11px;
+  background: var(--zemin);
+  background-image: var(--kutu-yuzey);
+  border: 1px solid var(--cizgi);
+  box-shadow: var(--golge), var(--kutu-ic-isik);
 }
 .aktarma-hatlar { color: var(--yazi-soluk); font-size: .88rem; }
 
@@ -303,6 +397,15 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
 .harita-ust { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
 .harita-ipucu { margin: 0 0 .9rem; font-size: .78rem; color: var(--yazi-soluk); }
 
+/* Leaflet'in kendi katkı kutusu haritanın sağ altını kapatıyordu; ibare
+   ODbL gereği zorunlu olduğu için haritanın altına, kartın içine alındı. */
+.harita-katki {
+  margin: .55rem 0 0;
+  font-size: .72rem;
+  color: var(--yazi-soluk);
+}
+.harita-katki a { color: var(--vurgu); }
+
 .harita {
   height: 380px;
   border-radius: 10px;
@@ -369,13 +472,31 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
 }
 .rota-kapat:hover { border-color: var(--hata); color: var(--hata); }
 
+/* Adım listesi kendi içinde kaydırılır: uzun bir yürüyüşte kart sayfayı
+   metrelerce uzatıyordu. Yükseklik en fazla 7 adım; kesin değeri JS ölçüp
+   --adim-yukseklik olarak yazar (satır sarınca da tam 7 adım görünsün).
+   Buradaki değer JS çalışmazsa geçerli olan yedek. */
 .rota-adimlar {
-  margin: .8rem 0 0; padding: 0 0 0 1.2rem;
+  margin: .8rem 0 0; padding: 0 .4rem 0 1.2rem;
   display: grid; gap: .35rem;
-  max-height: 220px; overflow-y: auto;
+  max-height: var(--adim-yukseklik, 12.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
   font-size: .88rem;
 }
 .rota-adimlar li { padding-left: .2rem; }
+.rota-adimlar::-webkit-scrollbar { width: 8px; }
+.rota-adimlar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--yazi-soluk) 35%, transparent);
+  border-radius: 999px;
+}
+
+/* Kaç adım olduğunu ve listenin kaydırıldığını söyler. */
+.rota-adim-sayisi {
+  margin: .55rem 0 0; font-size: .75rem; color: var(--yazi-soluk);
+}
 .rota-adim-mesafe { color: var(--yazi-soluk); font-size: .78rem; margin-left: .35rem; }
 
 .rota-durum { margin: .8rem 0 0; font-size: .85rem; color: var(--yazi-soluk); }
@@ -457,3 +578,81 @@ button.satir-baglanti {
 .konum-isareti--hazir {
   filter: drop-shadow(0 0 8px var(--vurgu)) brightness(1.15);
 }
+
+/* ---------- Açılış ekranı ----------
+
+   Marka çizilerek gelir: önce plaka yerine oturur, sonra iki yay orta
+   çizgileri boyunca süpürülerek açılır (yaylar uca doğru inceldiği için
+   doğrudan çizgi olarak çizilemiyor — maske kullanılıyor), en son kelime
+   belirir. Toplam ~2 saniye; dokunmak/tuşa basmak hemen geçer. */
+.acilis {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center;
+  background: var(--acilis-zemin);
+  opacity: 1;
+  transition: opacity .45s ease, visibility .45s ease;
+}
+.acilis--kapali { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.acilis-ic { display: grid; justify-items: center; gap: .25rem; text-align: center; padding: 1.5rem; }
+
+.acilis-plaka {
+  width: min(56vw, 208px);
+  aspect-ratio: 1;
+  display: grid; place-items: center;
+  margin-bottom: 1.4rem;
+  background: #fff;
+  border-radius: 30px;
+  box-shadow:
+    0 2px 4px rgba(11, 31, 58, .12),
+    0 22px 40px -16px rgba(11, 31, 58, .38),
+    0 44px 80px -40px rgba(11, 31, 58, .45),
+    inset 0 1px 0 rgba(255, 255, 255, .9);
+  animation: acilisPlaka .75s cubic-bezier(.2, .85, .3, 1) both;
+}
+.acilis-logo { width: 86%; height: 86%; display: block; }
+
+/* Süpürme deseni yay uzunluğundan (~96) uzun: ofset 100'den 0'a inerken
+   çizgi baştan sona açılır. */
+.acilis-supurge {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: acilisSupur .8s cubic-bezier(.4, 0, .2, 1) .15s forwards;
+}
+#izbanSupurmeMavi .acilis-supurge { animation-delay: .45s; }
+
+.acilis-kelime { opacity: 0; animation: acilisKelime .45s ease .95s forwards; }
+
+.acilis-ad {
+  margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -.01em;
+  color: var(--yazi);
+  opacity: 0; animation: acilisYazi .5s ease 1.2s forwards;
+}
+.acilis-alt {
+  margin: 0; font-size: .85rem; color: var(--yazi-soluk);
+  opacity: 0; animation: acilisYazi .5s ease 1.35s forwards;
+}
+
+@keyframes acilisPlaka {
+  from { opacity: 0; transform: translateY(14px) scale(.88); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes acilisSupur { to { stroke-dashoffset: 0; } }
+@keyframes acilisKelime {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes acilisYazi {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Hareket azaltma isteniyorsa her şey yerinde durur, ekran kısa görünür. */
+@media (prefers-reduced-motion: reduce) {
+  .acilis-plaka, .acilis-kelime, .acilis-ad, .acilis-alt { animation: none; opacity: 1; transform: none; }
+  .acilis-supurge { animation: none; stroke-dashoffset: 0; }
+  .acilis { transition-duration: .2s; }
+}
+
+/* Açılış ekranı açıkken arka plan kaymasın. */
+body.acilis-acik { overflow: hidden; }

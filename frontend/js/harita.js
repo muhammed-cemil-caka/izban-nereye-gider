@@ -25,7 +25,13 @@ var YURUYUS_RENGI = '#b3541e';
 function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   var harita = L.map(elemanKimligi, {
     zoomControl: true,
-    attributionControl: true,
+    // Katkı kutusu haritanın sağ altını kapatıyordu; ibare (ODbL gereği
+    // zorunlu) haritanın altındaki .harita-katki satırına taşındı.
+    attributionControl: false,
+    // Kesirli yakınlık: kamera yakınlığı da kare kare yumuşatılıyor,
+    // tam sayıya yuvarlanırsa geçiş basamak basamak görünür.
+    zoomSnap: 0,
+    zoomDelta: 1,
     // leaflet-rotate: haritayı gidiş yönüne çevirebilmek için.
     // Leaflet bunu yerleşik desteklemiyor.
     rotate: true,
@@ -371,13 +377,90 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     }
   }
 
-  /* ---------- Yön ---------- */
+  /* ---------- Kamera: sürekli takip ----------
 
-  var hedefAci = null;
-  var mevcutAci = null;
-  var takipKaresi = null;
+     Merkez, yakınlık ve açı tek bir requestAnimationFrame döngüsünde üstel
+     yumuşatmayla hedefe yaklaşır — mobildeki Ticker'ın aynısı.
+
+     Önce her ölçümde setView(animate: true) çağrılıyordu: yeni ölçüm gelince
+     süren animasyon baştan başlıyor, hız sıfırlanıyor ve harita takılıyormuş
+     gibi görünüyordu. Üstel yumuşatmada hedef değişse de hız korunur, bu
+     yüzden "Başla" anındaki yakınlaşma da tek akıcı hareket olur. */
+
   var DONUS_ESIGI_DERECE = 8;
+  var TAKIP_HIZI = 3.2;       // saniyede kapatılan mesafe oranı
+  var YAKINLIK_HIZI = 2.6;
   var DONUS_HIZI = 4.0;
+
+  var hedefMerkez = null, mevcutMerkez = null;
+  var hedefYakinlik = null, mevcutYakinlik = null;
+  var hedefAci = null, mevcutAci = null;
+  var takipKaresi = null;
+  var sonZaman = null;
+
+  function takibiCalistir() {
+    if (takipKaresi !== null) return;
+    sonZaman = null;
+    takipKaresi = requestAnimationFrame(kare);
+  }
+
+  function takibiDurdur() {
+    if (takipKaresi !== null) cancelAnimationFrame(takipKaresi);
+    takipKaresi = null;
+  }
+
+  function kare(zaman) {
+    var dt = sonZaman === null ? 1 / 60 : (zaman - sonZaman) / 1000;
+    sonZaman = zaman;
+    // Sekme arka plandayken dt kocaman gelebiliyor; sıçramayı sınırla.
+    if (dt > 0.1) dt = 0.1;
+
+    var isVar = false;
+    var tasi = false;
+
+    if (hedefMerkez) {
+      var k = 1 - Math.exp(-TAKIP_HIZI * dt);
+      mevcutMerkez = {
+        enlem: mevcutMerkez.enlem + (hedefMerkez.enlem - mevcutMerkez.enlem) * k,
+        boylam: mevcutMerkez.boylam + (hedefMerkez.boylam - mevcutMerkez.boylam) * k
+      };
+      tasi = true;
+      // Yaklaşık 1 metrelik farka inince iş biter.
+      if (Math.abs(hedefMerkez.enlem - mevcutMerkez.enlem) > 1e-5 ||
+          Math.abs(hedefMerkez.boylam - mevcutMerkez.boylam) > 1e-5) {
+        isVar = true;
+      }
+    }
+
+    if (hedefYakinlik !== null) {
+      var ky = 1 - Math.exp(-YAKINLIK_HIZI * dt);
+      mevcutYakinlik += (hedefYakinlik - mevcutYakinlik) * ky;
+      tasi = true;
+      if (Math.abs(hedefYakinlik - mevcutYakinlik) > 0.01) isVar = true;
+    }
+
+    if (tasi && mevcutMerkez) {
+      harita.setView(
+        [mevcutMerkez.enlem, mevcutMerkez.boylam],
+        mevcutYakinlik === null ? harita.getZoom() : mevcutYakinlik,
+        { animate: false }
+      );
+    }
+
+    if (hedefAci !== null && mevcutAci !== null) {
+      var fark = (hedefAci - mevcutAci + 540) % 360 - 180;
+      var ka = 1 - Math.exp(-DONUS_HIZI * dt);
+      mevcutAci = (mevcutAci + fark * ka + 360) % 360;
+      if (harita.setBearing) harita.setBearing(-mevcutAci);
+      if (Math.abs(fark) > 0.3) isVar = true;
+    }
+
+    if (isVar) {
+      takipKaresi = requestAnimationFrame(kare);
+    } else {
+      takipKaresi = null;
+    }
+  }
 
   /**
    * Haritayı gidiş yönüne çevirir: kullanıcının baktığı yön yukarı bakar.
@@ -386,9 +469,9 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   function haritayiYoneCevir(aci) {
     if (typeof aci !== 'number' || !harita.setBearing) return;
 
-    if (mevcutAci !== null) {
+    if (hedefAci !== null) {
       var fark = (aci - hedefAci + 540) % 360 - 180;
-      if (hedefAci !== null && Math.abs(fark) < DONUS_ESIGI_DERECE) return;
+      if (Math.abs(fark) < DONUS_ESIGI_DERECE) return;
     }
 
     hedefAci = aci;
@@ -397,37 +480,10 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
       harita.setBearing(-aci);
       return;
     }
-    donusuCalistir();
-  }
-
-  /** Üstel yumuşatma: hedef değişse de dönüş hızı korunur, takılma olmaz. */
-  function donusuCalistir() {
-    if (takipKaresi !== null) return;
-
-    var sonZaman = null;
-
-    function kare(zaman) {
-      var dt = sonZaman === null ? 1 / 60 : (zaman - sonZaman) / 1000;
-      sonZaman = zaman;
-
-      var fark = (hedefAci - mevcutAci + 540) % 360 - 180;
-      var k = 1 - Math.exp(-DONUS_HIZI * dt);
-      mevcutAci = (mevcutAci + fark * k + 360) % 360;
-      harita.setBearing(-mevcutAci);
-
-      if (Math.abs(fark) > 0.3) {
-        takipKaresi = requestAnimationFrame(kare);
-      } else {
-        takipKaresi = null;
-      }
-    }
-
-    takipKaresi = requestAnimationFrame(kare);
+    takibiCalistir();
   }
 
   function haritayiKuzeyeAl() {
-    if (takipKaresi !== null) cancelAnimationFrame(takipKaresi);
-    takipKaresi = null;
     hedefAci = null;
     mevcutAci = null;
     if (harita.setBearing) harita.setBearing(0);
@@ -441,24 +497,45 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
   var KAMERA_ESIGI_M = 8;
   var sonKameraHedefi = null;
 
-  function konumaOdaklan(konum, yakinlik) {
+  /**
+   * Kamerayı konuma taşır. Hareket kare kare yumuşatılır.
+   * @param {object} konum
+   * @param {number} [yakinlik] en az bu yakınlığa gelinir
+   * @param {boolean} [aninda] eşiği ve animasyonu atla (düğmeyle dönüş)
+   */
+  function konumaOdaklan(konum, yakinlik, aninda) {
     // GPS dururken bile birkaç metre oynuyor; her ölçümde kamerayı taşımak
     // haritayı sürekli ileri geri kaydırıyor (mobildeki eşik ile aynı).
-    if (sonKameraHedefi &&
+    if (!aninda && sonKameraHedefi &&
         metreUzaklik(konum, sonKameraHedefi) < KAMERA_ESIGI_M) {
       return;
     }
     sonKameraHedefi = { enlem: konum.enlem, boylam: konum.boylam };
 
-    var hedefYakinlik = yakinlik || 14;
-    if (harita.getZoom() > hedefYakinlik) hedefYakinlik = harita.getZoom();
+    var istenen = yakinlik || 14;
+    if (harita.getZoom() > istenen) istenen = harita.getZoom();
 
-    harita.setView([konum.enlem, konum.boylam], hedefYakinlik, {
-      animate: true,
-      duration: 1.2,
-      easeLinearity: 0.2
-    });
+    hedefMerkez = { enlem: konum.enlem, boylam: konum.boylam };
+    hedefYakinlik = istenen;
+    if (mevcutMerkez === null || aninda) {
+      var merkez = harita.getCenter();
+      mevcutMerkez = { enlem: merkez.lat, boylam: merkez.lng };
+    }
+    if (mevcutYakinlik === null || aninda) mevcutYakinlik = harita.getZoom();
+
+    takibiCalistir();
   }
+
+  /** Kullanıcı haritayı kendi kaydırdıysa takip hedefi geçersizdir:
+      kamera onu geri çekmeye çalışmasın. Sonraki konum ölçümü (ya da
+      "konuma dön" düğmesi) takibi yeniden kurar. */
+  harita.on('dragstart', function () {
+    takibiDurdur();
+    hedefMerkez = null;
+    mevcutMerkez = null;
+    hedefYakinlik = null;
+    mevcutYakinlik = null;
+  });
 
   /* ---------- Konuma dön ---------- */
 

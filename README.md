@@ -140,6 +140,85 @@ cd mobile && flutter pub get && flutter run
 
 Ayrıntılar: [`mobile/README.md`](mobile/README.md)
 
+## Marka ve görünüm
+
+### Logo
+
+İZBAN markası **vektör olarak yeniden üretildi**: resmî logonun 240x240'lık
+PNG'si piksel piksel ölçüldü (halka orta yarıçapı, yayların açıları ve uca
+doğru incelmesi, kelimenin konumu, renkler) ve 200'lük bir kareye ölçeklendi.
+Renkler resmî dosyadan örneklendi: **#ED1B24** kırmızı, **#0C4CA3** mavi.
+
+```bash
+python3 araclar/logo-uret.py
+```
+
+Betik iki yere yazar:
+
+| Hedef | Ne için |
+| --- | --- |
+| `frontend/gorseller/izban-logo.svg` | Duran kopya — üst bantta `<img>` ile |
+| `frontend/index.html` (işaretler arası) | Açılış ekranındaki **canlanan** kopya |
+
+İkisi de otomatik üretilir, elle düzenlenmez. Canlanan kopyanın satır içi
+olması gerekiyor: CSS ile canlandırılabilmesi için. Mobilde aynı geometri
+`mobile/lib/ekranlar/izban_logosu.dart` içinde `CustomPaint` ile çizilir —
+görsel dosya yok, her çözünürlükte keskin ve çizilerek canlanabiliyor.
+
+Yaylar **sabit kalınlıkta değil**, keskin uçtan sönük uca doğru incelir
+(34 → 6 birim). Bu yüzden basit bir çizgi (`stroke`) olarak çizilemiyorlar;
+dolu bir yol olarak üretilip webde maskeyle, mobilde de kısmi yol üreterek
+süpürülüyorlar.
+
+Kelimenin genişliği webde `textLength`, mobilde yatay ölçekle **sabitlenir**:
+cihazın yazı tipi değişse de marka kilidi bozulmaz. Sistem yazı tipi resmî
+logodaki kadar kalın olmadığı için harflere ince bir çizgi eklenir.
+
+Logo hem açılış ekranında hem de ana sayfada başlığın yanında durur. Her iki
+yerde de **beyaz bir plakanın** üstündedir: marka renkleri koyu temada okunur
+kalsın diye.
+
+### Açılış ekranı
+
+Uygulama açılırken marka **çizilerek** gelir: plaka yerine oturur, iki yay orta
+çizgileri boyunca süpürülerek açılır (mavi olan biraz geriden), sonra kelime
+belirir. Toplam ~2 saniye; dokunmak/tuşa basmak hemen geçer, hareket azaltma
+açıksa süre kısalır.
+
+Ekran, uygulamanın **üstünde** durur — altında değil. Sayfa/uygulama arkada
+veriyi okuyup konumu istemeye başlar, kullanıcı animasyonu beklemez.
+
+Mobilde zamanlamanın tamamı tek bir `AnimationController`'a bağlı,
+zamanlayıcıya değil: widget testleri `pumpAndSettle` ile animasyonu sonuna
+kadar sarabiliyor. Zamanlayıcı kullanılsaydı açılış ekranı testlerde açık
+kalır ve ana ekranı gölgelerdi.
+
+Kod: `frontend/css/stil.css` (`.acilis*`) · `mobile/lib/ekranlar/acilis_ekrani.dart`
+
+### Renk paleti ve kabartma kutucuklar
+
+Palet markadan geliyor; yön renkleri de öyle — **kuzey mavi, güney kırmızı**.
+Kutucukların 3 boyutlu görünümü üç katmandan oluşur ve tema değişince üçü
+birlikte değişir:
+
+| Katman | Web değişkeni | Mobil karşılığı |
+| --- | --- | --- |
+| Yüzey eğimi | `--kutu-yuzey` | `KabarikKutu` gradyanı |
+| Üst kenardaki ışık | `--kabartma` | gradyanın açık ilk durağı |
+| Altındaki katmanlı gölge | `--golge` | `CardTheme.shadowColor` + `BoxShadow` |
+
+Mobilde yuvarlatılmış kenarda Flutter tek renk kenar istiyor; üstteki ışık
+hissi bu yüzden kenardan değil gradyandan geliyor.
+
+### Tema (açık / koyu)
+
+Her iki istemcide de üst bantta bir düğme var ve seçim kalıcı:
+
+- **Web:** `localStorage` (`izban.tema`), seçim yapılmadıysa işletim sistemi
+  tercihi geçerli.
+- **Mobil:** `shared_preferences` (`izban.tema`), `ThemeMode` olarak saklanır.
+  Eklenti yoksa (widget testleri) sessizce sistem temasına düşer.
+
 ## Konum ve en yakın durak
 
 Uygulama açılışında konum izni ister, izin verilirse en yakın durağı bulur ve
@@ -215,6 +294,12 @@ faturalandırma hesabı gerektirmez.
   (CDN bağımlılığı yok). Kod: `frontend/js/harita.js`
 - **Mobil:** `flutter_map` paketi. Kod: `mobile/lib/ekranlar/harita_karti.dart`
 
+**Katkı ibaresi haritanın üstünde değil altındadır.** Leaflet'in ve
+`flutter_map`'in kendi katkı kutusu haritanın sağ alt köşesini kapatıyordu;
+kutu kapatıldı (`attributionControl: false` / `RichAttributionWidget`
+kaldırıldı) ve ibare kartın içine, haritanın hemen altına alındı. İbare
+**kaldırılamaz**: veri ODbL lisanslı, gösterilmesi zorunlu.
+
 Haritada hat çizilir, 41 durak işaretlenir, seçili güzergâh vurgulanır, biniş
 yeşil / iniş turuncu gösterilir. Durağa tıklamak onu biniş durağı yapar.
 Kullanıcı konumu **sürüklenebilir** bir işaretle gösterilir — masaüstünde şaşan
@@ -267,6 +352,20 @@ FOSSGIS'in işlettiği ücretsiz topluluk servisi, anahtar istemez. Rota yalnız
 kullanıcı düğmeye bastığında çekilir, kendiliğinden değil.
 
 Kod: `frontend/js/rota.js` · `mobile/lib/servisler/rota_servisi.dart`
+
+### Adım listesi en fazla 7 satır
+
+Yol tarifi alınınca adımlar ("sola dön", "sağa dön") kartın içinde listelenir.
+Uzun bir yürüyüşte bu liste sayfayı metrelerce uzatıyor, altındaki her şey
+aşağı kaçıyordu. Liste artık **kendi içinde kaydırılır** ve aynı anda en fazla
+**7 adım** görünür; altında "12 adım · listeyi kaydırarak devamını gör" yazar.
+
+Yükseklik sabit piksel değil:
+
+- *Webde* 8. adımın üst kenarı ölçülüp yükseklik ondan hesaplanır — adım metni
+  sarıp iki satır olsa da tam 7 adımlık pencere kalır (`--adim-yukseklik`).
+- *Mobilde* satır yüksekliği `TextPainter` ile ölçülür; yazı boyutunu büyüten
+  kullanıcıda da pencere tam 7 adım kalır.
 
 ### Adım adım yönlendirme
 
@@ -368,7 +467,9 @@ testlidir: `frontend/js/yonlendirme.js` · `mobile/lib/servisler/yonlendirme_ser
 Her iki istemcide de: yürüme mesafesine göre en yakın durak, adım adım
 yönlendirme, gidiş yönüne dönen harita, ekranda dik duran yön oku, ilerleme
 çubuğu, kat edilen yolun soluklaşması, 2 saniye basılı tutunca taşınan konum
-iğnesi, konuma dön düğmesi ve pusula.
+iğnesi, konuma dön düğmesi, pusula, canlanan açılış ekranı, açık/koyu tema
+düğmesi, aynı marka paleti ve kabartma kutucuklar, en fazla 7 satırlık adım
+listesi.
 
 Leaflet haritayı döndürmeyi yerleşik desteklemediği için web tarafında
 `leaflet-rotate` eklentisi kullanılır (`frontend/vendor/leaflet/`, MIT).
@@ -379,6 +480,18 @@ Kamera hareketi her iki tarafta da **sürekli takip** ile yumuşatılır: her
 ölçümde yeni animasyon başlatmak hızı sıfırlayıp takılma hissi veriyordu.
 Mobilde `Ticker` ile üstel yumuşatma, webde `requestAnimationFrame` ile
 aynı yaklaşım kullanılır.
+
+**Yakınlık da yumuşatılır.** Önce yalnızca merkez yumuşatılıyordu; "Başla"ya
+basıldığında harita bir anda 17'ye sıçrıyor, ilk hareket de animasyonsuz
+yapılıyordu. Artık merkez ve yakınlık aynı üstel eğriyle birlikte akıyor,
+"Başla" tek bir yumuşak yaklaşma hareketi oluyor. Webde bunun için
+`zoomSnap: 0` gerekiyor: Leaflet varsayılan olarak yakınlığı tam sayıya
+yuvarlar ve geçiş basamak basamak görünürdü.
+
+İki koruma var: kullanıcı haritayı **kendi kaydırırsa** takip hedefi düşer
+(kamera onu geri çekmeye çalışmaz, sonraki ölçümde yeniden kurulur) ve hedef
+**3 km'den uzaksa** animasyon yapılmaz — kamera yol boyunca bütün döşemeleri
+isterdi.
 
 ### Döşeme ve yönlendirme sunucusu uyarısı
 
@@ -435,6 +548,7 @@ etkilenmiyor. Klasörü ASCII bir adla (`izban-nereye-gider`) tutarsanız üçü
 │   └── firebase.json
 ├── frontend/                # HTML + CSS + JS
 │   ├── css/stil.css
+│   ├── gorseller/           # izban-logo.svg — otomatik üretilir
 │   ├── js/duraklar.js       # otomatik üretilir
 │   ├── js/hesap.js          # yolculuk hesabı
 │   ├── js/uygulama.js       # arayüz
@@ -444,5 +558,5 @@ etkilenmiyor. Klasörü ASCII bir adla (`izban-nereye-gider`) tutarsanız üçü
     └── lib/
         ├── modeller/
         ├── servisler/
-        └── ekranlar/
+        └── ekranlar/        # ana_ekran · harita_karti · acilis_ekrani · izban_logosu
 ```

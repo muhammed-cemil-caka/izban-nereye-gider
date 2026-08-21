@@ -39,6 +39,7 @@
     rotaBaslik: document.getElementById('rotaBaslik'),
     rotaOlcu: document.getElementById('rotaOlcu'),
     rotaAdimlar: document.getElementById('rotaAdimlar'),
+    rotaAdimSayisi: document.getElementById('rotaAdimSayisi'),
     rotaTemizle: document.getElementById('rotaTemizle'),
     rotaDurum: document.getElementById('rotaDurum'),
     haritaKarti: document.querySelector('.harita-karti'),
@@ -227,6 +228,7 @@
     sonRotaHedefi = null;
     oge.rotaSonucu.hidden = true;
     oge.rotaAdimlar.textContent = '';
+    oge.rotaAdimSayisi.textContent = '';
     rotaDurumuYaz('');
     if (harita) harita.yuruyusRotasiniTemizle();
   }
@@ -294,6 +296,31 @@
     }, 0);
   }
 
+  // Adım listesinde aynı anda görünecek en fazla adım sayısı. Uzun bir
+  // yürüyüşte liste kartı sayfayı metrelerce uzatıyordu; artık kendi içinde
+  // kaydırılıyor.
+  var GORUNUR_ADIM = 7;
+
+  /**
+   * Listenin yüksekliğini tam 7 adıma sabitler.
+   *
+   * Sabit bir piksel değeri yetmiyor: adım metni sarınca satır iki katına
+   * çıkıyor ve ekranda 5 adım kalıyor. 8. adımın üst kenarı ölçülüp yükseklik
+   * ondan hesaplanıyor — satırlar sarsa da tam 7 adım görünür.
+   */
+  function adimYuksekliginiAyarla() {
+    var liste = oge.rotaAdimlar;
+    liste.style.removeProperty('--adim-yukseklik');
+
+    var satirlar = liste.children;
+    if (satirlar.length <= GORUNUR_ADIM) return;
+
+    var ilk = satirlar[0];
+    var sonrasi = satirlar[GORUNUR_ADIM];
+    var yukseklik = sonrasi.offsetTop - ilk.offsetTop;
+    if (yukseklik > 0) liste.style.setProperty('--adim-yukseklik', yukseklik + 'px');
+  }
+
   function rotaSonucunuYaz(rota, durak) {
     oge.rotaBaslik.textContent = durak.ad + ' durağına yürüyüş';
     oge.rotaOlcu.textContent =
@@ -313,6 +340,11 @@
     });
 
     oge.rotaSonucu.hidden = false;
+    adimYuksekliginiAyarla();
+
+    oge.rotaAdimSayisi.textContent = rota.adimlar.length > GORUNUR_ADIM
+      ? rota.adimlar.length + ' adım · listeyi kaydırarak devamını gör'
+      : rota.adimlar.length + ' adım';
   }
 
   /** Kullanıcının konumundan verilen durağa yürüyüş rotası çizer. */
@@ -914,7 +946,45 @@
     if (harita) harita.guzergahiVurgula(sonuc);
   }
 
+  /**
+   * Açılış ekranını kapatır.
+   *
+   * Sayfa arkada zaten hazırlanıyor; ekran yalnızca marka animasyonu için
+   * duruyor. Dokunmak, tuşa basmak veya süre dolması kapatır. Hareket
+   * azaltma isteyen kullanıcıda süre kısalır.
+   */
+  function acilisiKur() {
+    var ekran = document.getElementById('acilisEkrani');
+    if (!ekran) return;
+
+    document.body.classList.add('acilis-acik');
+
+    var azHareket = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sure = azHareket ? 700 : 2000;
+    var sayac = null;
+
+    function kapat() {
+      if (!ekran) return;
+      clearTimeout(sayac);
+      ekran.classList.add('acilis--kapali');
+      document.body.classList.remove('acilis-acik');
+      document.removeEventListener('keydown', kapat);
+
+      var gidecek = ekran;
+      ekran = null;
+      // Geçiş bitince DOM'dan tamamen kalksın: üstünde duran kaplama,
+      // haritanın dokunma olaylarını yutuyordu.
+      setTimeout(function () { gidecek.remove(); }, 600);
+    }
+
+    sayac = setTimeout(kapat, sure);
+    ekran.addEventListener('click', kapat);
+    document.addEventListener('keydown', kapat);
+  }
+
   function baslat() {
+    acilisiKur();
     temayiBaslat();
     secimleriDoldur();
     baslangicSeciminiYukle();

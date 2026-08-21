@@ -95,13 +95,20 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   Ticker? _takipTikeri;
   LatLng? _kameraHedefNoktasi;
   LatLng? _kameraKonumu;
+  double? _kameraHedefYakinlik;
+  double? _mevcutYakinlik;
   double? _hedefAci;
   double? _mevcutAci;
   Duration _sonKare = Duration.zero;
 
   /// Saniyede kapatılan mesafe oranı. Büyük değer daha hızlı yakalar.
   static const _takipHizi = 3.2;
+  static const _yakinlikHizi = 2.6;
   static const _donusHizi = 4.0;
+
+  /// Bundan uzağa animasyonla gidilmez: kamera yol boyunca bütün döşemeleri
+  /// isterdi, hareket de bitmek bilmezdi.
+  static const _uzakSayilanM = 3000.0;
 
   /// İlk kamera hareketi animasyonsuz olsun: yönlendirme başlar başlamaz
   /// kullanıcıya doğrudan yakınlaşılır.
@@ -235,10 +242,12 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
       return;
     }
 
+    // "Başla" anındaki ilk hareket de yumuşak: eskiden doğrudan move
+    // çağrılıyordu, harita hem zıplıyor hem bir anda 17'ye yakınlaşıyordu.
     _kameraHedefi = konum;
     _kamerayiTasi(
       LatLng(konum.enlem, konum.boylam),
-      animasyonlu: _yonlendirmeBasladi,
+      yakinlik: _yonlendirmeYakinligi,
     );
     _yonlendirmeBasladi = true;
     // Pusula varsa telefonun baktığı yön, yoksa hareket yönü.
@@ -280,23 +289,29 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     if (_haritaHazir) _denetleyici.rotate(0);
   }
 
-  /// Kamerayı hedefe taşır. Sürekli takip tikerini besler.
-  void _kamerayiTasi(LatLng hedef, {required bool animasyonlu}) {
+  /// Kamerayı hedefe taşır; hareketi sürekli takip tikeri yürütür.
+  ///
+  /// [yakinlik] verilirse kamera oraya kadar yumuşayarak yakınlaşır — ama
+  /// kullanıcı zaten daha yakındaysa yakınlığı bozulmaz.
+  void _kamerayiTasi(LatLng hedef, {double? yakinlik}) {
+    final kamera = _denetleyici.camera;
     _kameraHedefNoktasi = hedef;
+    _kameraKonumu ??= kamera.center;
+    _mevcutYakinlik ??= kamera.zoom;
 
-    if (!animasyonlu) {
+    if (yakinlik != null) {
+      _kameraHedefYakinlik = kamera.zoom < yakinlik ? yakinlik : kamera.zoom;
+    }
+
+    final uzaklik = const Distance().distance(_kameraKonumu!, hedef);
+    if (uzaklik > _uzakSayilanM) {
       _kameraKonumu = hedef;
-      _denetleyici.move(hedef, _yakinlik());
+      _mevcutYakinlik = _kameraHedefYakinlik ?? kamera.zoom;
+      _denetleyici.move(hedef, _mevcutYakinlik!);
       return;
     }
 
     _takibiCalistir();
-  }
-
-  double _yakinlik() {
-    // Kullanıcı uzaklaştırdıysa yakınlaştırmasını zorla değiştirme.
-    final mevcut = _denetleyici.camera.zoom;
-    return mevcut < _yonlendirmeYakinligi ? _yonlendirmeYakinligi : mevcut;
   }
 
   void _takibiCalistir() {
@@ -332,8 +347,19 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
         mevcut.longitude + (hedef.longitude - mevcut.longitude) * k,
       );
 
+      // Yakınlık da aynı biçimde yumuşatılır; yoksa "Başla" anında harita
+      // bir anda 17'ye sıçrıyordu.
+      final hedefYakinlik = _kameraHedefYakinlik;
+      var yakinlik = _mevcutYakinlik ?? _denetleyici.camera.zoom;
+      if (hedefYakinlik != null) {
+        final ky = 1 - matematik.exp(-_yakinlikHizi * dt);
+        yakinlik += (hedefYakinlik - yakinlik) * ky;
+        if ((hedefYakinlik - yakinlik).abs() > 0.01) isVar = true;
+      }
+
       _kameraKonumu = yeni;
-      _denetleyici.move(yeni, _yakinlik());
+      _mevcutYakinlik = yakinlik;
+      _denetleyici.move(yeni, yakinlik);
 
       // Hedefe yeterince yaklaşınca (yaklaşık 1 m) iş biter.
       if ((hedef.latitude - yeni.latitude).abs() > 1e-5 ||
@@ -426,7 +452,8 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
                 Text('HARİTA', style: tema.textTheme.labelMedium),
                 const SizedBox(height: 2),
                 Text(
-                  'Durağa dokun · konumu düzeltmek için işarete 2 sn basılı tut',
+                  'Durağa dokun · konumu düzeltmek için işarete 2 sn basılı tut '
+                  '· ⊕ düğmesi konumuna döner',
                   style: tema.textTheme.bodySmall,
                 ),
               ],
@@ -533,14 +560,6 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
                         );
                       },
                     ),
-                    RichAttributionWidget(
-                      attributions: [
-                        TextSourceAttribution(
-                          'OpenStreetMap katkıcıları',
-                          onTap: () {},
-                        ),
-                      ],
-                    ),
                   ],
                 ),
 
@@ -555,6 +574,19 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
                   ),
                 ),
               ],
+            ),
+          ),
+
+          // Leaflet/flutter_map'in kendi katkı kutusu haritanın sağ altını
+          // kapatıyordu. İbare ODbL gereği zorunlu olduğu için kaldırılmadı,
+          // haritanın altına alındı.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Text(
+              'Harita verisi © OpenStreetMap katkıcıları',
+              style: tema.textTheme.bodySmall?.copyWith(
+                color: tema.textTheme.bodySmall?.color?.withValues(alpha: .7),
+              ),
             ),
           ),
         ],
@@ -754,24 +786,19 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
   /// Kamerayı kullanıcının konumuna geri getirir.
   ///
   /// Kullanıcı hattın başka bir yerine bakmak için haritayı kaydırdığında
-  /// konumuna dönmek için geri kaydırmak zorunda kalmasın. Animasyon yok:
-  /// düğmeye basınca beklenen şey anında orada olmaktır.
+  /// konumuna dönmek için geri kaydırmak zorunda kalmasın. Hareket, takipteki
+  /// yumuşatmanın aynısıdır.
   void _konumaGeriDon() {
     final konum = widget.konumDurumu.value.konum;
     if (konum == null || !_haritaHazir) return;
 
-    final hedef = LatLng(konum.enlem, konum.boylam);
-    final mevcutYakinlik = _denetleyici.camera.zoom;
-    final yakinlik = mevcutYakinlik < _konumaDonYakinligi
-        ? _konumaDonYakinligi
-        : mevcutYakinlik;
-
-    // Süren takip animasyonu araya girip kamerayı geri çekmesin.
-    _takibiDurdur();
-    _kameraHedefNoktasi = hedef;
-    _kameraKonumu = hedef;
+    // Gürültü eşiği yalnızca kendiliğinden gelen ölçümler içindir; düğmeye
+    // basıldığında kamera her hâlükârda konuma dönmeli.
     _kameraHedefi = konum;
-    _denetleyici.move(hedef, yakinlik);
+    _kamerayiTasi(
+      LatLng(konum.enlem, konum.boylam),
+      yakinlik: _konumaDonYakinligi,
+    );
   }
 }
 

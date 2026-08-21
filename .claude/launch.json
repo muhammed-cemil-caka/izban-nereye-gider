@@ -9,6 +9,15 @@
         "5173"
       ],
       "port": 5173
+    },
+    {
+      "name": "frontend-onizleme",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "araclar/gelistirme-sunucusu.py",
+        "5174"
+      ],
+      "port": 5174
     }
   ]
 }

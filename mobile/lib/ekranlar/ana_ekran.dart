@@ -8,6 +8,7 @@ import 'dart:async';
 import '../servisler/rota_servisi.dart';
 import '../servisler/yonlendirme_servisi.dart';
 import 'harita_karti.dart';
+import 'izban_logosu.dart';
 
 class AnaEkran extends StatefulWidget {
   /// Verilmezse assets/duraklar.json okunur; testler hazır servis geçebilir.
@@ -16,7 +17,17 @@ class AnaEkran extends StatefulWidget {
   /// Verilmezse gerçek cihaz konumu kullanılır; testler sahte servis geçebilir.
   final KonumServisi? konumServisi;
 
-  const AnaEkran({super.key, this.servis, this.konumServisi});
+  /// Tema seçimi uygulama kökünde tutulur; üst bantdaki düğme onu değiştirir.
+  final ThemeMode temaKipi;
+  final ValueChanged<ThemeMode>? temaDegisti;
+
+  const AnaEkran({
+    super.key,
+    this.servis,
+    this.konumServisi,
+    this.temaKipi = ThemeMode.system,
+    this.temaDegisti,
+  });
 
   @override
   State<AnaEkran> createState() => _AnaEkranDurumu();
@@ -395,10 +406,63 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
   @override
   Widget build(BuildContext context) {
+    final renkler = Theme.of(context).colorScheme;
+    final koyuMu = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('İZBAN Nereye Gider?'),
         centerTitle: false,
+        titleSpacing: 12,
+        title: Row(
+          children: [
+            // Logo beyaz plakanın üstünde durur: marka renkleri koyu temada
+            // da okunur kalsın, kabartma dili kartlarla aynı olsun.
+            Container(
+              width: 40,
+              height: 40,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: renkler.outlineVariant),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x220B1F3A),
+                    blurRadius: 10,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const IzbanLogosu(boyut: 34),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(child: Text('İZBAN Nereye Gider?')),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: koyuMu ? 'Açık temaya geç' : 'Koyu temaya geç',
+            icon: Icon(koyuMu ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+            onPressed: widget.temaDegisti == null
+                ? null
+                : () => widget.temaDegisti!(
+                      koyuMu ? ThemeMode.light : ThemeMode.dark,
+                    ),
+          ),
+          const SizedBox(width: 4),
+        ],
+        // İnce marka şeridi: mavi → kırmızı.
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(3),
+          child: Container(
+            height: 3,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0C4CA3), Color(0xFFED1B24)],
+              ),
+            ),
+          ),
+        ),
       ),
       body: FutureBuilder<List<Durak>>(
         future: _duraklarGelecegi,
@@ -659,6 +723,7 @@ class _OzetKarti extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Row(
+              spacing: 10,
               children: [
                 _OzetKutu(deger: yolculuk.sureMetni, etiket: 'tahmini süre'),
                 _OzetKutu(deger: '${yolculuk.durakSayisi}', etiket: 'durak'),
@@ -682,6 +747,56 @@ class _OzetKarti extends StatelessWidget {
   }
 }
 
+/// Yüzeyi eğimli, kenarı çizgili, altı gölgeli kutucuk.
+///
+/// Kabartma hissi üç katmandan geliyor: yüzeydeki eğim (gradyan), üst kenardaki
+/// ışık çizgisi ve altındaki gölge — web'deki --kutu-yuzey/--kabartma/--golge
+/// üçlüsünün karşılığı.
+class KabarikKutu extends StatelessWidget {
+  final Widget cocuk;
+  final EdgeInsetsGeometry dolgu;
+  final double yuvarlaklik;
+
+  const KabarikKutu({
+    super.key,
+    required this.cocuk,
+    this.dolgu = const EdgeInsets.all(14),
+    this.yuvarlaklik = 12,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final renkler = Theme.of(context).colorScheme;
+    final acik = Theme.of(context).brightness == Brightness.light;
+
+    return Container(
+      padding: dolgu,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: acik
+              ? const [Color(0xFFFFFFFF), Color(0xFFF2F6FC)]
+              : const [Color(0xFF16294A), Color(0xFF0D1C33)],
+        ),
+        borderRadius: BorderRadius.circular(yuvarlaklik),
+        // Kenar tek renk olmak zorunda (yuvarlatılmış kenarda Flutter böyle
+        // istiyor); üstteki ışık hissi gradyanın açık ilk durağından geliyor.
+        border: Border.all(color: renkler.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: acik ? const Color(0x1F0B1F3A) : const Color(0x66000000),
+            blurRadius: 14,
+            spreadRadius: -4,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: cocuk,
+    );
+  }
+}
+
 class _OzetKutu extends StatelessWidget {
   final String deger;
   final String etiket;
@@ -692,12 +807,20 @@ class _OzetKutu extends StatelessWidget {
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(deger, style: tema.textTheme.headlineSmall),
-          Text(etiket, style: tema.textTheme.bodySmall),
-        ],
+      child: KabarikKutu(
+        cocuk: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              deger,
+              style: tema.textTheme.headlineSmall?.copyWith(
+                color: tema.colorScheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(etiket, style: tema.textTheme.bodySmall),
+          ],
+        ),
       ),
     );
   }
@@ -1050,27 +1173,99 @@ class _RotaKarti extends StatelessWidget {
               visualDensity: VisualDensity.compact,
             ),
             const SizedBox(height: 8),
-            ...yol.adimlar.map((adim) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.chevron_right, size: 16),
-                      const SizedBox(width: 4),
-                      Expanded(child: Text(adim.metin, style: tema.textTheme.bodySmall)),
-                      Text(
-                        adim.mesafeM < 1000
-                            ? '${adim.mesafeM.round()} m'
-                            : '${(adim.mesafeM / 1000).toStringAsFixed(1)} km',
-                        style: tema.textTheme.bodySmall
-                            ?.copyWith(color: tema.textTheme.bodySmall?.color?.withValues(alpha: .6)),
-                      ),
-                    ],
-                  ),
-                )),
+            _AdimListesi(adimlar: yol.adimlar),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Yürüyüş adımları — aynı anda en fazla 7 tanesi görünür.
+///
+/// Önce bütün adımlar alt alta diziliyordu; uzun bir yürüyüşte kart ekranı
+/// metrelerce uzatıyor, altındaki her şey aşağı kaçıyordu. Artık liste kendi
+/// içinde kaydırılıyor.
+class _AdimListesi extends StatefulWidget {
+  final List<RotaAdimi> adimlar;
+
+  const _AdimListesi({required this.adimlar});
+
+  @override
+  State<_AdimListesi> createState() => _AdimListesiDurumu();
+}
+
+class _AdimListesiDurumu extends State<_AdimListesi> {
+  static const gorunurAdim = 7;
+  final _kaydirma = ScrollController();
+
+  @override
+  void dispose() {
+    _kaydirma.dispose();
+    super.dispose();
+  }
+
+  static String _mesafe(double metre) => metre < 1000
+      ? '${metre.round()} m'
+      : '${(metre / 1000).toStringAsFixed(1)} km';
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final soluk = tema.textTheme.bodySmall
+        ?.copyWith(color: tema.textTheme.bodySmall?.color?.withValues(alpha: .6));
+
+    final satirlar = widget.adimlar
+        .map((adim) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.chevron_right, size: 16),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(adim.metin, style: tema.textTheme.bodySmall),
+                  ),
+                  Text(_mesafe(adim.mesafeM), style: soluk),
+                ],
+              ),
+            ))
+        .toList();
+
+    if (satirlar.length <= gorunurAdim) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: satirlar);
+    }
+
+    // Sabit piksel yerine gerçek satır yüksekliği ölçülüyor: yazı boyutunu
+    // büyüten kullanıcıda da tam 7 adımlık pencere kalsın.
+    final olcer = TextPainter(
+      text: TextSpan(text: 'Örnek', style: tema.textTheme.bodySmall),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final satirYuksekligi = olcer.height + 6; // dikey dolgu 3 + 3
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: satirYuksekligi * gorunurAdim,
+          child: Scrollbar(
+            controller: _kaydirma,
+            thumbVisibility: true,
+            child: ListView(
+              controller: _kaydirma,
+              padding: const EdgeInsets.only(right: 10),
+              children: satirlar,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${widget.adimlar.length} adım · listeyi kaydırarak devamını gör',
+          style: soluk,
+        ),
+      ],
     );
   }
 }

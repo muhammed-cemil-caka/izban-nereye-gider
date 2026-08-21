@@ -42,6 +42,9 @@ dependencies:
   latlong2: ^0.10.1
   flutter_compass: ^0.8.1
 
+  # Tema seçimi uygulama kapansa da hatırlansın diye
+  shared_preferences: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
