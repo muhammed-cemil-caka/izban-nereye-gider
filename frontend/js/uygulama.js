@@ -525,9 +525,11 @@
     yakinDurak = enYakin.durak;
 
     oge.yakinDurakAd.textContent = enYakin.durak.ad;
-    oge.yakinDurakMesafe.textContent = enYakin.yuruyusMu
-      ? mesafeBicimle(enYakin.mesafeM) + ' yürüyüş'
-      : mesafeBicimle(enYakin.mesafeM);
+    oge.yakinDurakMesafe.textContent = enYakin.kip === 'araba'
+      ? mesafeBicimle(enYakin.mesafeM) + ' araba ile'
+      : enYakin.kip === 'yuruyus'
+        ? mesafeBicimle(enYakin.mesafeM) + ' yürüyüş'
+        : mesafeBicimle(enYakin.mesafeM);
     oge.yolTarifi.setAttribute(
       'aria-label',
       enYakin.durak.ad + ' durağına yürüyerek yol tarifini haritada göster'
@@ -661,13 +663,17 @@
    * görünen durak yürüyerek çok daha uzak olabiliyor. Ölçüldü: Çiğli kuş
    * uçuşu daha yakın ama yürüyüşle 2,5 km; Mavişehir 1,4 km.
    */
-  function adaylariYuruyuseGoreSirala(konum, adaylar) {
-    if (typeof yuruyusMesafeleriAl !== 'function') return;
+  function adaylariGercekMesafeyeGoreSirala(konum, adaylar, kip) {
+    if (typeof mesafeleriAl !== 'function') return;
 
+    var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
     var hedefler = adaylar.map(function (a) { return a.durak.konum; });
 
-    yuruyusMesafeleriAl(konum, hedefler)
+    mesafeleriAl(konum, hedefler, secilenKip)
       .then(function (olcumler) {
+        // Kullanıcı bu arada kipi değiştirdiyse eski yanıt listeyi bozmasın.
+        if (secilenKip !== siralamaKipi) return;
+
         var yeniSira = adaylar
           .map(function (aday, sira) {
             var olcum = olcumler[sira];
@@ -676,7 +682,7 @@
               durak: aday.durak,
               mesafeM: olcum.mesafeM,
               sureSn: olcum.sureSn,
-              yuruyusMu: true
+              kip: secilenKip
             };
           })
           .sort(function (a, b) { return a.mesafeM - b.mesafeM; });
@@ -687,6 +693,44 @@
       .catch(function () {
         // Servise ulaşılamazsa kuş uçuşu sıralama kalır; site çalışmaya devam eder.
       });
+  }
+
+  /**
+   * Kip seçilince hem liste o kiple sıralanır hem de rota çizilir.
+   *
+   * Kullanıcı "arabayla" dediğinde sorduğu şey "hangi durağa arabayla daha
+   * kısa giderim"; sıralama yürüyüşte kalırsa yanlış durağa yönlendirilir.
+   * Sıralama sonucu geldiğinde rota o kipin en yakın durağına çizilir.
+   */
+  function kipleYolTarifi(kip) {
+    var oncekiKip = siralamaKipi;
+    siralamaKipiniDegistir(kip);
+
+    // Kip değişmediyse liste zaten doğru; doğrudan rotayı çiz.
+    if (oncekiKip === kip || !sonKonum || !tumAdaylar.length) {
+      if (yakinDurak) yolTarifiniGoster(yakinDurak, kip);
+      return;
+    }
+
+    // Sıralama isteği dönene kadar eldeki durakla başla; liste tazelenince
+    // en yakın durak değişirse kullanıcı listeden seçebilir.
+    if (yakinDurak) yolTarifiniGoster(yakinDurak, kip);
+  }
+
+  /**
+   * En yakın durak listesini verilen kiple yeniden sıralar.
+   *
+   * Yürüyerek en yakın durak ile arabayla en yakın durak aynı olmayabiliyor:
+   * yaya köprüsünden geçilen durak yürüyerek yakın ama arabayla dolambaçlı.
+   */
+  function siralamaKipiniDegistir(kip) {
+    var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
+    if (secilenKip === siralamaKipi) return;
+
+    siralamaKipi = secilenKip;
+    if (sonKonum && tumAdaylar.length) {
+      adaylariGercekMesafeyeGoreSirala(sonKonum, tumAdaylar, secilenKip);
+    }
   }
 
   // Yürüme sıralamasının hesaplandığı konum ve tazeleme eşiği.
@@ -730,7 +774,7 @@
     // İstek sayısı, aşağıdaki 150 m'lik tazeleme eşiğiyle sınırlı kalıyor.
     if (!yonlendirmeOturumu) {
       sonYuruyusKonumu = { enlem: konum.enlem, boylam: konum.boylam };
-      adaylariYuruyuseGoreSirala(sonKonum, adaylar);
+      adaylariGercekMesafeyeGoreSirala(sonKonum, adaylar, siralamaKipi);
     }
   }
 
@@ -880,6 +924,8 @@
   var yonlendirmeOturumu = null;
   var sonRota = null;
   var sonRotaKip = 'yuruyus';
+  // En yakın durak listesi hangi kiple sıralandı?
+  var siralamaKipi = 'yuruyus';
   var sonRotaHedefi = null;
 
   // Bilinen son yön. Yeni ölçümde açı hesaplanamazsa (henüz yeterli hareket
@@ -1145,18 +1191,20 @@
     oge.konumTekrar.addEventListener('click', konumuBul);
 
     oge.yolTarifi.addEventListener('click', function () {
-      if (yakinDurak) yolTarifiniGoster(yakinDurak, 'yuruyus');
+      if (yakinDurak) kipleYolTarifi('yuruyus');
     });
 
     oge.arabaTarifi.addEventListener('click', function () {
-      if (yakinDurak) yolTarifiniGoster(yakinDurak, 'araba');
+      if (yakinDurak) kipleYolTarifi('araba');
     });
 
     // Kip düğmeleri aynı hedefe farklı kiple yeniden rota ister.
     oge.rotaKipYuruyus.addEventListener('click', function () {
+      siralamaKipiniDegistir('yuruyus');
       if (sonRotaHedefi) yolTarifiniGoster(sonRotaHedefi, 'yuruyus');
     });
     oge.rotaKipAraba.addEventListener('click', function () {
+      siralamaKipiniDegistir('araba');
       if (sonRotaHedefi) yolTarifiniGoster(sonRotaHedefi, 'araba');
     });
 

@@ -24,6 +24,8 @@ const {
   sorguKur,
   hatlariCoz,
   duragaYakinHatlar,
+  otobusDuraklariniCoz,
+  duragaYakinOtobusDuragi,
   OTOBUS_YAKINLIK_M
 } = require('./eshot-hatlari.js');
 
@@ -142,13 +144,21 @@ function surumuArtir(surum) {
   }
 
   const hatlar = hatlariCoz(yanit);
-  console.log(`${hatlar.length} ESHOT hattı çözüldü.\n`);
+  const otobusDuraklari = otobusDuraklariniCoz(yanit);
+  console.log(`${hatlar.length} ESHOT hattı, ${otobusDuraklari.length} otobüs durağı çözüldü.\n`);
 
   let hatliDurak = 0;
+  let duraklıAmaHatsiz = 0;
   let toplamHat = 0;
 
   for (const durak of veri.duraklar) {
     const yakinHatlar = duragaYakinHatlar(durak.konum, hatlar);
+
+    // Hat ilişkisi haritalanmamış olabilir; o zaman durağın kendisine bakılır.
+    // Yalnızca ilişkilere güvenmek Torbalı, Pancar, Cumaovası, Gaziemir gibi
+    // gerçek ESHOT aktarmalarını "yok" gösteriyordu.
+    const yakinDurak = duragaYakinOtobusDuragi(durak.konum, otobusDuraklari);
+
     const aktarma = new Set((durak.aktarma || []).filter((a) => a !== 'ESHOT'));
 
     if (yakinHatlar.length) {
@@ -158,12 +168,21 @@ function surumuArtir(surum) {
       toplamHat += yakinHatlar.length;
     } else {
       delete durak.otobusHatlari;
+      if (yakinDurak) {
+        aktarma.add('ESHOT');
+        duraklıAmaHatsiz++;
+      }
     }
 
     if (aktarma.size) durak.aktarma = [...aktarma].sort((a, b) => a.localeCompare(b, 'tr'));
     else delete durak.aktarma;
 
-    console.log(`  ${durak.ad.padEnd(14)} ${yakinHatlar.length ? yakinHatlar.join(', ') : '—'}`);
+    const not = yakinHatlar.length
+      ? yakinHatlar.join(', ')
+      : yakinDurak
+        ? `otobüs durağı var, hat kaydı yok — ${yakinDurak.ad || '(adsız)'} (${Math.round(yakinDurak.mesafeM)} m)`
+        : '—';
+    console.log(`  ${durak.ad.padEnd(14)} ${not}`);
   }
 
   veri.surum = surumuArtir(veri.surum);
@@ -174,7 +193,9 @@ function surumuArtir(surum) {
 
   fs.writeFileSync(hedefYolu, JSON.stringify(veri, null, 2) + '\n');
 
-  console.log(`\n${hatliDurak}/${veri.duraklar.length} durakta ESHOT hattı var `
-    + `(toplam ${toplamHat} hat kaydı).`);
+  console.log(`\n${hatliDurak}/${veri.duraklar.length} durakta hat numarası var `
+    + `(toplam ${toplamHat} kayıt).`);
+  console.log(`${duraklıAmaHatsiz} durakta ESHOT durağı var ama hat ilişkisi `
+    + 'OSM\'de haritalanmamış.');
   console.log(`Sürüm ${veri.surum} yazıldı. Şimdi: node araclar/veri-dagit.js`);
 })();

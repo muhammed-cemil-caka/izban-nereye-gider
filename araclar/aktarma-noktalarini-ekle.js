@@ -18,7 +18,11 @@
 const fs = require('fs');
 const path = require('path');
 const { calistir } = require('./overpass.js');
-const { metreUzaklik, OTOBUS_YAKINLIK_M } = require('./eshot-hatlari.js');
+const {
+  metreUzaklik,
+  eshotDuragiMi,
+  OTOBUS_DURAK_YAKINLIK_M
+} = require('./eshot-hatlari.js');
 
 // Raylı/vapur aktarmaları için kullanılan mesafe (duraklar.json'daki
 // aktarma etiketleri de bu yarıçapla üretilmişti).
@@ -37,7 +41,9 @@ function sorguKur(duraklar) {
       ${cevre('node(AROUND)["station"="subway"];', RAYLI_YAKINLIK_M)}
       ${cevre('node(AROUND)["amenity"="ferry_terminal"];', RAYLI_YAKINLIK_M)}
       ${cevre('way(AROUND)["amenity"="ferry_terminal"];', RAYLI_YAKINLIK_M)}
-      ${cevre('node(AROUND)["highway"="bus_stop"];', OTOBUS_YAKINLIK_M)}
+      ${cevre('node(AROUND)["highway"="bus_stop"];', OTOBUS_DURAK_YAKINLIK_M)}
+      ${cevre('node(AROUND)["public_transport"="platform"]["bus"="yes"];', OTOBUS_DURAK_YAKINLIK_M)}
+      ${cevre('node(AROUND)["amenity"="bus_station"];', OTOBUS_DURAK_YAKINLIK_M)}
     );
     out center tags;
   `;
@@ -59,7 +65,13 @@ function turunuBul(etiket) {
   if (etiket.railway === 'tram_stop') return 'Tramvay';
   if (etiket.station === 'subway') return 'Metro';
   if (etiket.amenity === 'ferry_terminal') return 'Vapur';
-  if (etiket.highway === 'bus_stop') return 'ESHOT';
+
+  const otobus = etiket.highway === 'bus_stop' ||
+    etiket.amenity === 'bus_station' ||
+    (etiket.public_transport === 'platform' && etiket.bus === 'yes');
+  // Özel servis/minibüs durakları ESHOT sayılmaz.
+  if (otobus) return eshotDuragiMi(etiket) ? 'ESHOT' : null;
+
   return null;
 }
 
@@ -93,7 +105,8 @@ function turunuBul(etiket) {
 
   let noktaliDurak = 0;
   for (const durak of veri.duraklar) {
-    const yakinlik = (tur) => (tur === 'ESHOT' ? OTOBUS_YAKINLIK_M : RAYLI_YAKINLIK_M);
+    const yakinlik = (tur) =>
+      tur === 'ESHOT' ? OTOBUS_DURAK_YAKINLIK_M : RAYLI_YAKINLIK_M;
 
     // Her tür için EN YAKIN nokta yeter: kullanıcı "metroya nasıl giderim"
     // diye soruyor, aynı türden beş kapıyı listelemenin faydası yok.
@@ -139,7 +152,7 @@ function turunuBul(etiket) {
   veri.kaynak = veri.kaynak || {};
   veri.kaynak.aktarmaNoktalari =
     'OpenStreetMap — her aktarma türünün durağa en yakın noktası '
-    + `(raylı/vapur ${RAYLI_YAKINLIK_M} m, otobüs ${OTOBUS_YAKINLIK_M} m)`;
+    + `(raylı/vapur ${RAYLI_YAKINLIK_M} m, otobüs ${OTOBUS_DURAK_YAKINLIK_M} m)`;
 
   fs.writeFileSync(hedefYolu, JSON.stringify(veri, null, 2) + '\n');
   console.log(`\n${noktaliDurak} durakta aktarma noktası var.`);

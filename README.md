@@ -129,11 +129,32 @@ Neden 400 m: otobüs durakları şehirde çok sık. Raylı aktarmalar için kull
 600 m ile neredeyse her İZBAN durağı düzinelerce hat topluyor ve bilgi anlamını
 yitiriyor.
 
+**İki kademeli tespit.** Önce yalnızca haritalanmış `route=bus` ilişkilerine
+bakılıyordu ve bu, gerçek aktarmaları "yok" gösteriyordu: Torbalı, Pancar,
+Gaziemir, Havalimanı, Selçuk gibi duraklarda otobüs durağı var ama İzmir'in
+dışında OSM'de çoğu durak hiçbir hat ilişkisine üye değil. Artık:
+
+| Bulunan | Sonuç |
+| --- | --- |
+| Durağa 400 m'de hat ilişkisi | `ESHOT` + **hat numaraları** |
+| Durağa 600 m'de ESHOT durağı | `ESHOT` (numara yok — OSM'de haritalanmamış) |
+| Hiçbiri | aktarma yok |
+
+Numara yarıçapı dar (400 m): 600 m'de her durak düzinelerce hat topluyor.
+"Durak var mı" sorusu ise 600 m'den soruluyor — raylı aktarmalarla aynı mesafe.
+Havalimanı'nın ESHOT durağı (`Havalimanı Dış Hatlar Gidiş`) İZBAN istasyonuna
+419 m; 400 m'lik yarıçapta kaçıyordu.
+
 **İşletmeci filtresi:** OSM'de İzmir hatlarının bir kısmında `operator` alanı
 "ESHOT" yazıyor, bir kısmında ise bu alan hiç yok. Etiketsizleri elemek gerçek
-hatları kaybettiriyor (ör. 535, 912), o yüzden etiketsizler ESHOT sayılıyor;
-açıkça **başka** bir işletmeci yazanlar (özel halk otobüsü kooperatifleri)
-elenir.
+hatları kaybettiriyor (ör. 535, 912), o yüzden etiketsizler ESHOT sayılıyor.
+Açıkça **başka** taşıyıcı olanlar elenir: minibüs/dolmuş kooperatifleri
+(`Karşıyaka Minibüs Durakları`), havalimanı servisleri (`HAVAŞ`,
+`İzmir Transfer`), turistik seferler (`Bus to Ephesus`).
+
+Sonuç: **41 durağın 34'ünde** ESHOT aktarması var, 21'inde hat numaralarıyla.
+Aktarması olmayan 7 durak: Hatundere, İnkılap, Cumaovası, Develi, Tekeli,
+Kuşçuburun, Belevi.
 
 **Overpass tuzakları** — üçü de veriyi sessizce bozuyordu, betikte kapatıldı:
 
@@ -493,8 +514,18 @@ sesli talimatlar da öyle. Kipe göre değişen üç şey var:
 > Araç içi kullanım sürücünün sorumluluğundadır; uygulama resmî bir navigasyon
 > cihazı değildir.
 
-En yakın durak sıralaması her hâlükârda **yürüme** mesafesine göre yapılır:
-kullanıcı durağa yürüyerek gidiyor, araba mesafesi orada yanıltıcı olurdu.
+**En yakın durak listesi de kipe göre sıralanır.** "Arabayla" seçilince liste
+araba mesafesine, "Yürüyerek" seçilince yürüme mesafesine göre yeniden
+sıralanır — ikisi çoğu zaman farklı çıkıyor. Ölçüldü (Halkapınar civarından):
+
+| | En yakın | Sonrakiler |
+| --- | --- | --- |
+| Yürüyerek | Halkapınar **606 m** | Salhane 2,5 km · Alsancak Gar 2,5 km |
+| Arabayla | Hilal **4,4 km** | Halkapınar 4,9 km · Alsancak Gar 4,9 km |
+
+Yaya köprüsünden geçilen durak yürüyerek yakın ama arabayla dolambaçlı; tek
+yön ve bölünmüş yollar sıralamayı tamamen değiştiriyor. Mesafeler OSRM'in
+matris servisinden, kipin kendi profiliyle tek istekte alınır.
 
 Yönlendirme servisi: [OSRM](https://routing.openstreetmap.de) —
 FOSSGIS'in işlettiği ücretsiz topluluk servisi, anahtar istemez. Rota yalnızca

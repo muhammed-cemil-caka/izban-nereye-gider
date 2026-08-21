@@ -114,22 +114,32 @@ function rotaAl(baslangic, bitis, kip) {
 }
 
 /**
- * Bir noktadan birden çok hedefe yürüme mesafelerini tek istekte alır.
+ * Bir noktadan birden çok hedefe GERÇEK mesafeleri tek istekte alır.
  *
  * Kuş uçuşu mesafe yanıltıyor: dere, otoyol veya demiryolu araya girdiğinde
  * yakın görünen durak yürüyerek çok daha uzak olabiliyor. OSRM'in matris
  * servisi bunu tek çağrıda çözüyor, hedef başına ayrı rota istemeye gerek yok.
  *
+ * Kip önemli: yürüyerek en yakın durak ile arabayla en yakın durak farklı
+ * olabiliyor. Yaya köprüsünden geçilen durak yürüyerek yakın ama arabayla
+ * dolambaçlı; bölünmüş yol kenarındaki durak ise tersi.
+ *
+ * @param {object} baslangic
+ * @param {Array} hedefler
+ * @param {string} [kip] 'yuruyus' (varsayılan) veya 'araba'
  * @returns {Promise<Array<{mesafeM: number, sureSn: number}>>} hedeflerle aynı sırada
  */
-function yuruyusMesafeleriAl(baslangic, hedefler) {
+function mesafeleriAl(baslangic, hedefler, kip) {
   if (!hedefler.length) return Promise.resolve([]);
+
+  var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
+  var taban = ROTA_TABANLARI[secilenKip];
 
   var noktalar = [baslangic].concat(hedefler)
     .map(function (n) { return n.boylam + ',' + n.enlem; })
     .join(';');
 
-  var adres = ROTA_TABAN.replace('/route/v1/foot', '/table/v1/foot') +
+  var adres = taban.replace('/route/v1/', '/table/v1/') +
     '/' + noktalar + '?sources=0&annotations=distance,duration';
 
   return fetch(adres)
@@ -139,7 +149,7 @@ function yuruyusMesafeleriAl(baslangic, hedefler) {
     })
     .then(function (veri) {
       if (veri.code !== 'Ok' || !veri.distances || !veri.distances[0]) {
-        throw new Error('Yürüme mesafeleri alınamadı.');
+        throw new Error('Mesafeler alınamadı.');
       }
 
       var mesafeler = veri.distances[0];
@@ -174,6 +184,6 @@ if (typeof module !== 'undefined') {
   module.exports = {
     manevrayiTurkcelestir: manevrayiTurkcelestir,
     rotaSuresiBicimle: rotaSuresiBicimle,
-    yuruyusMesafeleriAl: yuruyusMesafeleriAl
+    mesafeleriAl: mesafeleriAl
   };
 }

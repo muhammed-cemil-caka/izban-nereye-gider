@@ -58,6 +58,9 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   Rota? _yuruyusRotasi;
   RotaHedefi? _rotaHedefi;
   RotaKipi _rotaKipi = RotaKipi.yuruyus;
+
+  /// En yakın durak listesi hangi kiple sıralandı?
+  RotaKipi _siralamaKipi = RotaKipi.yuruyus;
   bool _rotaAraniyor = false;
   String? _rotaHatasi;
 
@@ -130,7 +133,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
         // Kuş uçuşu sıralama anında gösterilir; yürüme mesafesi gelince düzelir.
         _sonYuruyusKonumu = konum;
-        _adaylariYuruyuseGoreSirala(konum, adaylar);
+        _adaylariGercekMesafeyeGoreSirala(konum, adaylar, kip: _siralamaKipi);
 
       case KonumHatasi(:final mesaj, :final ayarlarGerekli):
         setState(() {
@@ -150,23 +153,30 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// Kuş uçuşu yanıltıyor: dere, otoyol veya demiryolu araya girdiğinde yakın
   /// görünen durak yürüyerek çok daha uzak olabiliyor. Ölçüldü: Çiğli kuş
   /// uçuşu daha yakın ama yürüyüşle 2,5 km; Mavişehir 1,4 km.
-  Future<void> _adaylariYuruyuseGoreSirala(
+  Future<void> _adaylariGercekMesafeyeGoreSirala(
     Konum konum,
-    List<YakinDurak> adaylar,
-  ) async {
+    List<YakinDurak> adaylar, {
+    RotaKipi kip = RotaKipi.yuruyus,
+  }) async {
     if (adaylar.isEmpty) return;
 
     try {
-      final olcumler = await const RotaServisi()
-          .yuruyusMesafeleri(konum, adaylar.map((a) => a.durak.konum).toList());
+      final olcumler = await const RotaServisi().mesafeler(
+        konum,
+        adaylar.map((a) => a.durak.konum).toList(),
+        kip: kip,
+      );
       if (!mounted) return;
+
+      // Kullanıcı bu arada kipi değiştirdiyse eski yanıt listeyi bozmasın.
+      if (kip != _siralamaKipi) return;
 
       final yeniSira = <YakinDurak>[];
       for (var i = 0; i < adaylar.length; i++) {
         final olcum = i < olcumler.length ? olcumler[i] : null;
         yeniSira.add(olcum == null
             ? adaylar[i]
-            : YakinDurak(adaylar[i].durak, olcum.mesafeM, yuruyusMu: true));
+            : YakinDurak(adaylar[i].durak, olcum.mesafeM, kip: kip));
       }
       yeniSira.sort((a, b) => a.mesafeM.compareTo(b.mesafeM));
 
@@ -176,6 +186,20 @@ class _AnaEkranDurumu extends State<AnaEkran> {
       });
     } catch (_) {
       // Servise ulaşılamazsa kuş uçuşu sıralama kalır.
+    }
+  }
+
+  /// En yakın durak listesini verilen kiple yeniden sıralar.
+  ///
+  /// Yürüyerek en yakın durak ile arabayla en yakın durak aynı olmayabiliyor:
+  /// yaya köprüsünden geçilen durak yürüyerek yakın ama arabayla dolambaçlı.
+  void _siralamaKipiniDegistir(RotaKipi kip) {
+    if (kip == _siralamaKipi) return;
+    setState(() => _siralamaKipi = kip);
+
+    final konum = _kullaniciKonumu;
+    if (konum != null && _yakinAdaylar.isNotEmpty) {
+      _adaylariGercekMesafeyeGoreSirala(konum, _yakinAdaylar, kip: kip);
     }
   }
 
@@ -206,7 +230,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
       });
 
       _sonYuruyusKonumu = konum;
-      _adaylariYuruyuseGoreSirala(konum, adaylar);
+      _adaylariGercekMesafeyeGoreSirala(konum, adaylar, kip: _siralamaKipi);
     }, onError: (_) { /* takip sessizce durur */ });
   }
 
@@ -561,8 +585,12 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                         : duraklar.first.kod;
                   }
                 }),
-                yolTarifiAc: (yakin, kip) =>
-                    _yolTarifiniGoster(RotaHedefi.durak(yakin.durak), kip: kip),
+                yolTarifiAc: (yakin, kip) {
+                  // Kullanıcı "arabayla" dediğinde sorduğu şey "hangi durağa
+                  // arabayla daha kısa giderim"; liste de o kiple sıralanır.
+                  _siralamaKipiniDegistir(kip);
+                  _yolTarifiniGoster(RotaHedefi.durak(yakin.durak), kip: kip);
+                },
               ),
               const SizedBox(height: 16),
               _SecimKarti(
@@ -661,7 +689,10 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                     _yonlendirmeyiBitir();
                   },
                   kip: _rotaKipi,
-                  kipDegisti: _rotaKipiniDegistir,
+                  kipDegisti: (kip) {
+                    _siralamaKipiniDegistir(kip);
+                    _rotaKipiniDegistir(kip);
+                  },
                 ),
               ],
               const SizedBox(height: 16),
@@ -1292,7 +1323,7 @@ class _KonumKarti extends StatelessWidget {
           ),
           Chip(
             label: Text(
-              yakin.yuruyusMu ? '${yakin.mesafeMetni} yürüyüş' : yakin.mesafeMetni,
+              yakin.mesafeKipMetni,
             ),
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,

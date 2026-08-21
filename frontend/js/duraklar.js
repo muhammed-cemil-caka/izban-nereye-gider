@@ -1,7 +1,7 @@
 // OTOMATİK ÜRETİLDİ — elle düzenlemeyin.
 // Kaynak: backend/veri/duraklar.json — değişiklik sonrası: node araclar/veri-dagit.js
 const HAT_VERISI = {
-  "surum": "2.3.0",
+  "surum": "2.5.0",
   "guncellemeTarihi": "2026-08-21",
   "uyari": "Durak sırası, koordinatlar ve aktarmalar OpenStreetMap verisinden üretilmiştir. SÜRELER TAHMİNİDİR: gerçek mesafeden hesaplanır, resmî tarife değildir. Gerçek varış saatleri için izban.com.tr tarifesi kullanılmalıdır.",
   "kaynak": {
@@ -10,7 +10,7 @@ const HAT_VERISI = {
     "ilce": "Nominatim ters coğrafi kodlama",
     "sureModeli": "65 km/sa ortalama hız, durak başına 0.6 dk bekleme; mesafeler gerçek ray geometrisi üzerinden ölçülür",
     "otobus": "OpenStreetMap — durağa 400 m'den yakın ESHOT otobüs hatları (type=route, route=bus ilişkileri)",
-    "aktarmaNoktalari": "OpenStreetMap — her aktarma türünün durağa en yakın noktası (raylı/vapur 600 m, otobüs 400 m)"
+    "aktarmaNoktalari": "OpenStreetMap — her aktarma türünün durağa en yakın noktası (raylı/vapur 600 m, otobüs 600 m)"
   },
   "hat": {
     "ad": "İZBAN Banliyö Hattı",
@@ -126,7 +126,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.560558,
         "boylam": 27.044252
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Üst Geçit",
+          "konum": {
+            "enlem": 38.5595062,
+            "boylam": 27.04413
+          },
+          "mesafeM": 117
+        }
+      ]
     },
     {
       "kod": "ulukent",
@@ -316,7 +330,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.474955,
         "boylam": 27.089842
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Ayyıldız",
+          "konum": {
+            "enlem": 38.47945,
+            "boylam": 27.0927198
+          },
+          "mesafeM": 559
+        }
+      ]
     },
     {
       "kod": "demirkopru",
@@ -327,7 +355,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.468094,
         "boylam": 27.096235
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Doğakan Güngör Parkı",
+          "konum": {
+            "enlem": 38.470942,
+            "boylam": 27.0999669
+          },
+          "mesafeM": 454
+        }
+      ]
     },
     {
       "kod": "nergiz",
@@ -373,10 +415,20 @@ const HAT_VERISI = {
         "boylam": 27.115136
       },
       "aktarma": [
+        "ESHOT",
         "Tramvay",
         "Vapur"
       ],
       "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Atatürk Bulvarı",
+          "konum": {
+            "enlem": 38.4619657,
+            "boylam": 27.1133803
+          },
+          "mesafeM": 482
+        },
         {
           "tur": "Tramvay",
           "ad": "Karşıyaka İskele",
@@ -408,9 +460,19 @@ const HAT_VERISI = {
         "boylam": 27.121472
       },
       "aktarma": [
+        "ESHOT",
         "Tramvay"
       ],
       "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Selçuk Yaşar Alaybey Ortaokulu",
+          "konum": {
+            "enlem": 38.459734,
+            "boylam": 27.1263681
+          },
+          "mesafeM": 438
+        },
         {
           "tur": "Tramvay",
           "ad": "Alaybey",
@@ -602,13 +664,21 @@ const HAT_VERISI = {
       ],
       "otobusHatlari": [
         "53",
+        "77",
+        "78",
         "102",
+        "147",
+        "148",
         "154",
         "168",
+        "255",
+        "335",
+        "434",
         "501",
         "502",
         "503",
         "504",
+        "515",
         "543",
         "555",
         "564",
@@ -617,12 +687,12 @@ const HAT_VERISI = {
       "aktarmaNoktalari": [
         {
           "tur": "ESHOT",
-          "ad": "Halkapınar Metro",
+          "ad": "Halkapınar Metro 2",
           "konum": {
-            "enlem": 38.433438,
-            "boylam": 27.1688233
+            "enlem": 38.4354952,
+            "boylam": 27.1683654
           },
-          "mesafeM": 195
+          "mesafeM": 53
         },
         {
           "tur": "Metro",
@@ -698,9 +768,19 @@ const HAT_VERISI = {
         "boylam": 27.154359
       },
       "aktarma": [
+        "ESHOT",
         "Metro"
       ],
       "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Hilal",
+          "konum": {
+            "enlem": 38.4277377,
+            "boylam": 27.1498345
+          },
+          "mesafeM": 460
+        },
         {
           "tur": "Metro",
           "ad": "Hilal",
@@ -887,7 +967,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.326327,
         "boylam": 27.139891
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Gaziemir Üst Geçit",
+          "konum": {
+            "enlem": 38.3247885,
+            "boylam": 27.1365728
+          },
+          "mesafeM": 336
+        }
+      ]
     },
     {
       "kod": "sarnic",
@@ -908,12 +1002,12 @@ const HAT_VERISI = {
       "aktarmaNoktalari": [
         {
           "tur": "ESHOT",
-          "ad": "Sarnıç Alt Geçiti",
+          "ad": "Sarnıç Aktarma Merkezi",
           "konum": {
-            "enlem": 38.3122389,
-            "boylam": 27.1426027
+            "enlem": 38.3130724,
+            "boylam": 27.1446844
           },
-          "mesafeM": 173
+          "mesafeM": 106
         }
       ]
     },
@@ -926,7 +1020,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.291261,
         "boylam": 27.147718
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Havalimanı Dış Hatlar Gidiş",
+          "konum": {
+            "enlem": 38.2950136,
+            "boylam": 27.1472605
+          },
+          "mesafeM": 419
+        }
+      ]
     },
     {
       "kod": "cumaovasi",
@@ -970,7 +1078,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.197416,
         "boylam": 27.239537
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Pancar Aktarma Merkezi",
+          "konum": {
+            "enlem": 38.1981944,
+            "boylam": 27.238883
+          },
+          "mesafeM": 104
+        }
+      ]
     },
     {
       "kod": "kuscuburun",
@@ -992,7 +1114,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.169825,
         "boylam": 27.347025
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Kasap",
+          "konum": {
+            "enlem": 38.1718867,
+            "boylam": 27.3484832
+          },
+          "mesafeM": 262
+        }
+      ]
     },
     {
       "kod": "tepekoy",
@@ -1003,7 +1139,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.147225,
         "boylam": 27.36133
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Tepeköy",
+          "konum": {
+            "enlem": 38.1469186,
+            "boylam": 27.3621145
+          },
+          "mesafeM": 77
+        }
+      ]
     },
     {
       "kod": "saglik",
@@ -1014,7 +1164,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 38.084974,
         "boylam": 27.400596
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Sağlık",
+          "konum": {
+            "enlem": 38.08856,
+            "boylam": 27.405098
+          },
+          "mesafeM": 561
+        }
+      ]
     },
     {
       "kod": "belevi",
@@ -1036,7 +1200,21 @@ const HAT_VERISI = {
       "konum": {
         "enlem": 37.950734,
         "boylam": 27.373029
-      }
+      },
+      "aktarma": [
+        "ESHOT"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Selçuk Otogar",
+          "konum": {
+            "enlem": 37.9482618,
+            "boylam": 27.3696939
+          },
+          "mesafeM": 401
+        }
+      ]
     }
   ]
 };

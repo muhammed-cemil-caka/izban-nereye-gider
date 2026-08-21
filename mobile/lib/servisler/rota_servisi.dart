@@ -63,9 +63,6 @@ class Rota {
 class RotaServisi {
   const RotaServisi();
 
-  /// En yakın durak sıralaması hep YÜRÜYEREK hesaplanır: kullanıcı durağa
-  /// yürüyerek gidiyor, araba mesafesi orada yanıltıcı olurdu.
-  static final _yuruyusTabani = RotaKipi.yuruyus.taban;
   static const _zamanAsimi = Duration(seconds: 15);
 
   static const _yonAdlari = <String, String>{
@@ -120,10 +117,11 @@ class RotaServisi {
   /// uçuşu daha yakın ama yürüyüşle 2,5 km; Mavişehir 1,4 km.
   ///
   /// Hedeflerle aynı sırada döner; ulaşılamayan hedef için null.
-  Future<List<({double mesafeM, double sureSn})?>> yuruyusMesafeleri(
+  Future<List<({double mesafeM, double sureSn})?>> mesafeler(
     Konum baslangic,
-    List<Konum> hedefler,
-  ) async {
+    List<Konum> hedefler, {
+    RotaKipi kip = RotaKipi.yuruyus,
+  }) async {
     if (hedefler.isEmpty) return const [];
 
     final noktalar = [baslangic, ...hedefler]
@@ -131,7 +129,7 @@ class RotaServisi {
         .join(';');
 
     final adres = Uri.parse(
-      '${_yuruyusTabani.replaceFirst('/route/v1/foot', '/table/v1/foot')}'
+      '${kip.taban.replaceFirst('/route/v1/', '/table/v1/')}'
       '/$noktalar?sources=0&annotations=distance,duration',
     );
 
@@ -141,7 +139,7 @@ class RotaServisi {
     }
 
     final govde = jsonDecode(utf8.decode(yanit.bodyBytes)) as Map<String, dynamic>;
-    if (govde['code'] != 'Ok') throw Exception('Yürüme mesafeleri alınamadı.');
+    if (govde['code'] != 'Ok') throw Exception('Mesafeler alınamadı.');
 
     final mesafeler = (govde['distances'] as List<dynamic>).first as List<dynamic>;
     final sureler = (govde['durations'] as List<dynamic>?)?.first as List<dynamic>?;

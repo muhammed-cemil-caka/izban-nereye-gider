@@ -1,3 +1,4 @@
+import '../servisler/rota_servisi.dart';
 import 'durak.dart';
 
 /// Bir konuma en yakın durak ve aradaki mesafe.
@@ -5,10 +6,20 @@ class YakinDurak {
   final Durak durak;
   final double mesafeM;
 
-  /// Mesafe kuş uçuşu mu, gerçek yürüme mesafesi mi?
-  final bool yuruyusMu;
+  /// Mesafe hangi kiple ölçüldü? null ise kuş uçuşu.
+  ///
+  /// Yürüyerek en yakın durak ile arabayla en yakın durak aynı olmayabiliyor;
+  /// bu yüzden ölçümün kipi de taşınıyor.
+  final RotaKipi? kip;
 
-  const YakinDurak(this.durak, this.mesafeM, {this.yuruyusMu = false});
+  const YakinDurak(this.durak, this.mesafeM, {this.kip});
+
+  /// "1,6 km yürüyüş" / "1,6 km araba ile" / "1,6 km"
+  String get mesafeKipMetni => switch (kip) {
+        RotaKipi.yuruyus => '$mesafeMetni yürüyüş',
+        RotaKipi.araba => '$mesafeMetni araba ile',
+        null => mesafeMetni,
+      };
 
   /// 450 → "450 m", 2300 → "2,3 km"
   String get mesafeMetni {
