@@ -156,6 +156,26 @@ Sonuç: **41 durağın 34'ünde** ESHOT aktarması var, 21'inde hat numaralarıy
 Aktarması olmayan 7 durak: Hatundere, İnkılap, Cumaovası, Develi, Tekeli,
 Kuşçuburun, Belevi.
 
+### Aktarmaları doğrulama
+
+Dosyadaki aktarma bilgisini OSM'e karşı sınar; hiçbir şey yazmaz:
+
+```bash
+npm run dogrula
+```
+
+Betik sorguyu üretim betiğinden **bağımsız** kurar (tür tür ayrı sorar), böylece
+üretimdeki bir sorgu hatası doğrulamada da tekrarlanmaz. Üç şeye bakar: OSM'de
+olup dosyada olmayan aktarma (EKSİK), dosyada olup OSM'de olmayan (FAZLA) ve
+hat numaralarının tutup tutmadığı. Fark varsa çıkış kodu 1.
+
+Son çalıştırma: **0 eksik, 0 fazla, 0 hat farkı** — 41 durağın hepsi tutuyor.
+
+> Cumaovası'nda bir teşhis sorgusu 119 m'de `operator=Eshot` etiketli adsız bir
+> nokta göstermişti ama aynı sorgu başka aynalarda tekrarlanmadı ve doğrulama
+> temiz çıkıyor. Aynaların anlık görüntüleri farklı olabiliyor; ileride
+> `npm run dogrula` fark bulursa `npm run eshot` ile tazelenir.
+
 **Overpass tuzakları** — üçü de veriyi sessizce bozuyordu, betikte kapatıldı:
 
 - `overpass.osm.ch` yalnızca İsviçre çıkartmasını tutuyor: Türkiye sorgularına
@@ -661,8 +681,20 @@ yönlendirme, gidiş yönüne dönen harita, ekranda dik duran yön oku, ilerlem
 çubuğu, kat edilen yolun soluklaşması, 2 saniye basılı tutunca taşınan konum
 iğnesi, konuma dön düğmesi, pusula, canlanan açılış ekranı, açık/koyu tema
 düğmesi, aynı marka paleti ve kabartma kutucuklar, en fazla 7 satırlık adım
-listesi, yürüyerek/arabayla rota seçimi, ESHOT hat numaraları ve sesli
+listesi, yürüyerek/arabayla rota seçimi, kipe göre en yakın durak sıralaması,
+ESHOT hat numaraları, aktarmaya dokununca canlı yönlendirme ve sesli
 yönlendirme.
+
+**Yalnızca webde olan iki şey var**, ikisi de konumu elle düzeltmekle ilgili:
+
+| | Neden yalnızca webde |
+| --- | --- |
+| Yer arama (durak/mahalle/cadde → Nominatim) | Masaüstünde konum Wi-Fi tabanlı ve yüz metrelerce şaşabiliyor; telefonda GPS zaten isabetli |
+| Elle girilen konumun hatırlanması (`localStorage`) | Aynı sebep |
+
+Mobilde konumu düzeltmenin yolu haritadaki iğneyi 2 saniye basılı tutup
+taşımak; o da webde var. Bu iki özelliği mobile de eklemek isterseniz iş
+Nominatim araması + `shared_preferences` ile saklama.
 
 Leaflet haritayı döndürmeyi yerleşik desteklemediği için web tarafında
 `leaflet-rotate` eklentisi kullanılır (`frontend/vendor/leaflet/`, MIT).

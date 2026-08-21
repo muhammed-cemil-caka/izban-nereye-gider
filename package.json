@@ -8,7 +8,11 @@
     "start:https": "python3 araclar/gelistirme-sunucusu.py 5173 --https",
     "test": "node araclar/test-hesap.js",
     "veri": "node araclar/veri-dagit.js",
-    "logo": "python3 araclar/logo-uret.py"
+    "logo": "python3 araclar/logo-uret.py",
+    "dogrula": "node araclar/aktarmalari-dogrula.js",
+    "eshot": "node araclar/eshot-hatlarini-ekle.js",
+    "aktarma-noktalari": "node araclar/aktarma-noktalarini-ekle.js",
+    "mesafeler": "node araclar/mesafeleri-guncelle.js"
   },
   "repository": {
     "type": "git",
