@@ -56,7 +56,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   double? _konumDogrulukM;
   Konum? _kullaniciKonumu;
   Rota? _yuruyusRotasi;
-  Durak? _rotaHedefi;
+  RotaHedefi? _rotaHedefi;
   RotaKipi _rotaKipi = RotaKipi.yuruyus;
   bool _rotaAraniyor = false;
   String? _rotaHatasi;
@@ -215,9 +215,15 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     _takipAboneligi = null;
   }
 
+  /// Verilen hedefe rota çizer.
+  ///
+  /// [yonlendir] verilirse rota gelir gelmez canlı yönlendirme de başlar:
+  /// kullanıcı aktarma noktasına dokunduğunda beklediği şey rota değil,
+  /// yönlendirmenin kendisi.
   Future<void> _yolTarifiniGoster(
-    YakinDurak yakin, {
+    RotaHedefi hedef, {
     RotaKipi kip = RotaKipi.yuruyus,
+    bool yonlendir = false,
   }) async {
     final konum = _kullaniciKonumu;
     if (konum == null) return;
@@ -229,15 +235,16 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     });
 
     try {
-      final rota = await const RotaServisi()
-          .rotaAl(konum, yakin.durak.konum, kip: kip);
+      final rota =
+          await const RotaServisi().rotaAl(konum, hedef.konum, kip: kip);
       if (!mounted) return;
       setState(() {
         _yuruyusRotasi = rota;
-        _rotaHedefi = yakin.durak;
+        _rotaHedefi = hedef;
         _rotaAraniyor = false;
       });
       _haritayaKaydir();
+      if (yonlendir) _yonlendirmeyiBaslat();
     } catch (sorun) {
       if (!mounted) return;
       setState(() {
@@ -264,7 +271,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     final hedef = _rotaHedefi;
     if (hedef == null || kip == _rotaKipi) return;
     if (_yonlendirmeAktif) _yonlendirmeyiBitir();
-    _yolTarifiniGoster(YakinDurak(hedef, 0), kip: kip);
+    _yolTarifiniGoster(hedef, kip: kip);
   }
 
   void _yonlendirmeyiBaslat() {
@@ -358,7 +365,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
         _kullaniciKonumu = konum;
 
         try {
-          final yeni = await const RotaServisi().rotaAl(konum, hedef.konum);
+          final yeni = await const RotaServisi()
+              .rotaAl(konum, hedef.konum, kip: _rotaKipi);
           if (!mounted) return;
           setState(() => _yuruyusRotasi = yeni);
           _yenidenHesaplaniyor = false;
@@ -554,7 +562,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                   }
                 }),
                 yolTarifiAc: (yakin, kip) =>
-                    _yolTarifiniGoster(yakin, kip: kip),
+                    _yolTarifiniGoster(RotaHedefi.durak(yakin.durak), kip: kip),
               ),
               const SizedBox(height: 16),
               _SecimKarti(
@@ -665,7 +673,13 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 _GuzergahKarti(yolculuk: yolculuk),
                 if (yolculuk.aktarmaliDuraklar.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  _AktarmaKarti(yolculuk: yolculuk),
+                  _AktarmaKarti(
+                    yolculuk: yolculuk,
+                    aktarmayaGit: (nokta) => _yolTarifiniGoster(
+                      RotaHedefi.aktarma(nokta),
+                      yonlendir: true,
+                    ),
+                  ),
                 ],
               ],
               const SizedBox(height: 24),
@@ -1002,6 +1016,83 @@ class _OtobusHatlari extends StatelessWidget {
   }
 }
 
+/// Tek bir aktarma türü. Noktası biliniyorsa dokunulabilir: basınca oraya
+/// yürüyüş rotası çizilip canlı yönlendirme başlar.
+class _AktarmaTuru extends StatelessWidget {
+  static const simgeler = <String, IconData>{
+    'Metro': Icons.subway,
+    'Tramvay': Icons.tram,
+    'Vapur': Icons.directions_boat,
+    'ESHOT': Icons.directions_bus,
+  };
+
+  final String tur;
+  final AktarmaNoktasi? nokta;
+  final ValueChanged<AktarmaNoktasi> basildi;
+
+  const _AktarmaTuru({
+    required this.tur,
+    required this.nokta,
+    required this.basildi,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final renkler = tema.colorScheme;
+    final hedef = nokta;
+
+    final icerik = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(simgeler[tur] ?? Icons.alt_route, size: 15, color: renkler.primary),
+        const SizedBox(width: 5),
+        Text(
+          tur,
+          style: tema.textTheme.labelMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: renkler.onSurface,
+          ),
+        ),
+        if (hedef != null) ...[
+          const SizedBox(width: 6),
+          Text(
+            hedef.mesafeMetni,
+            style: tema.textTheme.labelSmall?.copyWith(
+              color: renkler.onSurface.withValues(alpha: .6),
+            ),
+          ),
+          const SizedBox(width: 2),
+          Icon(Icons.chevron_right, size: 14,
+              color: renkler.onSurface.withValues(alpha: .5)),
+        ],
+      ],
+    );
+
+    final kutu = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: renkler.surface,
+        border: Border.all(color: renkler.outlineVariant),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: icerik,
+    );
+
+    if (hedef == null) return kutu;
+
+    return Semantics(
+      button: true,
+      label: '$tur aktarmasına yürüyüş yol tarifi',
+      child: InkWell(
+        onTap: () => basildi(hedef),
+        borderRadius: BorderRadius.circular(999),
+        child: kutu,
+      ),
+    );
+  }
+}
+
 /// Küçük etiket — webdeki .rozet karşılığı.
 class _Rozet extends StatelessWidget {
   final String metin;
@@ -1039,7 +1130,10 @@ class _Rozet extends StatelessWidget {
 class _AktarmaKarti extends StatelessWidget {
   final Yolculuk yolculuk;
 
-  const _AktarmaKarti({required this.yolculuk});
+  /// Aktarma noktasına dokunulunca oraya yürüyüş rotası + canlı yönlendirme.
+  final ValueChanged<AktarmaNoktasi> aktarmayaGit;
+
+  const _AktarmaKarti({required this.yolculuk, required this.aktarmayaGit});
 
   @override
   Widget build(BuildContext context) {
@@ -1061,26 +1155,27 @@ class _AktarmaKarti extends StatelessWidget {
                 cocuk: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Text(
+                      durak.ad,
+                      style: tema.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    // Türler alt alta sıkışan bir metin yerine hizalı çipler:
+                    // "ESHOT · Metro · Tramvay" tek satıra sığmadığında
+                    // ortadan kırpılıyordu. Noktası bilinen tür tıklanabilir.
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
                       children: [
-                        Expanded(
-                          child: Text(
-                            durak.ad,
-                            style: tema.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                        for (final tur in durak.aktarma)
+                          _AktarmaTuru(
+                            tur: tur,
+                            nokta: durak.aktarmaNoktalari
+                                .where((n) => n.tur == tur)
+                                .firstOrNull,
+                            basildi: aktarmayaGit,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Flexible(
-                          child: Text(
-                            durak.aktarma.join(' · '),
-                            textAlign: TextAlign.end,
-                            style: tema.textTheme.bodySmall?.copyWith(
-                              color: tema.textTheme.bodySmall?.color
-                                  ?.withValues(alpha: .8),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                     // ESHOT aktarması varsa hangi hatlar olduğu yazılır;
@@ -1303,7 +1398,7 @@ class _KonumKarti extends StatelessWidget {
 /// Hesaplanan yürüyüş rotasını adım adım gösterir.
 class _RotaKarti extends StatelessWidget {
   final Rota? rota;
-  final Durak? hedef;
+  final RotaHedefi? hedef;
   final bool araniyor;
   final String? hata;
   final VoidCallback temizle;
@@ -1334,14 +1429,18 @@ class _RotaKarti extends StatelessWidget {
     final tema = Theme.of(context);
 
     if (araniyor) {
-      return const Card(
+      return Card(
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-              SizedBox(width: 12),
-              Text('Yürüyüş rotası hesaplanıyor…'),
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 12),
+              Text('${kip.etiket} rotası hesaplanıyor…'),
             ],
           ),
         ),
@@ -1376,21 +1475,16 @@ class _RotaKarti extends StatelessWidget {
                     style: tema.textTheme.titleSmall,
                   ),
                 ),
-                // Adım adım yönlendirme yürüyüş için tasarlandı: panel yürüme
-                // temposundan süre hesaplıyor, harita yaya yakınlığında duruyor
-                // ve sesli uyarı araç hızında geç kalıyor. Araba kipinde rota
-                // gösterilir, yönlendirme başlatılmaz.
-                if (yol.kip == RotaKipi.yuruyus)
-                  FilledButton(
-                    onPressed: yonlendirmede ? bitir : basla,
-                    style: FilledButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      backgroundColor: yonlendirmede
-                          ? Theme.of(context).colorScheme.error
-                          : null,
-                    ),
-                    child: Text(yonlendirmede ? 'Bitir' : 'Başla'),
+                FilledButton(
+                  onPressed: yonlendirmede ? bitir : basla,
+                  style: FilledButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: yonlendirmede
+                        ? Theme.of(context).colorScheme.error
+                        : null,
                   ),
+                  child: Text(yonlendirmede ? 'Bitir' : 'Başla'),
+                ),
                 IconButton(
                   onPressed: temizle,
                   icon: const Icon(Icons.close, size: 20),
@@ -1531,7 +1625,7 @@ class _AdimListesiDurumu extends State<_AdimListesi> {
 /// Yönlendirme sırasında sıradaki manevrayı ve kalan mesafeyi gösterir.
 class _YonlendirmePaneli extends StatelessWidget {
   final Rota? rota;
-  final Durak? hedef;
+  final RotaHedefi? hedef;
   final YonlendirmeDurumu? durum;
   final String? uyari;
   final bool varildi;
@@ -1709,7 +1803,10 @@ class _YonlendirmePaneli extends StatelessWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      _hizMetni(durum?.hizMs ?? 0) ?? 'toplam yürüyüş',
+                      _hizMetni(durum?.hizMs ?? 0) ??
+                          (rota?.kip == RotaKipi.araba
+                              ? 'toplam sürüş'
+                              : 'toplam yürüyüş'),
                       style: tema.textTheme.bodySmall?.copyWith(
                         color: renkler.onPrimary.withValues(alpha: .8),
                       ),

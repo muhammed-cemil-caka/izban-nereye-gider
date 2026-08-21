@@ -281,6 +281,24 @@ select:focus-visible, .tema-dugmesi:focus-visible, .ters-dugmesi:focus-visible {
   box-shadow: var(--golge), var(--kutu-ic-isik);
 }
 .aktarma-hatlar { color: var(--yazi-soluk); font-size: .88rem; }
+
+/* Aktarma türleri: noktası bilinenler tıklanabilir düğme — basınca oraya
+   yürüyüş rotası çizilip canlı yönlendirme başlar. */
+.aktarma-turler { display: flex; flex-wrap: wrap; gap: .35rem; justify-content: flex-end; }
+.aktarma-tur {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .2rem .55rem;
+  border: 1px solid var(--cizgi);
+  border-radius: 999px;
+  background: var(--zemin-kart);
+  color: var(--yazi);
+  font: inherit; font-size: .78rem; font-weight: 600;
+  white-space: nowrap;
+}
+button.aktarma-tur { cursor: pointer; }
+button.aktarma-tur:hover { border-color: var(--vurgu); color: var(--vurgu); }
+button.aktarma-tur:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+.aktarma-tur-mesafe { color: var(--yazi-soluk); font-weight: 500; font-size: .72rem; }
 .aktarma-ust { display: flex; justify-content: space-between; gap: .75rem; flex-wrap: wrap; width: 100%; }
 
 /* ESHOT hat numaraları: "ESHOT" tek başına hangi otobüse binileceğini

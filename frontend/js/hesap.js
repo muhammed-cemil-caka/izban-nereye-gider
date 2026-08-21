@@ -47,7 +47,10 @@ function yolculukHesapla(duraklar, binisKod, inisKod) {
         ad: d.ad,
         hatlar: d.aktarma,
         // ESHOT aktarmasında hangi otobüs hatlarına binileceği.
-        otobusHatlari: d.otobusHatlari || []
+        otobusHatlari: d.otobusHatlari || [],
+        // Aktarmanın gerçek noktaları: kullanıcı "metroya nasıl giderim"
+        // dediğinde oraya yürüyüş rotası çizilebilsin.
+        noktalar: d.aktarmaNoktalari || []
       };
     });
 

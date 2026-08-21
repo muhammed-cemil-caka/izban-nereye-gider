@@ -38,6 +38,7 @@
     arabaTarifi: document.getElementById('arabaTarifiDugmesi'),
     rotaKipYuruyus: document.getElementById('rotaKipYuruyus'),
     rotaKipAraba: document.getElementById('rotaKipAraba'),
+    yonlendirmeToplamEtiket: document.getElementById('yonlendirmeToplamEtiket'),
     rotaSonucu: document.getElementById('rotaSonucu'),
     rotaBaslik: document.getElementById('rotaBaslik'),
     rotaOlcu: document.getElementById('rotaOlcu'),
@@ -164,6 +165,28 @@
     return rozet;
   }
 
+  var AKTARMA_SIMGELERI = {
+    Metro: 'Ⓜ',
+    Tramvay: '🚊',
+    Vapur: '⛴',
+    ESHOT: '🚌'
+  };
+
+  /**
+   * Aktarma noktasına yürüyüş rotası çizip canlı yönlendirmeyi başlatır.
+   *
+   * Kullanıcı "metroya nasıl giderim" diye sorduğunda beklediği şey rota
+   * değil, yönlendirmenin kendisi; bu yüzden ayrıca "Başla"ya basması
+   * gerekmiyor.
+   */
+  function aktarmayaYonlendir(nokta, durakAdi) {
+    var hedef = {
+      ad: (nokta.ad || durakAdi) + ' ' + nokta.tur.toLowerCase(),
+      konum: nokta.konum
+    };
+    yolTarifiniGoster(hedef, 'yuruyus', { yonlendir: true });
+  }
+
   // Çok hat olan duraklarda liste kartı şişirmesin diye ilki gösterilir.
   var GORUNUR_OTOBUS_HATTI = 12;
 
@@ -211,11 +234,38 @@
       ad.textContent = aktarma.ad;
       ust.appendChild(ad);
 
-      var hatlar = document.createElement('span');
-      hatlar.className = 'aktarma-hatlar';
-      hatlar.textContent = aktarma.hatlar.join(' · ');
-      ust.appendChild(hatlar);
+      var turler = document.createElement('div');
+      turler.className = 'aktarma-turler';
 
+      aktarma.hatlar.forEach(function (tur) {
+        var nokta = (aktarma.noktalar || []).find(function (n) { return n.tur === tur; });
+
+        // Noktası bilinen aktarma tıklanabilir: kullanıcının konumundan oraya
+        // yürüyüş rotası çizilip canlı yönlendirme başlar.
+        var oge2 = document.createElement(nokta ? 'button' : 'span');
+        oge2.className = 'aktarma-tur aktarma-tur--' + tur.toLowerCase();
+        oge2.textContent = AKTARMA_SIMGELERI[tur]
+          ? AKTARMA_SIMGELERI[tur] + ' ' + tur
+          : tur;
+
+        if (nokta) {
+          oge2.type = 'button';
+          oge2.title = tur + ' aktarmasına yürüyüş yol tarifi (' +
+            mesafeBicimle(nokta.mesafeM) + ')';
+          oge2.addEventListener('click', function () {
+            aktarmayaYonlendir(nokta, aktarma.ad);
+          });
+
+          var mesafe = document.createElement('span');
+          mesafe.className = 'aktarma-tur-mesafe';
+          mesafe.textContent = mesafeBicimle(nokta.mesafeM);
+          oge2.appendChild(mesafe);
+        }
+
+        turler.appendChild(oge2);
+      });
+
+      ust.appendChild(turler);
       satir.appendChild(ust);
 
       // "ESHOT" tek başına hangi otobüse binileceğini söylemiyor; hat
@@ -400,7 +450,7 @@
    * @param {object} durak
    * @param {string} [kip] 'yuruyus' (varsayılan) veya 'araba'
    */
-  function yolTarifiniGoster(durak, kip) {
+  function yolTarifiniGoster(durak, kip, secenekler) {
     if (!sonKonum) {
       rotaDurumuYaz('Önce konumunu bulmam gerekiyor.', 'hata');
       return;
@@ -424,23 +474,22 @@
         rotaSonucunuYaz(rota, durak);
         rotaDurumuYaz('');
         haritayaKaydir();
+
+        // Aktarma noktasına tıklandığında kullanıcı doğrudan yönlendirme
+        // bekliyor; ayrıca "Başla"ya basması gerekmesin.
+        if (secenekler && secenekler.yonlendir) yonlendirmeyiBaslat();
       })
       .catch(function (sorun) {
         rotaDurumuYaz(sorun.message, 'hata');
       });
   }
 
-  /** Kip düğmelerinin basılı durumunu ve "Başla"nın görünürlüğünü ayarlar. */
+  /** Kip düğmelerinin basılı durumunu ayarlar. */
   function kipDugmeleriniTazele() {
     var arabaMi = sonRotaKip === 'araba';
     oge.rotaKipYuruyus.setAttribute('aria-pressed', String(!arabaMi));
     oge.rotaKipAraba.setAttribute('aria-pressed', String(arabaMi));
-
-    // Adım adım yönlendirme yürüyüş için tasarlandı: panel yürüme temposuna
-    // göre süre hesaplıyor, harita yaya yakınlığında duruyor ve sesli uyarılar
-    // araç hızında geç kalıyor. Araba kipinde rota gösterilir, yönlendirme
-    // başlatılmaz.
-    oge.yonlendirmeBaslat.hidden = arabaMi;
+    oge.yonlendirmeToplamEtiket.textContent = arabaMi ? 'toplam sürüş' : 'toplam yürüyüş';
   }
 
   function hataGoster(mesaj) {
@@ -875,7 +924,9 @@
         );
       }
       harita.konumuGoster(sonKonum, { yonlendirme: true, aci: baslangicAcisi });
-      harita.konumaOdaklan(sonKonum, 17);
+      // Araçta biraz daha geniş bakış: 17 yaya yakınlığı, sürüşte
+      // bir sonraki kavşak ekrana girmiyor.
+      harita.konumaOdaklan(sonKonum, sonRotaKip === 'araba' ? 16 : 17);
       harita.haritayiYoneCevir(baslangicAcisi);
       sonYonAcisi = baslangicAcisi;
     }
@@ -926,7 +977,7 @@
         if (harita) {
           // Ok ekranda dik durur; dönen haritadır (mobildeki gibi).
           harita.konumuGoster(durum.konum, { yonlendirme: true, aci: 0 });
-          harita.konumaOdaklan(durum.konum, 17);
+          harita.konumaOdaklan(durum.konum, sonRotaKip === 'araba' ? 16 : 17);
           // Pusula varsa telefonun baktığı yön, yoksa hareket yönü.
           harita.haritayiYoneCevir(pusulaAcisi !== null ? pusulaAcisi : sonYonAcisi);
         }

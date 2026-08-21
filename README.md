@@ -76,8 +76,35 @@ duraklara 600 m'den yakın tramvay/metro/vapur noktalarından (yapım aşamasın
 elenir), ilçeleri Nominatim'den alır. Veri **ODbL** lisanslıdır — yayında
 "© OpenStreetMap katkıcıları" ibaresi bulunmalıdır.
 
-**Süreler hâlâ tahminidir:** gerçek mesafeden sabit hız modeliyle hesaplanır,
-resmî tarife değildir. Model parametreleri dosyanın `kaynak.sureModeli` alanında yazılıdır.
+### Duraklar arası mesafeler
+
+Mesafeler **gerçek ray geometrisi** üzerinden ölçülür:
+
+```bash
+node araclar/mesafeleri-guncelle.js        # yalnızca karşılaştırma tablosu
+node araclar/mesafeleri-guncelle.js --yaz  # dosyaya yaz
+```
+
+Betik İZBAN rota ilişkilerinin yol geometrisini indirir, **üye sırasına göre**
+uç uca dizer (yolları Overpass'ın döndürdüğü id sırasıyla eklemek çizgiyi
+şehrin içinde ileri geri zıplatıp uzunluğu 2000 km'ye çıkarıyordu), sonra her
+durağı bu çizgiye izdüşürüp iki durak arasını çizgi üzerinden ölçer.
+
+Önceki değerler kuş uçuşu mesafenin **1.08** ile çarpımıydı — hattın
+kıvrımlarını kaba bir katsayıyla tahmin ediyordu ve uçtan uca **%2,4 fazla**
+ölçüyordu:
+
+| | Eski (kuş uçuşu × 1.08) | Yeni (ray üzerinden) |
+| --- | --- | --- |
+| Aliağa → Selçuk | 137,81 km | **134,60 km** |
+| Uçtan uca süre | 151 dk | 148 dk |
+
+Resmî İZBAN uzunluğu ~136 km; ölçülen 134,6 km bununla uyumlu. Bütün duraklar
+çizgiye **0 m** uzaklıkta izdüşüyor, yani eşleşme birebir.
+
+**Süreler hâlâ tahminidir:** ölçülen mesafeden sabit hız modeliyle hesaplanır
+(65 km/sa + durak başına 0,6 dk), resmî tarife değildir. Model parametreleri
+dosyanın `kaynak.sureModeli` alanında yazılıdır.
 
 ### ESHOT otobüs aktarmaları
 
@@ -377,6 +404,26 @@ aynı yerde gösteriyor.
 tek başına hangi otobüse binileceğini söylemiyor. Çok hat olan duraklarda ilk
 12 tanesi gösterilir, gerisi "+N hat" olarak özetlenir.
 
+**Aktarma türüne dokunmak oraya yönlendirir.** Her tür (Metro, Tramvay, Vapur,
+ESHOT) artık bir düğme: basınca kullanıcının **o anki konumundan** aktarma
+noktasına yürüyüş rotası çizilir ve canlı yönlendirme kendiliğinden başlar —
+ayrıca "Başla"ya basmak gerekmez. Çipte aktarmanın kaç metre uzakta olduğu da
+yazar (`Metro 34 m ›`).
+
+Bunun için aktarmanın gerçek noktası gerekiyordu; önce yalnızca etiket vardı
+("Metro"), gidilecek bir koordinat yoktu:
+
+```bash
+node araclar/aktarma-noktalarini-ekle.js
+```
+
+Betik her aktarma türü için durağa **en yakın** noktayı bulup `aktarmaNoktalari`
+alanına yazar (ad, koordinat, mesafe). Aynı türden beş kapıyı listelemenin
+faydası yok; kullanıcı "metroya nasıl giderim" diye soruyor.
+
+Ölçülen bazı mesafeler: Halkapınar metro **34 m**, tramvay 293 m; Hilal metro
+162 m; Karşıyaka tramvay 497 m, vapur 525 m.
+
 Haritada hat çizilir, 41 durak işaretlenir, seçili güzergâh vurgulanır, biniş
 yeşil / iniş turuncu gösterilir. Durağa tıklamak onu biniş durağı yapar.
 Kullanıcı konumu **sürüklenebilir** bir işaretle gösterilir — masaüstünde şaşan
@@ -434,10 +481,17 @@ yeniden istenir. Haritada yürüyüş **noktalı turuncu**, araba **düz mavi**
 | Yürüyerek | `routed-foot/route/v1/foot` |
 | Arabayla | `routed-car/route/v1/driving` |
 
-**Adım adım yönlendirme yalnızca yürüyüşte açılır.** Araba kipinde "Başla"
-düğmesi görünmez: panel yürüme temposundan süre hesaplıyor, harita yaya
-yakınlığında duruyor ve sesli uyarı araç hızında geç kalıyor. Araba kipi rotayı,
-mesafeyi, süreyi ve adımları gösterir.
+**Adım adım yönlendirme iki kipte de çalışır** — "Başla" araba kipinde de var,
+sesli talimatlar da öyle. Kipe göre değişen üç şey var:
+
+| | Yürüyerek | Arabayla |
+| --- | --- | --- |
+| Harita yakınlığı | 17 | 16 (sonraki kavşak ekrana girsin) |
+| Panel etiketi | "toplam yürüyüş" | "toplam sürüş" |
+| Kalan süre | rotanın kendi temposundan | aynı |
+
+> Araç içi kullanım sürücünün sorumluluğundadır; uygulama resmî bir navigasyon
+> cihazı değildir.
 
 En yakın durak sıralaması her hâlükârda **yürüme** mesafesine göre yapılır:
 kullanıcı durağa yürüyerek gidiyor, araba mesafesi orada yanıltıcı olurdu.

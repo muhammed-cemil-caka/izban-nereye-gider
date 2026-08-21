@@ -84,6 +84,10 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
 
   static const _yonlendirmeYakinligi = 17.0;
 
+  /// Araçta biraz daha geniş bakış: 17 yaya yakınlığı, sürüşte bir sonraki
+  /// kavşak ekrana girmiyor.
+  static const _arabaYakinligi = 16.0;
+
   /// "Konumuma dön" düğmesinin en az açacağı yakınlık. Kullanıcı daha
   /// yakındaysa yakınlığı bozmayız.
   static const _konumaDonYakinligi = 16.0;
@@ -247,7 +251,9 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
     _kameraHedefi = konum;
     _kamerayiTasi(
       LatLng(konum.enlem, konum.boylam),
-      yakinlik: _yonlendirmeYakinligi,
+      yakinlik: widget.yuruyusRotasi?.kip == RotaKipi.araba
+          ? _arabaYakinligi
+          : _yonlendirmeYakinligi,
     );
     _yonlendirmeBasladi = true;
     // Pusula varsa telefonun baktığı yön, yoksa hareket yönü.

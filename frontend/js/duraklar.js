@@ -1,15 +1,16 @@
 // OTOMATİK ÜRETİLDİ — elle düzenlemeyin.
 // Kaynak: backend/veri/duraklar.json — değişiklik sonrası: node araclar/veri-dagit.js
 const HAT_VERISI = {
-  "surum": "2.1.0",
+  "surum": "2.3.0",
   "guncellemeTarihi": "2026-08-21",
   "uyari": "Durak sırası, koordinatlar ve aktarmalar OpenStreetMap verisinden üretilmiştir. SÜRELER TAHMİNİDİR: gerçek mesafeden hesaplanır, resmî tarife değildir. Gerçek varış saatleri için izban.com.tr tarifesi kullanılmalıdır.",
   "kaynak": {
     "duraklar": "OpenStreetMap rota ilişkileri 15423228 ve 16191185",
     "lisans": "ODbL — © OpenStreetMap katkıcıları",
     "ilce": "Nominatim ters coğrafi kodlama",
-    "sureModeli": "65 km/sa ortalama hız, 1.08× ray katsayısı, durak başına 0.6 dk bekleme",
-    "otobus": "OpenStreetMap — durağa 400 m'den yakın ESHOT otobüs hatları (type=route, route=bus ilişkileri)"
+    "sureModeli": "65 km/sa ortalama hız, durak başına 0.6 dk bekleme; mesafeler gerçek ray geometrisi üzerinden ölçülür",
+    "otobus": "OpenStreetMap — durağa 400 m'den yakın ESHOT otobüs hatları (type=route, route=bus ilişkileri)",
+    "aktarmaNoktalari": "OpenStreetMap — her aktarma türünün durağa en yakın noktası (raylı/vapur 600 m, otobüs 400 m)"
   },
   "hat": {
     "ad": "İZBAN Banliyö Hattı",
@@ -36,6 +37,17 @@ const HAT_VERISI = {
         "837",
         "849",
         "936"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Aliağa Terminal İçi",
+          "konum": {
+            "enlem": 38.7900492,
+            "boylam": 26.9676547
+          },
+          "mesafeM": 148
+        }
       ]
     },
     {
@@ -43,7 +55,7 @@ const HAT_VERISI = {
       "ad": "Biçerova",
       "ilce": "Aliağa",
       "dakika": 5,
-      "mesafeKm": 4.79,
+      "mesafeKm": 5.21,
       "konum": {
         "enlem": 38.749225,
         "boylam": 26.960827
@@ -53,6 +65,17 @@ const HAT_VERISI = {
       ],
       "otobusHatlari": [
         "745"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Biçerova",
+          "konum": {
+            "enlem": 38.7500608,
+            "boylam": 26.9614045
+          },
+          "mesafeM": 106
+        }
       ]
     },
     {
@@ -60,7 +83,7 @@ const HAT_VERISI = {
       "ad": "Hatundere",
       "ilce": "Menemen",
       "dakika": 14,
-      "mesafeKm": 13.67,
+      "mesafeKm": 13.51,
       "konum": {
         "enlem": 38.689897,
         "boylam": 27.017432
@@ -71,7 +94,7 @@ const HAT_VERISI = {
       "ad": "Menemen",
       "ilce": "Menemen",
       "dakika": 25,
-      "mesafeKm": 25.46,
+      "mesafeKm": 25.57,
       "konum": {
         "enlem": 38.603221,
         "boylam": 27.076514
@@ -81,6 +104,17 @@ const HAT_VERISI = {
       ],
       "otobusHatlari": [
         "749"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Menemen Aktarma Merkezi",
+          "konum": {
+            "enlem": 38.6038001,
+            "boylam": 27.077142
+          },
+          "mesafeM": 84
+        }
       ]
     },
     {
@@ -88,7 +122,7 @@ const HAT_VERISI = {
       "ad": "Egekent 2",
       "ilce": "Menemen",
       "dakika": 31,
-      "mesafeKm": 31.41,
+      "mesafeKm": 31.22,
       "konum": {
         "enlem": 38.560558,
         "boylam": 27.044252
@@ -98,8 +132,8 @@ const HAT_VERISI = {
       "kod": "ulukent",
       "ad": "Ulukent",
       "ilce": "Menemen",
-      "dakika": 34,
-      "mesafeKm": 33.15,
+      "dakika": 33,
+      "mesafeKm": 32.85,
       "konum": {
         "enlem": 38.547782,
         "boylam": 27.035451
@@ -109,14 +143,25 @@ const HAT_VERISI = {
       ],
       "otobusHatlari": [
         "850"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Ulukent Aktarma Merkezi",
+          "konum": {
+            "enlem": 38.5478528,
+            "boylam": 27.0351326
+          },
+          "mesafeM": 29
+        }
       ]
     },
     {
       "kod": "egekent",
       "ad": "Egekent",
       "ilce": "Çiğli",
-      "dakika": 39,
-      "mesafeKm": 38.11,
+      "dakika": 38,
+      "mesafeKm": 37.8,
       "konum": {
         "enlem": 38.507331,
         "boylam": 27.045912
@@ -131,6 +176,26 @@ const HAT_VERISI = {
         "596",
         "817",
         "912"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Egekent Aktarma Merkezi",
+          "konum": {
+            "enlem": 38.5074076,
+            "boylam": 27.0463688
+          },
+          "mesafeM": 41
+        },
+        {
+          "tur": "Tramvay",
+          "ad": "Evka 5",
+          "konum": {
+            "enlem": 38.5062542,
+            "boylam": 27.0426469
+          },
+          "mesafeM": 308
+        }
       ]
     },
     {
@@ -138,7 +203,7 @@ const HAT_VERISI = {
       "ad": "Atasanayi",
       "ilce": "Çiğli",
       "dakika": 40,
-      "mesafeKm": 39.32,
+      "mesafeKm": 38.92,
       "konum": {
         "enlem": 38.498993,
         "boylam": 27.053177
@@ -151,6 +216,26 @@ const HAT_VERISI = {
         "535",
         "595",
         "912"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Çiğli Santral",
+          "konum": {
+            "enlem": 38.5004936,
+            "boylam": 27.0544185
+          },
+          "mesafeM": 199
+        },
+        {
+          "tur": "Tramvay",
+          "ad": "Çiğli Bölge Hastanesi",
+          "konum": {
+            "enlem": 38.4975483,
+            "boylam": 27.0487309
+          },
+          "mesafeM": 419
+        }
       ]
     },
     {
@@ -158,7 +243,7 @@ const HAT_VERISI = {
       "ad": "Çiğli",
       "ilce": "Çiğli",
       "dakika": 42,
-      "mesafeKm": 40.63,
+      "mesafeKm": 40.14,
       "konum": {
         "enlem": 38.491608,
         "boylam": 27.063423
@@ -171,14 +256,34 @@ const HAT_VERISI = {
         "535",
         "817",
         "912"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Çiğli Aktarma Merkezi",
+          "konum": {
+            "enlem": 38.4918609,
+            "boylam": 27.0615913
+          },
+          "mesafeM": 162
+        },
+        {
+          "tur": "Tramvay",
+          "ad": "Semra Aksu",
+          "konum": {
+            "enlem": 38.4923579,
+            "boylam": 27.0615902
+          },
+          "mesafeM": 180
+        }
       ]
     },
     {
       "kod": "mavisehir",
       "ad": "Mavişehir",
       "ilce": "Karşıyaka",
-      "dakika": 45,
-      "mesafeKm": 42.79,
+      "dakika": 44,
+      "mesafeKm": 42.15,
       "konum": {
         "enlem": 38.482184,
         "boylam": 27.082995
@@ -189,6 +294,17 @@ const HAT_VERISI = {
       "otobusHatlari": [
         "535",
         "912"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Mavişehir Aktarma Merkezi",
+          "konum": {
+            "enlem": 38.481032,
+            "boylam": 27.0838266
+          },
+          "mesafeM": 147
+        }
       ]
     },
     {
@@ -196,7 +312,7 @@ const HAT_VERISI = {
       "ad": "Şemikler",
       "ilce": "Karşıyaka",
       "dakika": 46,
-      "mesafeKm": 43.87,
+      "mesafeKm": 43.15,
       "konum": {
         "enlem": 38.474955,
         "boylam": 27.089842
@@ -206,8 +322,8 @@ const HAT_VERISI = {
       "kod": "demirkopru",
       "ad": "Demirköprü",
       "ilce": "Karşıyaka",
-      "dakika": 48,
-      "mesafeKm": 44.89,
+      "dakika": 47,
+      "mesafeKm": 44.1,
       "konum": {
         "enlem": 38.468094,
         "boylam": 27.096235
@@ -217,8 +333,8 @@ const HAT_VERISI = {
       "kod": "nergiz",
       "ad": "Nergiz",
       "ilce": "Karşıyaka",
-      "dakika": 50,
-      "mesafeKm": 46.19,
+      "dakika": 49,
+      "mesafeKm": 45.3,
       "konum": {
         "enlem": 38.459542,
         "boylam": 27.104702
@@ -233,6 +349,17 @@ const HAT_VERISI = {
         "487",
         "532",
         "847"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Geçit 1",
+          "konum": {
+            "enlem": 38.4586437,
+            "boylam": 27.1072105
+          },
+          "mesafeM": 240
+        }
       ]
     },
     {
@@ -240,7 +367,7 @@ const HAT_VERISI = {
       "ad": "Karşıyaka",
       "ilce": "Karşıyaka",
       "dakika": 51,
-      "mesafeKm": 47.19,
+      "mesafeKm": 46.27,
       "konum": {
         "enlem": 38.457852,
         "boylam": 27.115136
@@ -248,28 +375,59 @@ const HAT_VERISI = {
       "aktarma": [
         "Tramvay",
         "Vapur"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "Tramvay",
+          "ad": "Karşıyaka İskele",
+          "konum": {
+            "enlem": 38.4545942,
+            "boylam": 27.1190376
+          },
+          "mesafeM": 497
+        },
+        {
+          "tur": "Vapur",
+          "ad": "Karşıyaka",
+          "konum": {
+            "enlem": 38.4552409,
+            "boylam": 27.1201572
+          },
+          "mesafeM": 525
+        }
       ]
     },
     {
       "kod": "alaybey",
       "ad": "Alaybey",
       "ilce": "Karşıyaka",
-      "dakika": 53,
-      "mesafeKm": 47.88,
+      "dakika": 52,
+      "mesafeKm": 46.91,
       "konum": {
         "enlem": 38.460619,
         "boylam": 27.121472
       },
       "aktarma": [
         "Tramvay"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "Tramvay",
+          "ad": "Alaybey",
+          "konum": {
+            "enlem": 38.4600515,
+            "boylam": 27.1271438
+          },
+          "mesafeM": 498
+        }
       ]
     },
     {
       "kod": "naldoken",
       "ad": "Naldöken",
       "ilce": "Karşıyaka",
-      "dakika": 54,
-      "mesafeKm": 48.69,
+      "dakika": 53,
+      "mesafeKm": 47.67,
       "konum": {
         "enlem": 38.464582,
         "boylam": 27.12853
@@ -289,14 +447,34 @@ const HAT_VERISI = {
         "434",
         "543",
         "912"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Bahçelievler Son Durak",
+          "konum": {
+            "enlem": 38.4653618,
+            "boylam": 27.1269179
+          },
+          "mesafeM": 165
+        },
+        {
+          "tur": "Tramvay",
+          "ad": "Alaybey",
+          "konum": {
+            "enlem": 38.4600515,
+            "boylam": 27.1271438
+          },
+          "mesafeM": 518
+        }
       ]
     },
     {
       "kod": "turan",
       "ad": "Turan",
       "ilce": "Bayraklı",
-      "dakika": 56,
-      "mesafeKm": 50.64,
+      "dakika": 55,
+      "mesafeKm": 49.51,
       "konum": {
         "enlem": 38.466765,
         "boylam": 27.149061
@@ -315,14 +493,25 @@ const HAT_VERISI = {
         "434",
         "543",
         "912"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Turan",
+          "konum": {
+            "enlem": 38.4675452,
+            "boylam": 27.1493423
+          },
+          "mesafeM": 90
+        }
       ]
     },
     {
       "kod": "bayrakli",
       "ad": "Bayraklı",
       "ilce": "Bayraklı",
-      "dakika": 58,
-      "mesafeKm": 52.13,
+      "dakika": 57,
+      "mesafeKm": 51.08,
       "konum": {
         "enlem": 38.463843,
         "boylam": 27.164418
@@ -347,14 +536,25 @@ const HAT_VERISI = {
         "543",
         "599",
         "912"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Bayraklı İstasyon",
+          "konum": {
+            "enlem": 38.4631371,
+            "boylam": 27.1647897
+          },
+          "mesafeM": 85
+        }
       ]
     },
     {
       "kod": "salhane",
       "ad": "Salhane",
       "ilce": "Bayraklı",
-      "dakika": 61,
-      "mesafeKm": 53.88,
+      "dakika": 59,
+      "mesafeKm": 52.71,
       "konum": {
         "enlem": 38.450557,
         "boylam": 27.172182
@@ -372,14 +572,25 @@ const HAT_VERISI = {
         "240",
         "338",
         "434"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Salhane İş Merkezi",
+          "konum": {
+            "enlem": 38.4508058,
+            "boylam": 27.1715319
+          },
+          "mesafeM": 63
+        }
       ]
     },
     {
       "kod": "halkapinar",
       "ad": "Halkapınar",
       "ilce": "Konak",
-      "dakika": 63,
-      "mesafeKm": 55.75,
+      "dakika": 62,
+      "mesafeKm": 54.58,
       "konum": {
         "enlem": 38.43519,
         "boylam": 27.168837
@@ -402,6 +613,35 @@ const HAT_VERISI = {
         "555",
         "564",
         "599"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Halkapınar Metro",
+          "konum": {
+            "enlem": 38.433438,
+            "boylam": 27.1688233
+          },
+          "mesafeM": 195
+        },
+        {
+          "tur": "Metro",
+          "ad": "Halkapınar",
+          "konum": {
+            "enlem": 38.4349028,
+            "boylam": 27.1687189
+          },
+          "mesafeM": 34
+        },
+        {
+          "tur": "Tramvay",
+          "ad": "Halkapınar",
+          "konum": {
+            "enlem": 38.4341376,
+            "boylam": 27.1719198
+          },
+          "mesafeM": 293
+        }
       ]
     },
     {
@@ -409,7 +649,7 @@ const HAT_VERISI = {
       "ad": "Alsancak Gar",
       "ilce": "Konak",
       "dakika": 65,
-      "mesafeKm": 57.69,
+      "mesafeKm": 57.47,
       "konum": {
         "enlem": 38.438597,
         "boylam": 27.148762
@@ -425,6 +665,26 @@ const HAT_VERISI = {
         "912",
         "930",
         "963"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Alsancak Gar",
+          "konum": {
+            "enlem": 38.4387653,
+            "boylam": 27.1492792
+          },
+          "mesafeM": 49
+        },
+        {
+          "tur": "Tramvay",
+          "ad": "Alsancak Gar",
+          "konum": {
+            "enlem": 38.4395222,
+            "boylam": 27.1481284
+          },
+          "mesafeM": 117
+        }
       ]
     },
     {
@@ -432,13 +692,24 @@ const HAT_VERISI = {
       "ad": "Hilal",
       "ilce": "Konak",
       "dakika": 67,
-      "mesafeKm": 59.33,
+      "mesafeKm": 58.99,
       "konum": {
         "enlem": 38.425612,
         "boylam": 27.154359
       },
       "aktarma": [
         "Metro"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "Metro",
+          "ad": "Hilal",
+          "konum": {
+            "enlem": 38.4269447,
+            "boylam": 27.155109
+          },
+          "mesafeM": 162
+        }
       ]
     },
     {
@@ -446,7 +717,7 @@ const HAT_VERISI = {
       "ad": "Kemer",
       "ilce": "Konak",
       "dakika": 68,
-      "mesafeKm": 59.82,
+      "mesafeKm": 59.45,
       "konum": {
         "enlem": 38.42178,
         "boylam": 27.156184
@@ -461,14 +732,34 @@ const HAT_VERISI = {
         "249",
         "348",
         "367"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Kemer Aktarma Merkezi",
+          "konum": {
+            "enlem": 38.4217857,
+            "boylam": 27.1566839
+          },
+          "mesafeM": 44
+        },
+        {
+          "tur": "Metro",
+          "ad": "Hilal",
+          "konum": {
+            "enlem": 38.4269447,
+            "boylam": 27.155109
+          },
+          "mesafeM": 582
+        }
       ]
     },
     {
       "kod": "sirinyer",
       "ad": "Şirinyer",
       "ilce": "Buca",
-      "dakika": 72,
-      "mesafeKm": 63.51,
+      "dakika": 73,
+      "mesafeKm": 63.64,
       "konum": {
         "enlem": 38.391941,
         "boylam": 27.147142
@@ -479,6 +770,17 @@ const HAT_VERISI = {
       "otobusHatlari": [
         "515",
         "838"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Şirinyer İstasyonu",
+          "konum": {
+            "enlem": 38.3917198,
+            "boylam": 27.1473904
+          },
+          "mesafeM": 33
+        }
       ]
     },
     {
@@ -486,7 +788,7 @@ const HAT_VERISI = {
       "ad": "Koşu",
       "ilce": "Buca",
       "dakika": 74,
-      "mesafeKm": 64.5,
+      "mesafeKm": 64.57,
       "konum": {
         "enlem": 38.383636,
         "boylam": 27.147495
@@ -496,6 +798,17 @@ const HAT_VERISI = {
       ],
       "otobusHatlari": [
         "171"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "İZBAN Koşu Durağı",
+          "konum": {
+            "enlem": 38.3836693,
+            "boylam": 27.1473911
+          },
+          "mesafeM": 10
+        }
       ]
     },
     {
@@ -503,7 +816,7 @@ const HAT_VERISI = {
       "ad": "İnkılap",
       "ilce": "Buca",
       "dakika": 76,
-      "mesafeKm": 66.36,
+      "mesafeKm": 66.29,
       "konum": {
         "enlem": 38.368872,
         "boylam": 27.141503
@@ -514,7 +827,7 @@ const HAT_VERISI = {
       "ad": "Semt Garajı",
       "ilce": "Gaziemir",
       "dakika": 78,
-      "mesafeKm": 67.86,
+      "mesafeKm": 67.68,
       "konum": {
         "enlem": 38.357007,
         "boylam": 27.136608
@@ -524,6 +837,17 @@ const HAT_VERISI = {
       ],
       "otobusHatlari": [
         "610"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Gaziemir Aktarma Merkezi",
+          "konum": {
+            "enlem": 38.3572079,
+            "boylam": 27.1355668
+          },
+          "mesafeM": 93
+        }
       ]
     },
     {
@@ -531,7 +855,7 @@ const HAT_VERISI = {
       "ad": "ESBAŞ",
       "ilce": "Gaziemir",
       "dakika": 81,
-      "mesafeKm": 70.27,
+      "mesafeKm": 69.95,
       "konum": {
         "enlem": 38.336941,
         "boylam": 27.136454
@@ -541,14 +865,25 @@ const HAT_VERISI = {
       ],
       "otobusHatlari": [
         "204"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Ege Serbest Bölge",
+          "konum": {
+            "enlem": 38.3369898,
+            "boylam": 27.1341528
+          },
+          "mesafeM": 201
+        }
       ]
     },
     {
       "kod": "gaziemir",
       "ad": "Gaziemir",
       "ilce": "Gaziemir",
-      "dakika": 83,
-      "mesafeKm": 71.59,
+      "dakika": 82,
+      "mesafeKm": 71.17,
       "konum": {
         "enlem": 38.326327,
         "boylam": 27.139891
@@ -559,7 +894,7 @@ const HAT_VERISI = {
       "ad": "Sarnıç",
       "ilce": "Gaziemir",
       "dakika": 85,
-      "mesafeKm": 73.35,
+      "mesafeKm": 72.8,
       "konum": {
         "enlem": 38.312123,
         "boylam": 27.144581
@@ -569,14 +904,25 @@ const HAT_VERISI = {
       ],
       "otobusHatlari": [
         "204"
+      ],
+      "aktarmaNoktalari": [
+        {
+          "tur": "ESHOT",
+          "ad": "Sarnıç Alt Geçiti",
+          "konum": {
+            "enlem": 38.3122389,
+            "boylam": 27.1426027
+          },
+          "mesafeM": 173
+        }
       ]
     },
     {
       "kod": "havalimani",
       "ad": "Havalimanı",
       "ilce": "Gaziemir",
-      "dakika": 88,
-      "mesafeKm": 75.87,
+      "dakika": 87,
+      "mesafeKm": 75.16,
       "konum": {
         "enlem": 38.291261,
         "boylam": 27.147718
@@ -586,8 +932,8 @@ const HAT_VERISI = {
       "kod": "cumaovasi",
       "ad": "Cumaovası",
       "ilce": "Menderes",
-      "dakika": 92,
-      "mesafeKm": 79.43,
+      "dakika": 91,
+      "mesafeKm": 78.61,
       "konum": {
         "enlem": 38.264131,
         "boylam": 27.162903
@@ -597,8 +943,8 @@ const HAT_VERISI = {
       "kod": "develi",
       "ad": "Develi",
       "ilce": "Menderes",
-      "dakika": 99,
-      "mesafeKm": 86.75,
+      "dakika": 98,
+      "mesafeKm": 85.53,
       "konum": {
         "enlem": 38.203284,
         "boylam": 27.166602
@@ -608,8 +954,8 @@ const HAT_VERISI = {
       "kod": "tekeli",
       "ad": "Tekeli",
       "ilce": "Menderes",
-      "dakika": 103,
-      "mesafeKm": 89.97,
+      "dakika": 102,
+      "mesafeKm": 88.57,
       "konum": {
         "enlem": 38.181005,
         "boylam": 27.185652
@@ -619,8 +965,8 @@ const HAT_VERISI = {
       "kod": "pancar",
       "ad": "Pancar",
       "ilce": "Torbalı",
-      "dakika": 108,
-      "mesafeKm": 95.42,
+      "dakika": 107,
+      "mesafeKm": 94,
       "konum": {
         "enlem": 38.197416,
         "boylam": 27.239537
@@ -630,8 +976,8 @@ const HAT_VERISI = {
       "kod": "kuscuburun",
       "ad": "Kuşçuburun",
       "ilce": "Torbalı",
-      "dakika": 115,
-      "mesafeKm": 102.16,
+      "dakika": 114,
+      "mesafeKm": 100.48,
       "konum": {
         "enlem": 38.209128,
         "boylam": 27.309317
@@ -641,8 +987,8 @@ const HAT_VERISI = {
       "kod": "torbali",
       "ad": "Torbalı",
       "ilce": "Torbalı",
-      "dakika": 121,
-      "mesafeKm": 108.07,
+      "dakika": 119,
+      "mesafeKm": 106.05,
       "konum": {
         "enlem": 38.169825,
         "boylam": 27.347025
@@ -652,8 +998,8 @@ const HAT_VERISI = {
       "kod": "tepekoy",
       "ad": "Tepeköy",
       "ilce": "Torbalı",
-      "dakika": 125,
-      "mesafeKm": 111.1,
+      "dakika": 123,
+      "mesafeKm": 108.86,
       "konum": {
         "enlem": 38.147225,
         "boylam": 27.36133
@@ -663,8 +1009,8 @@ const HAT_VERISI = {
       "kod": "saglik",
       "ad": "Sağlık",
       "ilce": "Torbalı",
-      "dakika": 133,
-      "mesafeKm": 119.45,
+      "dakika": 130,
+      "mesafeKm": 116.59,
       "konum": {
         "enlem": 38.084974,
         "boylam": 27.400596
@@ -674,8 +1020,8 @@ const HAT_VERISI = {
       "kod": "belevi",
       "ad": "Belevi",
       "ilce": "Selçuk",
-      "dakika": 140,
-      "mesafeKm": 126.57,
+      "dakika": 137,
+      "mesafeKm": 123.47,
       "konum": {
         "enlem": 38.031431,
         "boylam": 27.433077
@@ -685,8 +1031,8 @@ const HAT_VERISI = {
       "kod": "selcuk",
       "ad": "Selçuk",
       "ilce": "Selçuk",
-      "dakika": 151,
-      "mesafeKm": 137.81,
+      "dakika": 148,
+      "mesafeKm": 134.6,
       "konum": {
         "enlem": 37.950734,
         "boylam": 27.373029
