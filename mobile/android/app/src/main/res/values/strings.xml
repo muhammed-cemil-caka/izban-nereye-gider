@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kullanıcıya görünen uygulama adı. Manifest'te teknik ad
+     (izban_nereye_gider) yazıyordu ve ana ekranda öyle görünüyordu. -->
+<resources>
+    <string name="uygulama_adi">İZBAN Nereye Gider?</string>
+</resources>

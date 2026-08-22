@@ -1,11 +1,11 @@
 {
   "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
+    "rules": "backend/firestore.rules",
+    "indexes": "backend/firestore.indexes.json"
   },
   "functions": [
     {
-      "source": "functions",
+      "source": "backend/functions",
       "codebase": "default",
       "runtime": "nodejs22",
       "ignore": [
@@ -16,7 +16,7 @@
     }
   ],
   "hosting": {
-    "public": "../frontend",
+    "public": "frontend",
     "ignore": [
       "**/.*",
       "**/node_modules/**"

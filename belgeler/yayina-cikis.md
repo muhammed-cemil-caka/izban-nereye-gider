@@ -2,16 +2,26 @@
 
 Sırayla. Her adımın sonunda çalışır bir şey var.
 
-## 1. Web — bugün yapılabilir
+## 1. Web — YAYINDA
+
+Site: **https://izban-nereye-gider.web.app**
+
+`firebase.json` ve `.firebaserc` **depo kökünde** (bkz.
+`backend/OKUBENI-yapilandirma.md`). Komutlar kökten çalıştırılır:
 
 ```bash
-cd backend
-npm --prefix functions install
-firebase login
-firebase deploy --only hosting,functions
+npm --prefix backend/functions install
+firebase deploy --only hosting
 ```
 
-Bittiğinde site `https://izban-nereye-gider.web.app` adresinde.
+**Fonksiyonlar henüz yayında değil:** Cloud Functions v2, projenin Blaze
+(kullandıkça öde) planında olmasını istiyor. Vekil uçları o zamana kadar
+kapalı; istemciler bunu yokluyor ve doğrudan dış servise gidiyor, uygulama
+sorunsuz çalışıyor. Blaze'e geçince:
+
+```bash
+firebase deploy --only functions
+```
 
 Neyin yayına gittiği:
 
@@ -58,24 +68,47 @@ Anahtarın adreste görünmesi normaldir; koruma referrer kısıtıyla yapılır
 
 ## 4. Mobil mağazalar
 
-Ortak:
+### Hazır olanlar
 
-- Uygulama adı ve ikon: `android:label` hâlâ `izban_nereye_gider`, ikon
-  Flutter varsayılanı.
-- **Marka:** paket adı `com.izban.*`, uygulama adı ve logo İZBAN'a ait.
-  İzin almadan mağazaya çıkmak kaldırılma riski taşır. Ya izin al, ya kendi
-  adın ve logonla çık.
-- Gizlilik politikası URL'si (konum izni var) — Hosting'e bir sayfa koy yeter.
+- Uygulama adı: `İZBAN Nereye Gider?` (önce teknik ad görünüyordu)
+- Başlatıcı simgesi: `python3 araclar/uygulama-simgesi-uret.py` ile logodan
+  üretildi; Play Console listeleme simgesi de hazır
+  (`mobile/android/app/src/main/ic_launcher-playstore.png`, 512×512)
+- `targetSdk 36` — Play'in güncel eşiğini karşılıyor
+- AAB üretimi çalışıyor, R8 küçültme açık
+- İmza bağlantısı kurulu: `android/key.properties` varsa kullanılır
 
-Play Store:
+### Sende kalanlar
+
+**1. İmza anahtarı.** Parola gerektirdiği için bunu sen üretmelisin:
 
 ```bash
-cd mobile
-flutter build appbundle --release
+keytool -genkey -v -keystore ~/izban-yayin.jks -keyalg RSA \
+        -keysize 2048 -validity 10000 -alias izban
 ```
 
-Önce imzalama: `android/app/build.gradle.kts` içindeki `release` bloğu hâlâ
-debug anahtarıyla imzalıyor. Kendi keystore'unu üret, `key.properties` ile bağla.
+Sonra `mobile/android/key.properties`:
+
+```
+storeFile=/Users/<kullanici>/izban-yayin.jks
+storePassword=...
+keyAlias=izban
+keyPassword=...
+```
+
+Dosya `.gitignore`'da. **Anahtarı kaybetme:** ilk yüklemeden sonra aynı
+anahtarla imzalamak zorundasın, yoksa güncelleme yayımlayamazsın.
+
+```bash
+cd mobile && flutter build appbundle --release
+```
+
+**2. Marka.** Paket adı `com.izban.*`, uygulama adı ve logo İZBAN'a ait.
+İzin almadan mağazaya çıkmak kaldırılma riski taşır. Ya izin al, ya kendi adın
+ve logonla çık.
+
+**3. Gizlilik politikası URL'si** (konum izni var) — Hosting'e bir sayfa koymak
+yeterli. **Data safety** formu da doldurulacak.
 
 App Store: macOS + Xcode, `flutter build ipa`, yıllık 99 $ Apple Developer
 hesabı. Bundle id hazır (`com.izban.izbanNereyeGider`).
