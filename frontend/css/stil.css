@@ -935,3 +935,31 @@ body.acilis-acik { overflow: hidden; }
 /* Dil düğmesi üst bantta, tema düğmesinin yanında. */
 .ust-dugmeler { display: flex; gap: .4rem; flex: none; }
 .dil-dugmesi { font-size: .78rem; font-weight: 700; letter-spacing: .04em; }
+
+/* ---------- Toplu taşıma penceresi ----------
+
+   Turistik yere toplu taşıma tarifi. Önce rota durum satırına tek satır
+   hâlinde basılıyordu; adımlar birbirine giriyor ve okunmuyordu. Mobildeki
+   iletişim kutusunun karşılığı. */
+.toplu-pencere {
+  width: min(30rem, calc(100vw - 2rem));
+  padding: 1.2rem 1.3rem 1.1rem;
+  border: 1px solid var(--cizgi);
+  border-radius: 16px;
+  background: var(--zemin-kart);
+  background-image: var(--kutu-yuzey);
+  color: var(--yazi);
+  box-shadow: var(--golge-kabarik);
+}
+.toplu-pencere::backdrop { background: rgb(6 14 26 / .55); }
+.toplu-baslik { margin: 0 0 .8rem; font-size: 1.05rem; line-height: 1.3; }
+.toplu-adimlar { margin: 0; padding-left: 1.3rem; display: grid; gap: .5rem; font-size: .92rem; }
+.toplu-adimlar li { line-height: 1.45; }
+.toplu-not {
+  margin: .9rem 0 1rem;
+  padding-top: .8rem;
+  border-top: 1px solid var(--cizgi);
+  font-size: .78rem; line-height: 1.5;
+  color: var(--yazi-soluk);
+}
+.toplu-pencere form { display: flex; justify-content: flex-end; }

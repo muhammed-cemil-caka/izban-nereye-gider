@@ -76,7 +76,11 @@
     konumAramaDurum: document.getElementById('konumAramaDurum'),
     konumAramaListe: document.getElementById('konumAramaListe'),
     tema: document.getElementById('temaDugmesi'),
-    dil: document.getElementById('dilDugmesi')
+    dil: document.getElementById('dilDugmesi'),
+    topluPencere: document.getElementById('topluPencere'),
+    topluBaslik: document.getElementById('topluBaslik'),
+    topluAdimlar: document.getElementById('topluAdimlar'),
+    topluNot: document.getElementById('topluNot')
   };
 
   /* ---------- Tema ---------- */
@@ -263,6 +267,17 @@
   };
 
   /**
+   * Aktarma türünün görünen adı.
+   *
+   * Tür veriden ham geliyor ("Tramvay", "Vapur"); bunlar cins isim, çevrilir.
+   * ESHOT işletmecinin adı, Metro iki dilde de aynı — oldukları gibi kalır.
+   */
+  function aktarmaTuruAdi(tur) {
+    var anahtar = { Tramvay: 'aktarmaTuruTramvay', Vapur: 'aktarmaTuruVapur' }[tur];
+    return anahtar ? ceviri(anahtar) : tur;
+  }
+
+  /**
    * Aktarma noktasına yürüyüş rotası çizip canlı yönlendirmeyi başlatır.
    *
    * Kullanıcı "metroya nasıl giderim" diye sorduğunda beklediği şey rota
@@ -271,7 +286,8 @@
    */
   function aktarmayaYonlendir(nokta, durakAdi) {
     var hedef = {
-      ad: (nokta.ad || durakAdi) + ' — ' + ceviri('aktarmaTuruEki', { tur: nokta.tur }),
+      ad: (nokta.ad || durakAdi) + ' — ' +
+          ceviri('aktarmaTuruEki', { tur: aktarmaTuruAdi(nokta.tur) }),
       konum: nokta.konum
     };
     yolTarifiniGoster(hedef, 'yuruyus', { yonlendir: true });
@@ -667,7 +683,8 @@
     var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
     rotaDurumuYaz(ceviri(secilenKip === 'araba' ? 'durakSeciliyorAraba' : 'durakSeciliyorYuruyus'));
 
-    yereEnYakinDurak(yer, secilenKip).then(function (durak) {
+    yereEnYakinDurak(yer, secilenKip).then(function (secim) {
+      var durak = secim.durak;
       // Haritada o durağı seçili getir.
       oge.binis.value = durak.kod;
       if (oge.inis.value === oge.binis.value) {
@@ -704,7 +721,9 @@
     var adaylar = enYakinDuraklar(aktifDuraklar, yer.konum, 6);
     if (!adaylar.length) return Promise.reject(new Error(ceviri('durakBulunamadi')));
 
-    if (typeof mesafeleriAl !== 'function') return Promise.resolve(adaylar[0].durak);
+    // Kuş uçuşu yedek: servis yanıt vermezse akış kesilmesin.
+    var yedek = { durak: adaylar[0].durak, mesafeM: adaylar[0].mesafeM, kusUcusu: true };
+    if (typeof mesafeleriAl !== 'function') return Promise.resolve(yedek);
 
     return mesafeleriAl(yer.konum, adaylar.map(function (a) { return a.durak.konum; }), kip)
       .then(function (olcumler) {
@@ -713,39 +732,77 @@
             var olcum = olcumler[sira];
             return {
               durak: aday.durak,
-              sureSn: olcum && isFinite(olcum.sureSn) ? olcum.sureSn : Infinity
+              mesafeM: olcum && isFinite(olcum.mesafeM) ? olcum.mesafeM : aday.mesafeM,
+              sureSn: olcum && isFinite(olcum.sureSn) ? olcum.sureSn : Infinity,
+              kusUcusu: false
             };
           })
           .sort(function (a, b) { return a.sureSn - b.sureSn; });
 
-        return sirali[0].durak;
+        return sirali[0].sureSn === Infinity ? yedek : sirali[0];
       })
       .catch(function () {
-        // Servis yanıt vermezse kuş uçuşu sıralama kalır; akış kesilmez.
-        return adaylar[0].durak;
+        return yedek;
       });
   }
 
+  // Durakta duran çok hat olabiliyor (Halkapınar'da 20); hepsini yazmak
+  // pencereyi şişiriyor.
+  var GORUNUR_TOPLU_HAT = 8;
+
   /**
-   * Toplu taşıma: gerçek bir sefer motorumuz yok, aktarma zinciri anlatılır.
+   * Toplu taşıma: gerçek bir sefer motorumuz yok, gidiş zinciri anlatılır.
    *
-   * OSRM'de toplu taşıma profili yok; sefer saati verisi de elimizde yok.
+   * OSRM'de toplu taşıma profili yok; ESHOT tarife verisi de elimizde yok.
    * Uydurulmuş bir süre yolcuyu yanıltır, o yüzden yalnızca zincir gösterilir.
+   *
+   * Durak, "Yürüyerek" düğmesiyle AYNI yöntemle seçilir: kuş uçuşu değil,
+   * yürüyüş ağı. İkisi farklı durak söylerse tarif kendi içinde çelişiyordu —
+   * ölçüldü, Çiğli kuş uçuşu daha yakın ama yürüyüşle 2,5 km, Mavişehir 1,4 km.
    */
   function topluTasimaAnlat(yer) {
-    var adaylar = enYakinDuraklar(aktifDuraklar, yer.konum, 1);
-    if (!adaylar.length) return;
+    rotaDurumuYaz(ceviri('topluHesaplaniyor'));
 
-    var durak = adaylar[0].durak;
-    var hatlar = (durak.otobusHatlari || []).slice(0, 6).join(', ');
-    var aktarmalar = (durak.aktarma || []).join(' · ');
+    yereEnYakinDurak(yer, 'yuruyus').then(function (secim) {
+      rotaDurumuYaz('');
+      topluPencereyiAc(yer, secim);
+    }).catch(function (sorun) {
+      rotaDurumuYaz(sorun.message || ceviri('durakBulunamadi'), 'hata');
+    });
+  }
 
-    rotaDurumuYaz(ceviri('topluTasimaAnlat', {
-      durak: durak.ad,
-      aktarma: aktarmalar || '—',
-      hatlar: hatlar || '—',
-      yer: yer.ad
-    }));
+  function topluPencereyiAc(yer, secim) {
+    var durak = secim.durak;
+    var hatlar = (durak.otobusHatlari || []).slice(0, GORUNUR_TOPLU_HAT).join(', ');
+    var aktarmalar = (durak.aktarma || []).map(aktarmaTuruAdi).join(' · ');
+
+    // Adımlar diziden numaralanır: aktarması ya da otobüs hattı olmayan
+    // durakta sabit numaralar "1, 2, 4" diye atlıyordu.
+    var adimlar = [
+      ceviri('topluAdimIzban', { durak: durak.ad }),
+      ceviri('topluAdimYuru', { yer: yer.ad, mesafe: mesafeBicimle(secim.mesafeM) })
+    ];
+    if (aktarmalar) {
+      adimlar.push(ceviri('topluAdimAktarma', { durak: durak.ad, aktarma: aktarmalar }));
+    }
+    if (hatlar) {
+      adimlar.push(ceviri('topluAdimHatlar', { hatlar: hatlar }));
+    }
+
+    oge.topluBaslik.textContent = ceviri('topluBaslik', { yer: yer.ad });
+    oge.topluAdimlar.textContent = '';
+    adimlar.forEach(function (metin) {
+      var satir = document.createElement('li');
+      satir.textContent = metin;
+      oge.topluAdimlar.appendChild(satir);
+    });
+    // Hat uyarısı yalnızca hat listelendiğinde anlamlı.
+    oge.topluNot.textContent = hatlar
+      ? ceviri('topluNot') + ' ' + ceviri('topluHatUyari', { yer: yer.ad })
+      : ceviri('topluNot');
+
+    if (oge.topluPencere.showModal) oge.topluPencere.showModal();
+    else oge.topluPencere.setAttribute('open', '');
   }
 
   function aktarmalariCiz(sonuc) {
@@ -774,15 +831,16 @@
         // Noktası bilinen aktarma tıklanabilir: kullanıcının konumundan oraya
         // yürüyüş rotası çizilip canlı yönlendirme başlar.
         var oge2 = document.createElement(nokta ? 'button' : 'span');
+        var turAdi = aktarmaTuruAdi(tur);
         oge2.className = 'aktarma-tur aktarma-tur--' + tur.toLowerCase();
         oge2.textContent = AKTARMA_SIMGELERI[tur]
-          ? AKTARMA_SIMGELERI[tur] + ' ' + tur
-          : tur;
+          ? AKTARMA_SIMGELERI[tur] + ' ' + turAdi
+          : turAdi;
 
         if (nokta) {
           oge2.type = 'button';
           oge2.title = ceviri('aktarmayaTarif', {
-            tur: tur,
+            tur: turAdi,
             mesafe: mesafeBicimle(nokta.mesafeM)
           });
           oge2.addEventListener('click', function () {

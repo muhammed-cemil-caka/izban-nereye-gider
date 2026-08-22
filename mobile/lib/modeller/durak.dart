@@ -41,7 +41,9 @@ class RotaHedefi {
   factory RotaHedefi.durak(Durak durak) => RotaHedefi(durak.ad, durak.konum);
 
   factory RotaHedefi.aktarma(AktarmaNoktasi nokta) => RotaHedefi(
-        '${nokta.ad} — ${Diller.aktif('aktarmaTuruEki', {'tur': nokta.tur})}',
+        '${nokta.ad} — ${Diller.aktif('aktarmaTuruEki', {
+              'tur': Diller.aktif.aktarmaTuru(nokta.tur)
+            })}',
         nokta.konum,
       );
 }

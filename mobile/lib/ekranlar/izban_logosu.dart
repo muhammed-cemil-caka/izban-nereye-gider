@@ -61,8 +61,22 @@ class _IzbanCizeri extends CustomPainter {
 
   /// Yaylar sönük uçtan keskin uca doğru çizilir; açılış animasyonu da bu
   /// yönde ilerler.
+  ///
+  /// Marka 180° dönme simetrik: mavi yay kırmızının tam karşısı. Önce elle
+  /// ölçülmüş (292, 196) yazıyordu; 8°'lik sapma maviyi sola ve yukarı
+  /// kaydırıyor, iki yay birbirini tutmuyordu. Web tarafıyla aynı sayılar —
+  /// bkz. araclar/logo-uret.py
   static const _kirmiziYay = (sonuk: 116.0, keskin: 24.0);
-  static const _maviYay = (sonuk: 292.0, keskin: 196.0);
+  static const _maviYay = (sonuk: 116.0 + 180, keskin: 24.0 + 180);
+
+  /// Kelime kilidinin taban çizgileri.
+  ///
+  /// Alt yazı önce 131'deydi ve mavi yayın bandının içinden geçiyordu; ikisi
+  /// aynı renk olduğu için yazı okunmuyordu. Yayın çarpışma sınırı ölçüldü:
+  /// 116'da tam genişlik temiz, 118'de yalnızca 78 birim sığıyor — 21 harf
+  /// oraya girmiyor. Kilit yukarı alındı, aradaki 11 birimlik boşluk korundu.
+  static const _kelimeTabani = 105.0;
+  static const _altYaziTabani = 116.0;
 
   final double kirmiziIlerleme;
   final double maviIlerleme;
@@ -207,13 +221,13 @@ class _IzbanCizeri extends CustomPainter {
 
     if (kelimeGorunurlugu > 0) {
       _yaziCiz(tuval, 'İZ',
-          x: 30.8, genislik: 40.5, tabanCizgisi: 120, punto: 57, renk: mavi);
+          x: 30.8, genislik: 40.5, tabanCizgisi: _kelimeTabani, punto: 57, renk: mavi);
       _yaziCiz(tuval, 'BAN',
-          x: 72.5, genislik: 95.8, tabanCizgisi: 120, punto: 57, renk: kirmizi);
+          x: 72.5, genislik: 95.8, tabanCizgisi: _kelimeTabani, punto: 57, renk: kirmizi);
       _yaziCiz(tuval, 'İZMİR BANLİYÖ SİSTEMİ',
           x: 44,
           genislik: 112,
-          tabanCizgisi: 131,
+          tabanCizgisi: _altYaziTabani,
           punto: 7.6,
           renk: mavi,
           agirlik: FontWeight.w700,

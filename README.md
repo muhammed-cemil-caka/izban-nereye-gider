@@ -307,6 +307,26 @@ Kelimenin genişliği webde `textLength`, mobilde yatay ölçekle **sabitlenir**
 cihazın yazı tipi değişse de marka kilidi bozulmaz. Sistem yazı tipi resmî
 logodaki kadar kalın olmadığı için harflere ince bir çizgi eklenir.
 
+**Yaylar 180° dönme simetrik.** Piksel ölçümünden gelen mavi yay açıları
+(196°..292°) kırmızının karşısını 8° kaçırıyordu; ölçüldü, kırmızının kutusu
+x 73.5..165.9, mavininki 30.7..122.6 — simetrik olsa 34.1..126.5 olmalıydı.
+Mavi artık kırmızıdan türetiliyor: `(24+180, 116+180)`.
+
+**Alt yazı yayın dışında.** `İZMİR BANLİYÖ SİSTEMİ` y=131'deyken mavi yayın
+bandının içinden geçiyordu; ikisi de #0C4CA3 olduğu için yazı okunmuyordu.
+Çarpışma sınırı tarayıcıda `isPointInFill` ile ölçüldü:
+
+| Taban çizgisi | Temiz kalan genişlik |
+| --- | --- |
+| 116 | 130 birim |
+| 118 | 78 birim |
+| 131 | 68 birim |
+
+Alt yazıyı daraltmak seçenek değil — 21 harf 68 birime sığmıyor. Kilit yukarı
+alındı (kelime 120→105, alt yazı 131→116), aradaki 11 birimlik boşluk korundu.
+Kelimenin yaylarla kesişmesi tasarım gereği: harfler yayların üstüne, gövde
+rengiyle aynı renkte bir hâleyle (`paint-order="stroke"`) çiziliyor.
+
 Logo hem açılış ekranında hem de ana sayfada başlığın yanında durur. Her iki
 yerde de **beyaz bir plakanın** üstündedir: marka renkleri koyu temada okunur
 kalsın diye.
@@ -832,6 +852,8 @@ dışındaki her metin çevriliyor — başlıklar, düğmeler, durum mesajları
 etiketi (`Selçuk yönü` / `towards Selçuk`), süre birimleri (`2 sa 28 dk` /
 `2 h 28 min`), rozetler (`BİNİŞ` / `BOARD`), rota adımları (`Sola dön` /
 `Turn left`), sesli yönlendirmenin dili, ondalık ayracı (`2,3 km` / `2.3 km`)
+aktarma türleri (`Tramvay` / `Tram`, `Vapur` / `Ferry`; `ESHOT` işletmecinin
+adı, `Metro` iki dilde de aynı, ikisi de çevrilmez)
 ve **turistik özetler**: veri hem Türkçe hem İngilizce Vikipedi'den çekiliyor
 (`ozet` ve `ozetEn`), 95 yerin 90'ında İngilizce, 88'inde Türkçe metin var.
 Eksik olanlarda türden ve ilçeden kısa bir açıklama üretiliyor
@@ -925,11 +947,27 @@ ağıyla yapılır:
 Ölçüldü: "Hayat Çemberi" Alsancak Gar'a yürüyerek **246 m**, arabayla **3,8 km**
 — tek yönler yüzünden.
 
-**Toplu taşıma düğmesi rota çizmez**, aktarma zincirini anlatır: hangi durağa
-İZBAN ile gelinir, orada hangi aktarmalar/ESHOT hatları var. Otobüs saati
-verilmez — OSRM'de toplu taşıma profili yok ve elimizde ESHOT tarife verisi
-yok; uydurulmuş bir süre yolcuyu yanıltır. (İZBAN tarifesi ayrı: bkz.
-[Sefer saatleri](#sefer-saatleri).) Ayrıntı:
+**Toplu taşıma düğmesi rota çizmez**, gidiş zincirini kendi penceresinde
+anlatır (webde `<dialog>`, mobilde `AlertDialog`):
+
+1. İZBAN ile *hangi durağa* gelinir
+2. oradan yere *ne kadar yürünür*
+3. o durakta hangi aktarmalar var
+4. durakta duran ESHOT hat numaraları
+
+Durak, **"Yürüyerek" düğmesiyle aynı yöntemle** seçilir: kuş uçuşu değil
+yürüyüş ağı. Önce kuş uçuşuyla seçiliyordu ve iki düğme aynı yer için farklı
+durak söyleyebiliyordu — ölçüldü, Çiğli kuş uçuşu daha yakın ama yürüyüşle
+2,5 km, Mavişehir 1,4 km.
+
+Adımlar listeden numaralanır. Sabit numaralarken aktarması ya da otobüs hattı
+olmayan durakta (ör. Selçuk) "1, 2, 4" diye atlıyordu.
+
+Otobüs saati verilmez — OSRM'de toplu taşıma profili yok ve elimizde ESHOT
+tarife verisi yok; uydurulmuş bir süre yolcuyu yanıltır. Hat numaraları
+yalnızca *o durakta durdukları* için listeleniyor; yere gidip gitmedikleri
+elimizdeki veride yok ve pencere bunu açıkça yazıyor. (İZBAN tarifesi ayrı:
+bkz. [Sefer saatleri](#sefer-saatleri).) Ayrıntı:
 [`belgeler/turistik-yerler-tasarim.md`](belgeler/turistik-yerler-tasarim.md)
 
 > **Test notu:** `Image.network` widget testlerinde gerçek istek atıyor ve

@@ -8,7 +8,8 @@
 
 Ölçüler resmî logodan (240x240 PNG) piksel ölçümüyle çıkarıldı:
   · halka orta yarıçapı 69.5, yaylar uca doğru incelir (kalınlık 34 → 6)
-  · kırmızı yay 24°..116°, mavi yay 196°..292° (0° = sağ, saat yönünün tersi)
+  · kırmızı yay 24°..116° (0° = sağ, saat yönünün tersi)
+  · mavi yay onun tam 180° döndürülmüşü: 204°..296°
   · kelime taban çizgisi y=120, "İZ" x 37..83, "BAN" x 91..202
   · renkler #ED1B24 (kırmızı) ve #0C4CA3 (mavi)
 Hepsi 200'lük viewBox'a ölçeklenir. Mobil taraf aynı sayıları
@@ -23,8 +24,31 @@ OLCEK = 200 / 240
 MERKEZ = 100.0
 YARICAP = 69.5 * OLCEK
 KIRMIZI_YAY = (24, 116)
-MAVI_YAY = (196, 292)
+
+# Marka 180° dönme simetrik: mavi yay kırmızının tam karşısı. Önce elle
+# ölçülmüş (196, 292) yazıyordu; 8°'lik sapma maviyi sola ve yukarı kaydırıyor,
+# iki yay birbirini tutmuyordu. Ölçüldü: kırmızının kutusu x 73.5..165.9,
+# mavininki 30.7..122.6 — simetrik olsa 34.1..126.5 olmalıydı.
+MAVI_YAY = (KIRMIZI_YAY[0] + 180, KIRMIZI_YAY[1] + 180)
+
 KALINLIK = (34, 6)  # keskin uçtan sönük uca
+
+# Kelime kilidinin (İZBAN + alt yazı) taban çizgileri.
+#
+# Alt yazı önce y=131'deydi ve mavi yayın bandının içinden geçiyordu; ikisi
+# aynı renk (#0C4CA3) olduğu için yazı okunmuyordu. Yayın çarpışma sınırı
+# tarayıcıda isPointInFill ile ölçüldü:
+#
+#   taban 116 → 130 birim genişlik temiz
+#   taban 118 →  78    "        "
+#   taban 131 →  68    "        "
+#
+# Alt yazıyı daraltmak seçenek değil: 21 harf 68 birime sığmıyor. Kilit
+# yukarı alındı, aradaki 11 birimlik boşluk korundu. Kelimenin yayla
+# kesişmesi tasarım gereği — harfler yayların üstüne, gövde rengiyle aynı
+# renkte bir hâleyle (paint-order="stroke") çiziliyor.
+KELIME_TABANI = 105
+ALT_YAZI_TABANI = 116
 
 YAZI_TIPI = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
 
@@ -66,11 +90,11 @@ def kelime(girinti, sinifOnEki=''):
     g = ' class="%s-kelime"' % sinifOnEki if sinifOnEki else ' class="izban-kelime"'
     satirlar = [
         '<g%s font-family="%s" font-weight="900">' % (g, YAZI_TIPI),
-        '  <text x="30.8" y="120" font-size="57" textLength="40.5" lengthAdjust="spacingAndGlyphs"',
+        '  <text x="30.8" y="%s" font-size="57" textLength="40.5" lengthAdjust="spacingAndGlyphs"' % KELIME_TABANI,
         '        fill="#0C4CA3" stroke="#0C4CA3" stroke-width="1.6" paint-order="stroke">İZ</text>',
-        '  <text x="72.5" y="120" font-size="57" textLength="95.8" lengthAdjust="spacingAndGlyphs"',
+        '  <text x="72.5" y="%s" font-size="57" textLength="95.8" lengthAdjust="spacingAndGlyphs"' % KELIME_TABANI,
         '        fill="#ED1B24" stroke="#ED1B24" stroke-width="1.6" paint-order="stroke">BAN</text>',
-        '  <text%s x="100" y="131" font-size="7.6" font-weight="700" text-anchor="middle"' % alt,
+        '  <text%s x="100" y="%s" font-size="7.6" font-weight="700" text-anchor="middle"' % (alt, ALT_YAZI_TABANI),
         '        textLength="112" lengthAdjust="spacing" fill="#0C4CA3">İZMİR BANLİYÖ SİSTEMİ</text>',
         '</g>',
     ]

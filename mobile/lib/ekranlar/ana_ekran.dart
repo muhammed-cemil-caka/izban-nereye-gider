@@ -189,7 +189,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     });
 
     try {
-      final durak = await _yereEnYakinDurak(yer, duraklar, kip);
+      final durak = (await _yereEnYakinDurak(yer, duraklar, kip)).durak;
       if (!mounted) return;
 
       // Haritada o durağı seçili getir.
@@ -227,13 +227,16 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// Kuş uçuşu YALNIZCA ön eleme için (6 aday); karar OSRM matrisinden gelen
   /// SÜREYE göre verilir. Araçta uzun ama hızlı çevre yol, kısa ama yavaş
   /// şehir içinden iyi olabiliyor.
-  Future<Durak> _yereEnYakinDurak(
+  Future<({Durak durak, double mesafeM})> _yereEnYakinDurak(
     TuristikYer yer,
     List<Durak> duraklar,
     RotaKipi kip,
   ) async {
     final adaylar = YakinDurak.enYakinlar(duraklar, yer.konum, adet: 6);
     if (adaylar.isEmpty) throw Exception(Diller.aktif('durakBulunamadi'));
+
+    // Kuş uçuşu yedek: servis yanıt vermezse akış kesilmesin.
+    final yedek = (durak: adaylar.first.durak, mesafeM: adaylar.first.mesafeM);
 
     try {
       final olcumler = await const RotaServisi().mesafeler(
@@ -242,34 +245,66 @@ class _AnaEkranDurumu extends State<AnaEkran> {
         kip: kip,
       );
 
-      var enIyi = adaylar.first.durak;
+      ({Durak durak, double mesafeM})? enIyi;
       var enIyiSure = double.infinity;
       for (var i = 0; i < adaylar.length; i++) {
         final olcum = i < olcumler.length ? olcumler[i] : null;
         final sure = olcum?.sureSn ?? double.infinity;
         if (sure < enIyiSure) {
           enIyiSure = sure;
-          enIyi = adaylar[i].durak;
+          enIyi = (durak: adaylar[i].durak, mesafeM: olcum!.mesafeM);
         }
       }
-      return enIyi;
+      return enIyi ?? yedek;
     } catch (_) {
-      // Servis yanıt vermezse kuş uçuşu sıralama kalır; akış kesilmez.
-      return adaylar.first.durak;
+      return yedek;
     }
   }
 
-  /// Toplu taşıma: gerçek bir sefer motorumuz yok, aktarma zinciri anlatılır.
-  void _topluTasimaAnlat(TuristikYer yer, List<Durak> duraklar) {
-    final adaylar = YakinDurak.enYakinlar(duraklar, yer.konum, adet: 1);
-    if (adaylar.isEmpty) return;
+  // Durakta duran çok hat olabiliyor (Halkapınar'da 20); hepsini yazmak
+  // pencereyi şişiriyor.
+  static const _gorunurTopluHat = 8;
 
-    final durak = adaylar.first.durak;
-    final hatlar = durak.otobusHatlari.take(6).join(', ');
-    final aktarma = durak.aktarma.join(' · ');
+  /// Toplu taşıma: gerçek bir sefer motorumuz yok, gidiş zinciri anlatılır.
+  ///
+  /// Durak, "Yürüyerek" düğmesiyle AYNI yöntemle seçilir: kuş uçuşu değil,
+  /// yürüyüş ağı. İkisi farklı durak söylerse tarif kendi içinde çelişiyordu —
+  /// ölçüldü, Çiğli kuş uçuşu daha yakın ama yürüyüşle 2,5 km, Mavişehir 1,4 km.
+  Future<void> _topluTasimaAnlat(TuristikYer yer, List<Durak> duraklar) async {
+    setState(() => _rotaHatasi = null);
 
+    final ({Durak durak, double mesafeM}) secim;
+    try {
+      secim = await _yereEnYakinDurak(yer, duraklar, RotaKipi.yuruyus);
+    } catch (_) {
+      return;
+    }
+    if (!mounted) return;
+
+    final durak = secim.durak;
+    final hatlar = durak.otobusHatlari.take(_gorunurTopluHat).join(', ');
+    final aktarma = durak.aktarma.map(Diller.aktif.aktarmaTuru).join(' · ');
     final ceviri = Diller.of(context);
 
+    // Adımlar listeden numaralanır: aktarması ya da otobüs hattı olmayan
+    // durakta sabit numaralar "1, 2, 4" diye atlıyordu.
+    final adimlar = <String>[
+      ceviri('topluAdimIzban', {'durak': durak.ad}),
+      ceviri('topluAdimYuru', {
+        'yer': yer.ad,
+        'mesafe': Diller.aktif.mesafe(secim.mesafeM),
+      }),
+      if (aktarma.isNotEmpty)
+        ceviri('topluAdimAktarma', {'durak': durak.ad, 'aktarma': aktarma}),
+      if (hatlar.isNotEmpty) ceviri('topluAdimHatlar', {'hatlar': hatlar}),
+    ];
+
+    // Hat uyarısı yalnızca hat listelendiğinde anlamlı.
+    final not = hatlar.isEmpty
+        ? ceviri('topluNot')
+        : '${ceviri('topluNot')} ${ceviri('topluHatUyari', {'yer': yer.ad})}';
+
+    if (!mounted) return;
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -279,14 +314,9 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 8,
           children: [
-            Text('1. ${ceviri('topluAdim1', {'durak': durak.ad})}'),
-            if (aktarma.isNotEmpty)
-              Text('2. ${ceviri('topluAdim2', {'durak': durak.ad, 'aktarma': aktarma})}'),
-            if (hatlar.isNotEmpty)
-              Text('3. ${ceviri('topluAdim3', {'hatlar': hatlar})}'),
-            Text('4. ${ceviri('topluAdim4', {'yer': yer.ad})}'),
+            for (var i = 0; i < adimlar.length; i++) Text('${i + 1}. ${adimlar[i]}'),
             const Divider(),
-            Text(ceviri('topluNot'), style: const TextStyle(fontSize: 12)),
+            Text(not, style: const TextStyle(fontSize: 12)),
           ],
         ),
         actions: [
@@ -1902,7 +1932,7 @@ class _AktarmaTuru extends StatelessWidget {
         Icon(simgeler[tur] ?? Icons.alt_route, size: 15, color: renkler.primary),
         const SizedBox(width: 5),
         Text(
-          tur,
+          Diller.aktif.aktarmaTuru(tur),
           style: tema.textTheme.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
             color: renkler.onSurface,
@@ -1937,7 +1967,7 @@ class _AktarmaTuru extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: Diller.aktif('aktarmayaTarif', {'tur': tur}),
+      label: Diller.aktif('aktarmayaTarif', {'tur': Diller.aktif.aktarmaTuru(tur)}),
       child: InkWell(
         onTap: () => basildi(hedef),
         borderRadius: BorderRadius.circular(999),

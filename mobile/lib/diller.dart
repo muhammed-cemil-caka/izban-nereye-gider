@@ -87,14 +87,18 @@ class Diller {
     'yuruyus': 'yürüyüş',
     'arabaIle': 'araba ile',
     'topluBaslik': '{yer} — toplu taşıma',
-    'topluAdim1': 'İZBAN ile {durak} durağına gel.',
-    'topluAdim2': '{durak} aktarmaları: {aktarma}',
-    'topluAdim3': 'ESHOT hatları: {hatlar}',
-    'topluAdim4': 'Oradan "Yürüyerek" ile {yer}.',
+    'topluAdimIzban': 'İZBAN ile {durak} durağına gel.',
+    'topluAdimYuru': 'Oradan {yer}: yaklaşık {mesafe} yürüyüş.',
+    'topluAdimAktarma': '{durak} aktarmaları: {aktarma}',
+    'topluAdimHatlar': 'Durakta duran ESHOT hatları: {hatlar}',
     'topluNot': 'Otobüs saati veremiyorum: ESHOT tarife verisi elimizde yok, uydurulmuş bir süre yanıltır.',
+    'topluHatUyari': 'Hatlar yalnızca o durakta durdukları için listeleniyor; {yer} yönüne gidip gitmedikleri elimizdeki veride yok.',
+    'topluHesaplaniyor': 'En yakın durak yürüyüş ağına göre seçiliyor…',
     'tamam': 'Tamam',
     'aktarmayaTarif': '{tur} aktarmasına yürüyüş yol tarifi',
     'aktarmaTuruEki': '{tur} aktarması',
+    'aktarmaTuruTramvay': 'Tramvay',
+    'aktarmaTuruVapur': 'Vapur',
     'veriOkunamadi': 'Durak verisi okunamadı',
     'veriSurumu': 'Veri sürümü',
     'firebaseDogrulandi': 'Firebase (doğrulandı)',
@@ -249,14 +253,18 @@ class Diller {
     'yuruyus': 'walking',
     'arabaIle': 'by car',
     'topluBaslik': '{yer} — public transport',
-    'topluAdim1': 'Take İZBAN to {durak}.',
-    'topluAdim2': 'Interchanges at {durak}: {aktarma}',
-    'topluAdim3': 'ESHOT lines: {hatlar}',
-    'topluAdim4': 'From there use "Walking" for {yer}.',
+    'topluAdimIzban': 'Take İZBAN to {durak}.',
+    'topluAdimYuru': 'From there to {yer}: about {mesafe} on foot.',
+    'topluAdimAktarma': 'Interchanges at {durak}: {aktarma}',
+    'topluAdimHatlar': 'ESHOT lines calling at the station: {hatlar}',
     'topluNot': 'No bus times: we have no ESHOT timetable data, and an invented one would mislead.',
+    'topluHatUyari': 'The lines are listed only because they call at that station; whether they run towards {yer} is not in our data.',
+    'topluHesaplaniyor': 'Choosing the nearest station on the walking network…',
     'tamam': 'OK',
     'aktarmayaTarif': 'Walking directions to the {tur} interchange',
     'aktarmaTuruEki': '{tur} interchange',
+    'aktarmaTuruTramvay': 'Tram',
+    'aktarmaTuruVapur': 'Ferry',
     'veriOkunamadi': 'Could not read station data',
     'veriSurumu': 'Data version',
     'firebaseDogrulandi': 'Firebase (verified)',
@@ -356,6 +364,16 @@ class Diller {
     }
     return metin;
   }
+
+  /// Aktarma türünün görünen adı.
+  ///
+  /// Tür veriden ham geliyor ("Tramvay", "Vapur"); bunlar cins isim, çevrilir.
+  /// ESHOT işletmecinin adı, Metro iki dilde de aynı — oldukları gibi kalır.
+  String aktarmaTuru(String tur) => switch (tur) {
+        'Tramvay' => call('aktarmaTuruTramvay'),
+        'Vapur' => call('aktarmaTuruVapur'),
+        _ => tur,
+      };
 
   /// 450 → "450 m", 2300 → "2,3 km" / "2.3 km"
   ///
