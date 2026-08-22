@@ -1247,7 +1247,7 @@ class _GuzergahKarti extends StatelessWidget {
                     // olduğunu görmek için basılı tutmak gerekiyordu, hatların
                     // adı hiç görünmüyordu. Hat adları aşağıdaki aktarma
                     // kartında yazıyor — webdeki düzenin aynısı.
-                    if (durak.aktarmaVar) const _Rozet('AKTARMA'),
+                    if (durak.aktarmaVar) _Rozet(ceviri('aktarmaRozet')),
                   ],
                 ),
               );

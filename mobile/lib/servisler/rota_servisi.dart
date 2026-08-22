@@ -24,11 +24,24 @@ enum RotaKipi {
 }
 
 /// Rotanın bir adımı.
+///
+/// Manevra HAM hâlde saklanır, metin okunduğu anda çevrilir. Önce çekim anında
+/// biçimleniyordu: kullanıcı dili değiştirdiğinde eldeki rotanın adımları eski
+/// dilde kalıyor, sesli yönlendirme de İngilizce arayüzde Türkçe okuyordu.
 class RotaAdimi {
-  final String metin;
+  final String tur;
+  final String? yonKodu;
+  final String? yolAdi;
   final double mesafeM;
 
-  const RotaAdimi(this.metin, this.mesafeM);
+  const RotaAdimi({
+    required this.tur,
+    required this.mesafeM,
+    this.yonKodu,
+    this.yolAdi,
+  });
+
+  String get metin => RotaServisi.manevrayiTurkcelestir(tur, yonKodu, yolAdi);
 }
 
 /// Hesaplanmış rota — yürüyüş ya da araba.
@@ -87,6 +100,54 @@ class RotaServisi {
   static String _basHarfiBuyut(String metin) =>
       metin.isEmpty ? metin : '${metin[0].toUpperCase()}${metin.substring(1)}';
 
+  /* OSM'deki yol adları Türkçe: "8294. Sokak", "Namık Kemal Caddesi".
+     İngilizce arayüzde adım listesine olduğu gibi giriyordu ve İngilizce ses
+     onları Türkçe okuyordu. Yol TÜRÜ cins isimdir, çevrilir; addaki özel isim
+     olduğu gibi kalır — "Namık Kemal Avenue".
+
+     Sıra önemli: "Çevre Yolu", "Yolu"dan önce denenmeli. */
+  static final _yolTurleri = <(RegExp, String)>[
+    (RegExp(r'(^|\s)(?:Sokağı|Sokak|Sk\.)$', caseSensitive: false), 'Street'),
+    (RegExp(r'(^|\s)(?:Caddesi|Cadde|Cad\.|Cd\.)$', caseSensitive: false), 'Avenue'),
+    (RegExp(r'(^|\s)(?:Bulvarı|Bulvar|Blv\.|Bul\.)$', caseSensitive: false), 'Boulevard'),
+    (RegExp(r'(^|\s)(?:Çevre Yolu)$', caseSensitive: false), 'Ring Road'),
+    (RegExp(r'(^|\s)(?:Sahil Yolu)$', caseSensitive: false), 'Coastal Road'),
+    (RegExp(r'(^|\s)(?:Otoyolu|Otoyol)$', caseSensitive: false), 'Motorway'),
+    (RegExp(r'(^|\s)(?:Yolu|Yol)$', caseSensitive: false), 'Road'),
+    (RegExp(r'(^|\s)(?:Meydanı|Meydan)$', caseSensitive: false), 'Square'),
+    (RegExp(r'(^|\s)(?:Köprüsü|Köprü)$', caseSensitive: false), 'Bridge'),
+    (RegExp(r'(^|\s)(?:Geçidi|Geçit)$', caseSensitive: false), 'Pass'),
+    (RegExp(r'(^|\s)(?:Çıkmazı|Çıkmaz)$', caseSensitive: false), 'Cul-de-sac'),
+    (RegExp(r'(^|\s)(?:Parkı|Park)$', caseSensitive: false), 'Park'),
+  ];
+
+  // "8294. Sokak" → "Street 8294"; İngilizcede numara türden sonra gelir.
+  static final _numaraliYol = RegExp(r'^(\d+)\.\s*(.+)$');
+
+  /// Yol adını arayüz diline uyarlar. Türkçede olduğu gibi bırakır.
+  static String yolAdiniCevir(String? ad) {
+    if (ad == null || ad.isEmpty || Diller.aktif.kod != 'en') return ad ?? '';
+
+    String? numara;
+    var kalan = ad;
+    final eslesme = _numaraliYol.firstMatch(ad);
+    if (eslesme != null) {
+      numara = eslesme.group(1);
+      kalan = eslesme.group(2)!;
+    }
+
+    for (final (desen, karsilik) in _yolTurleri) {
+      if (desen.hasMatch(kalan)) {
+        kalan = kalan
+            .replaceAllMapped(desen, (e) => '${e.group(1)}$karsilik')
+            .trim();
+        break;
+      }
+    }
+
+    return numara == null ? kalan : '$kalan $numara';
+  }
+
   /// OSRM manevrasını arayüz diline çevirir.
   ///
   /// Adı tarihsel: önce yalnızca Türkçe üretiyordu. Artık seçili dile göre
@@ -100,7 +161,8 @@ class RotaServisi {
     final ceviri = Diller.aktif;
     final yonAnahtari = _yonAnahtarlari[yonKodu];
     final yon = yonAnahtari == null ? '' : ceviri(yonAnahtari);
-    final yer = (yolAdi != null && yolAdi.isNotEmpty) ? ' — $yolAdi' : '';
+    final cevrilen = yolAdiniCevir(yolAdi);
+    final yer = cevrilen.isEmpty ? '' : ' — $cevrilen';
 
     switch (tur) {
       case 'depart':
@@ -226,12 +288,10 @@ class RotaServisi {
       if (mesafe < 5 && i != 0 && i != hamAdimlar.length - 1) continue;
 
       adimlar.add(RotaAdimi(
-        manevrayiTurkcelestir(
-          manevra['type'] as String? ?? '',
-          manevra['modifier'] as String?,
-          adim['name'] as String?,
-        ),
-        mesafe,
+        tur: manevra['type'] as String? ?? '',
+        yonKodu: manevra['modifier'] as String?,
+        yolAdi: adim['name'] as String?,
+        mesafeM: mesafe,
       ));
     }
 

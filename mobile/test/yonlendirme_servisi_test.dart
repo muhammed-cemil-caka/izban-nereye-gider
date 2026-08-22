@@ -13,9 +13,9 @@ final _duzRota = Rota(
   mesafeM: 1000,
   sureSn: 720,
   adimlar: const [
-    RotaAdimi('Yola çık', 500),
-    RotaAdimi('Sağa dön', 400),
-    RotaAdimi('Vardın', 100),
+    RotaAdimi(tur: 'depart', mesafeM: 500),
+    RotaAdimi(tur: 'turn', yonKodu: 'right', mesafeM: 400),
+    RotaAdimi(tur: 'arrive', mesafeM: 100),
   ],
 );
 

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:izban_nereye_gider/diller.dart';
 import 'package:izban_nereye_gider/servisler/rota_servisi.dart';
 
 void main() {
@@ -57,6 +58,47 @@ void main() {
       expect(rota(sure: 20).sureMetni, '1 dk');
       expect(rota(sure: 3600).sureMetni, '1 sa');
       expect(rota(sure: 4500).sureMetni, '1 sa 15 dk');
+    });
+  });
+
+  group('yol adı çevirisi', () {
+    tearDown(() => Diller.aktif = const Diller('tr'));
+
+    test('Türkçede yol adı olduğu gibi kalır', () {
+      expect(RotaServisi.yolAdiniCevir('6525. Sokak'), '6525. Sokak');
+      expect(RotaServisi.yolAdiniCevir('İzmir Çevre Yolu'), 'İzmir Çevre Yolu');
+    });
+
+    test('İngilizcede yol türü çevrilir, özel isim kalır', () {
+      Diller.aktif = const Diller('en');
+      expect(RotaServisi.yolAdiniCevir('Namık Kemal Caddesi'), 'Namık Kemal Avenue');
+      expect(RotaServisi.yolAdiniCevir('Atatürk Bulvarı'), 'Atatürk Boulevard');
+      expect(RotaServisi.yolAdiniCevir('Cumhuriyet Meydanı'), 'Cumhuriyet Square');
+      // "Çevre Yolu" daha genel "Yolu"dan önce denenmeli.
+      expect(RotaServisi.yolAdiniCevir('İzmir Çevre Yolu'), 'İzmir Ring Road');
+    });
+
+    test('numaralı sokakta numara türden sonra gelir', () {
+      Diller.aktif = const Diller('en');
+      expect(RotaServisi.yolAdiniCevir('6525. Sokak'), 'Street 6525');
+    });
+
+    test('tanınmayan ad dokunulmadan geçer', () {
+      Diller.aktif = const Diller('en');
+      expect(RotaServisi.yolAdiniCevir('Kordon'), 'Kordon');
+      expect(RotaServisi.yolAdiniCevir(null), '');
+    });
+  });
+
+  group('adım metni okunduğu anda çevrilir', () {
+    tearDown(() => Diller.aktif = const Diller('tr'));
+
+    test('dil değişince eldeki rotanın adımı da değişir', () {
+      const adim = RotaAdimi(tur: 'turn', yonKodu: 'left', yolAdi: '6525. Sokak', mesafeM: 40);
+      expect(adim.metin, 'Sola dön — 6525. Sokak');
+
+      Diller.aktif = const Diller('en');
+      expect(adim.metin, 'Turn left — Street 6525');
     });
   });
 }

@@ -806,6 +806,10 @@ Aktarma, sefer satırının altında bekleme süresiyle yazılır:
 Tarife gün içinde değişmediği için yanıt oturum boyu saklanır — durak seçimi
 her değiştiğinde yeniden istenmez.
 
+Kart her iki istemcide de **özetin hemen ardında**: webde gezilecek yerler
+şeridi araya giriyor ve saatleri iki ekran aşağı itiyordu, şerit sonuçların
+altına alındı.
+
 ## Dil: Türkçe / İngilizce
 
 Üst bantta **TR/EN** düğmesi; seçim `localStorage` (web) ve
@@ -827,6 +831,22 @@ Seçili dil tek bir yerde tutulur (`diller.js` → `ceviriMetni()`,
 `diller.dart` → `Diller.aktif`). Widget ağacının ya da uygulama kapsamının
 dışında kalan katmanlar — rota servisi, konum servisi, sefer motoru, harita
 işareti — metinlerini oradan alıyor; önce sabit Türkçeydiler.
+
+**Rota adımı okunduğu anda çevrilir.** Manevra ham hâlde saklanıyor
+(`RotaAdimi.tur/yonKodu/yolAdi`), metin bir getter. Önce çekim anında
+biçimleniyordu: Türkçeyken hesaplanan rota İngilizceye geçilince Türkçe
+kalıyor, sesli yönlendirme de "Yola çık" diye okuyordu.
+
+**Yol adlarında tür çevrilir, özel isim kalır.** OSM'den `Namık Kemal Caddesi`
+geliyor; İngilizce arayüzde `Namık Kemal Avenue` yazılır ve okunur. Numaralı
+sokaklarda numara türden sonraya alınır: `6525. Sokak` → `Street 6525`.
+Karşılıklar `Sokak/Cadde/Bulvar/Yol/Meydan/Köprü/Geçit/Çıkmaz/Park` ile
+`Çevre Yolu`, `Sahil Yolu`, `Otoyol`. Sıra önemli — `Çevre Yolu`, daha genel
+`Yolu`dan önce denenir.
+
+Ses motoru da dile göre ayarlanır (`en-US` / `tr-TR`). Cihazda tam eşleşme
+kurulu değilse yalın dil koduna düşülür; doğrudan `setLanguage` çağırmak motoru
+önceki dilde bırakıyor ve İngilizce cümleler Türkçe sesle okunuyordu.
 
 Kelime sırası dilden dile değiştiği için metin parçaları birleştirilmiyor,
 `{yer}` tutucularıyla şablon kullanılıyor:

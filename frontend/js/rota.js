@@ -32,6 +32,52 @@ function basHarfiBuyut(metin) {
   return metin ? metin.charAt(0).toLocaleUpperCase('tr') + metin.slice(1) : metin;
 }
 
+/* OSM'deki yol adları Türkçe: "8294. Sokak", "Namık Kemal Caddesi". İngilizce
+   arayüzde adım listesine olduğu gibi giriyor ve İngilizce ses onları Türkçe
+   okuyordu. Yol TÜRÜ cins isimdir, çevrilir; addaki özel isim olduğu gibi
+   kalır — "Namık Kemal Avenue". */
+// Sıra önemli: "Çevre Yolu", "Yolu"dan önce denenmeli. \b kullanılmıyor —
+// JavaScript'te sözcük sınırı ASCII'ye göre, "Çevre" gibi sözcüklerde tutmuyor.
+var YOL_TURLERI = [
+  [/(^|\s)(?:Sokağı|Sokak|Sk\.)$/i, 'Street'],
+  [/(^|\s)(?:Caddesi|Cadde|Cad\.|Cd\.)$/i, 'Avenue'],
+  [/(^|\s)(?:Bulvarı|Bulvar|Blv\.|Bul\.)$/i, 'Boulevard'],
+  [/(^|\s)(?:Çevre Yolu)$/i, 'Ring Road'],
+  [/(^|\s)(?:Sahil Yolu)$/i, 'Coastal Road'],
+  [/(^|\s)(?:Otoyolu|Otoyol)$/i, 'Motorway'],
+  [/(^|\s)(?:Yolu|Yol)$/i, 'Road'],
+  [/(^|\s)(?:Meydanı|Meydan)$/i, 'Square'],
+  [/(^|\s)(?:Köprüsü|Köprü)$/i, 'Bridge'],
+  [/(^|\s)(?:Geçidi|Geçit)$/i, 'Pass'],
+  [/(^|\s)(?:Çıkmazı|Çıkmaz)$/i, 'Cul-de-sac'],
+  [/(^|\s)(?:Parkı|Park)$/i, 'Park']
+];
+
+// "8294. Sokak" → "Street 8294"; İngilizcede numara türden sonra gelir.
+var NUMARALI_YOL = /^(\d+)\.\s*(.+)$/;
+
+/** Yol adını arayüz diline uyarlar. Türkçede olduğu gibi bırakır. */
+function yolAdiniCevir(ad) {
+  if (!ad || secilenDil() !== 'en') return ad || '';
+
+  var numara = null;
+  var kalan = ad;
+  var eslesme = NUMARALI_YOL.exec(ad);
+  if (eslesme) {
+    numara = eslesme[1];
+    kalan = eslesme[2];
+  }
+
+  for (var i = 0; i < YOL_TURLERI.length; i++) {
+    if (YOL_TURLERI[i][0].test(kalan)) {
+      kalan = kalan.replace(YOL_TURLERI[i][0], '$1' + YOL_TURLERI[i][1]).trim();
+      break;
+    }
+  }
+
+  return numara ? kalan + ' ' + numara : kalan;
+}
+
 /**
  * OSRM manevrasını arayüz diline çevirir.
  *
@@ -43,7 +89,7 @@ function manevrayiTurkcelestir(manevra, yolAdi) {
   var tur = manevra.type;
   var yonAnahtari = YON_ANAHTARLARI[manevra.modifier];
   var yon = yonAnahtari ? ceviriMetni(yonAnahtari) : '';
-  var yer = yolAdi ? ' — ' + yolAdi : '';
+  var yer = yolAdi ? ' — ' + yolAdiniCevir(yolAdi) : '';
 
   switch (tur) {
     case 'depart':
@@ -104,11 +150,22 @@ function rotaAl(baslangic, bitis, kip) {
         return [n[1], n[0]];
       });
 
+      // Manevra HAM hâlde saklanır, metin okunduğu anda çevrilir: önce çekim
+      // anında biçimleniyordu ve kullanıcı dili değiştirdiğinde eldeki rotanın
+      // adımları eski dilde kalıyordu — sesli yönlendirme de öyle okuyordu.
       var adimlar = (rota.legs[0] ? rota.legs[0].steps : [])
         .map(function (adim) {
           return {
-            metin: manevrayiTurkcelestir(adim.maneuver, adim.name),
-            mesafeM: adim.distance
+            tur: adim.maneuver.type,
+            yonKodu: adim.maneuver.modifier,
+            yolAdi: adim.name,
+            mesafeM: adim.distance,
+            get metin() {
+              return manevrayiTurkcelestir(
+                { type: this.tur, modifier: this.yonKodu },
+                this.yolAdi
+              );
+            }
           };
         })
         // Sıfıra yakın adımlar listeyi gereksiz uzatıyor.
@@ -198,6 +255,7 @@ function rotaSuresiBicimle(saniye) {
 if (typeof module !== 'undefined') {
   module.exports = {
     manevrayiTurkcelestir: manevrayiTurkcelestir,
+    yolAdiniCevir: yolAdiniCevir,
     rotaSuresiBicimle: rotaSuresiBicimle,
     mesafeleriAl: mesafeleriAl
   };

@@ -13,7 +13,7 @@ const {
   metreUzaklik, mesafeBicimle, enYakinDurak, enYakinDuraklar,
   durakAra, aramaIcinSadelestir
 } = require('../frontend/js/hesap.js');
-const { manevrayiTurkcelestir, rotaSuresiBicimle } = require('../frontend/js/rota.js');
+const { manevrayiTurkcelestir, yolAdiniCevir, rotaSuresiBicimle } = require('../frontend/js/rota.js');
 const {
   seferZinciri, zincirYollari, ilkBaglanti, yolculuguKur,
   baskinOlanlar, siradakiSeferler
@@ -182,6 +182,40 @@ dogrula('manevralar Türkçeleştiriliyor', () => {
 
 dogrula('bilinmeyen manevra makul bir metne düşüyor', () => {
   assert.strictEqual(manevrayiTurkcelestir({ type: 'notify' }, ''), 'Devam et');
+});
+
+dogrula('yol adı Türkçede olduğu gibi kalıyor', () => {
+  assert.strictEqual(yolAdiniCevir('6525. Sokak'), '6525. Sokak');
+  assert.strictEqual(yolAdiniCevir('İzmir Çevre Yolu'), 'İzmir Çevre Yolu');
+});
+
+dogrula('İngilizcede yol türü çevriliyor, özel isim kalıyor', () => {
+  dilAyarla('en');
+  assert.strictEqual(yolAdiniCevir('Namık Kemal Caddesi'), 'Namık Kemal Avenue');
+  assert.strictEqual(yolAdiniCevir('Atatürk Bulvarı'), 'Atatürk Boulevard');
+  assert.strictEqual(yolAdiniCevir('Cumhuriyet Meydanı'), 'Cumhuriyet Square');
+  // "Çevre Yolu" daha genel "Yolu"dan önce denenmeli.
+  assert.strictEqual(yolAdiniCevir('İzmir Çevre Yolu'), 'İzmir Ring Road');
+  // İngilizcede numara türden sonra gelir.
+  assert.strictEqual(yolAdiniCevir('6525. Sokak'), 'Street 6525');
+  // Tanınmayan ad dokunulmadan geçer.
+  assert.strictEqual(yolAdiniCevir('Kordon'), 'Kordon');
+  dilAyarla('tr');
+});
+
+dogrula('adım metni okunduğu anda çevriliyor', () => {
+  // Rota nesnesi Türkçe kurulup dil değişince adımlar da değişmeli: sesli
+  // yönlendirme eski dilde okumasın.
+  var adim = {
+    tur: 'turn', yonKodu: 'left', yolAdi: '6525. Sokak', mesafeM: 40,
+    get metin() {
+      return manevrayiTurkcelestir({ type: this.tur, modifier: this.yonKodu }, this.yolAdi);
+    }
+  };
+  assert.strictEqual(adim.metin, 'Sola dön — 6525. Sokak');
+  dilAyarla('en');
+  assert.strictEqual(adim.metin, 'Turn left — Street 6525');
+  dilAyarla('tr');
 });
 
 dogrula('yürüyüş süresi biçimlendirme', () => {

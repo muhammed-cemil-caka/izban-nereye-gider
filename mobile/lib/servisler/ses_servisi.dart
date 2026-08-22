@@ -19,7 +19,14 @@ class SesServisi {
     if (_ayarlananDil == istenen) return;
 
     try {
-      await _motor.setLanguage(istenen);
+      // Cihazda tam eşleşme kurulu olmayabilir (yalnızca en-GB gibi). Doğrudan
+      // setLanguage çağırmak motoru önceki dilde bırakıyor ve İngilizce
+      // cümleler Türkçe sesle okunuyor.
+      var kod = istenen;
+      if (await _motor.isLanguageAvailable(istenen) != true) {
+        kod = istenen.split('-').first;
+      }
+      await _motor.setLanguage(kod);
       // Bir talimat okunurken yenisi gelirse öncekini kes; kuyruğa alma.
       await _motor.setQueueMode(0);
       _ayarlananDil = istenen;
