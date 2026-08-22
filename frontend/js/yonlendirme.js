@@ -10,6 +10,81 @@ var SAPMA_SAYISI = 3;          // üst üste bu kadar ölçümde sapma varsa yen
 var VARIS_ESIGI_M = 25;        // hedefe bu kadar yaklaşınca varılmış sayılır
 var SESLI_TEKRAR_ESIGI_M = 30; // aynı manevrayı tekrar seslendirmemek için
 
+/* ---------- Sesli yönlendirme: ses seçimi ----------
+
+   utterance.lang tek başına yetmiyor. Ses belirtilmezse tarayıcı kendi
+   varsayılan sesiyle okuyor; Türkçe bir sistemde İngilizce cümleler Türkçe
+   telaffuzla çıkıyordu. Mobil taraftaki davranışın aynısı yapılıyor: istenen
+   dilin sesi aranır, tam eşleşme yoksa yalın dil koduna düşülür. */
+
+var SESLER = [];
+
+function sesleriTazele() {
+  if (typeof speechSynthesis === 'undefined' || !speechSynthesis.getVoices) return;
+  SESLER = speechSynthesis.getVoices() || [];
+}
+
+// Ses listesi çoğu tarayıcıda eşzamansız doluyor; ilk çağrıda boş dönebiliyor.
+if (typeof speechSynthesis !== 'undefined') {
+  sesleriTazele();
+  if (speechSynthesis.addEventListener) {
+    speechSynthesis.addEventListener('voiceschanged', sesleriTazele);
+  }
+}
+
+/* macOS'ta 28 tane en-US sesi var ve hiçbiri `default` işaretli değil (sistem
+   dili Türkçe); ilkini almak "Albert", "Bahh", "Boing" gibi şaka seslerine
+   düşürüyor. Tarayıcı ses kalitesini bildirmediği için bilinen standart ses
+   adları yeğleniyor. Liste eksik kalsa da sorun değil: tanınmayan ama dili
+   tutan ses yine kullanılır, yalnızca sırada arkaya düşer. */
+var TERCIH_EDILEN_SES = new RegExp(
+  '^(?:' +
+  // Apple
+  'Samantha|Alex|Ava|Allison|Susan|Tom|Nicky|Aaron|Daniel|Karen|Moira|Serena|Fiona|Yelda|' +
+  // Chrome ve Windows: "Google US English", "Microsoft Aria Online ..."
+  'Google\\s|Microsoft\\s' +
+  ')', 'i'
+);
+
+/** Adayın puanı; yüksek olan kazanır. Dili hiç tutmuyorsa -1. */
+function sesPuani(ses, istenen) {
+  var dil = String(ses.lang || '').replace('_', '-').toLowerCase();
+  if (dil.split('-')[0] !== istenen.split('-')[0]) return -1;
+
+  // Tanınan ad, ülke kodu eşleşmesinden ağır basar: en-GB "Daniel", en-US
+  // "Albert"ten iyidir.
+  var puan = 0;
+  if (TERCIH_EDILEN_SES.test(String(ses.name || ''))) puan += 100;
+  if (ses.default) puan += 40;
+  if (dil === istenen) puan += 10;
+  return puan;
+}
+
+/**
+ * Dile en uygun ses. Hiçbiri tutmuyorsa null — tarayıcının varsayılanına
+ * bırakılır, ses tümden susmaz.
+ * @param {string} kod  "en-US" gibi
+ * @param {Array} [liste] verilmezse tarayıcının ses listesi
+ */
+function dileUygunSes(kod, liste) {
+  if (!liste && !SESLER.length) sesleriTazele();
+  var adaylar = liste || SESLER;
+
+  var istenen = kod.toLowerCase();
+  var enIyi = null;
+  var enIyiPuan = -1;
+
+  adaylar.forEach(function (ses) {
+    var puan = sesPuani(ses, istenen);
+    if (puan > enIyiPuan) {
+      enIyiPuan = puan;
+      enIyi = ses;
+    }
+  });
+
+  return enIyiPuan < 0 ? null : enIyi;
+}
+
 /**
  * İki nokta arasındaki yön açısını hesaplar (kuzeyden saat yönünde derece).
  * Cihaz kendi başlığını vermediğinde (masaüstünde genelde vermez) hareket
@@ -155,10 +230,15 @@ function yonlendirmeBaslat(secenekler) {
   function seslendir(metin) {
     if (!secenekler.sesliMi || typeof speechSynthesis === 'undefined') return;
     try {
-      var konusma = new SpeechSynthesisUtterance(metin);
       // Sesin dili arayüzle aynı olmalı: İngilizce adımı Türkçe sesle
       // okutmak anlaşılmaz hâle getiriyor.
-      konusma.lang = secilenDil() === 'en' ? 'en-US' : 'tr-TR';
+      var kod = secilenDil() === 'en' ? 'en-US' : 'tr-TR';
+      var konusma = new SpeechSynthesisUtterance(metin);
+      konusma.lang = kod;
+
+      var ses = dileUygunSes(kod);
+      if (ses) konusma.voice = ses;
+
       speechSynthesis.cancel();
       speechSynthesis.speak(konusma);
     } catch (sorun) { /* ses desteklenmiyorsa sessizce geç */ }
@@ -239,6 +319,8 @@ function yonlendirmeBaslat(secenekler) {
 
 if (typeof module !== 'undefined') {
   module.exports = {
+    dileUygunSes: dileUygunSes,
+    sesleriTazele: sesleriTazele,
     rotayaIzdusur: rotayaIzdusur,
     yonAcisi: yonAcisi,
     adimSinirlariniKur: adimSinirlariniKur,

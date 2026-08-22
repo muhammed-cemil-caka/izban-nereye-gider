@@ -844,9 +844,19 @@ Karşılıklar `Sokak/Cadde/Bulvar/Yol/Meydan/Köprü/Geçit/Çıkmaz/Park` ile
 `Çevre Yolu`, `Sahil Yolu`, `Otoyol`. Sıra önemli — `Çevre Yolu`, daha genel
 `Yolu`dan önce denenir.
 
-Ses motoru da dile göre ayarlanır (`en-US` / `tr-TR`). Cihazda tam eşleşme
-kurulu değilse yalın dil koduna düşülür; doğrudan `setLanguage` çağırmak motoru
-önceki dilde bırakıyor ve İngilizce cümleler Türkçe sesle okunuyordu.
+Ses motoru da dile göre ayarlanır (`en-US` / `tr-TR`). Mobilde `setLanguage`
+öncesi `isLanguageAvailable` denetlenir, tam eşleşme yoksa yalın dil koduna
+düşülür — doğrudan çağırmak motoru önceki dilde bırakıyor ve İngilizce cümleler
+Türkçe sesle okunuyordu.
+
+Webde `utterance.lang` tek başına yetmiyor: ses belirtilmezse tarayıcı kendi
+varsayılanıyla okuyor. `dileUygunSes()` adayları puanlar — tanınan ses adı
+(+100), tarayıcı varsayılanı (+40), ülke kodu tam eşleşmesi (+10); dili hiç
+tutmayan aday elenir. Tanınan ad ülke kodundan ağır basıyor çünkü macOS'ta 28
+tane `en-US` sesi var, hiçbiri `default` işaretli değil (sistem dili Türkçe) ve
+liste alfabetik: ilkini almak "Albert", "Bahh", "Boing" gibi şaka seslerine
+düşürüyordu. Tanınmayan ama dili tutan ses yine kullanılır, yalnızca sırada
+arkaya düşer.
 
 Kelime sırası dilden dile değiştiği için metin parçaları birleştirilmiyor,
 `{yer}` tutucularıyla şablon kullanılıyor:

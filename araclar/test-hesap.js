@@ -19,7 +19,7 @@ const {
   baskinOlanlar, siradakiSeferler
 } = require('../frontend/js/sefer.js');
 const {
-  rotayaIzdusur, adimSinirlariniKur, rotaIlerlemesi, yonAcisi
+  rotayaIzdusur, adimSinirlariniKur, rotaIlerlemesi, yonAcisi, dileUygunSes
 } = require('../frontend/js/yonlendirme.js');
 
 let sayac = 0;
@@ -473,6 +473,44 @@ dogrula('yalnızca durağa yakın hatlar sayılır', () => {
 
 dogrula('hat sıralaması sayıca yapılır', () => {
   assert.deepStrictEqual(['154', '53', 'C10', '9'].sort(hatSirala), ['9', '53', '154', 'C10']);
+});
+
+console.log('\nSesli yönlendirme');
+
+// macOS'un ses listesinin sadeleştirilmiş hâli: şaka sesleri alfabetik olarak
+// önde ve hiçbiri `default` işaretli değil (sistem dili Türkçe).
+const SESLER = [
+  { name: 'Albert', lang: 'en-US' },
+  { name: 'Bahh', lang: 'en-US' },
+  { name: 'Daniel', lang: 'en-GB' },
+  { name: 'Samantha', lang: 'en_US' },
+  { name: 'Yelda', lang: 'tr-TR', default: true }
+];
+
+dogrula('şaka sesi yerine tanınan ses seçiliyor', () => {
+  assert.strictEqual(dileUygunSes('en-US', SESLER).name, 'Samantha');
+  assert.strictEqual(dileUygunSes('tr-TR', SESLER).name, 'Yelda');
+});
+
+dogrula('tanınan ad ülke kodundan ağır basıyor', () => {
+  // en-GB Daniel, en-US Albert'ten iyidir.
+  assert.strictEqual(dileUygunSes('en-US', [SESLER[0], SESLER[2]]).name, 'Daniel');
+});
+
+dogrula('tanınmayan ses de dili tutuyorsa kullanılıyor', () => {
+  // Liste eksik kalsa bile İngilizce metin Türkçe sesle okunmamalı.
+  assert.strictEqual(dileUygunSes('en-US', [SESLER[0]]).name, 'Albert');
+});
+
+dogrula('Chrome/Windows sesleri de tanınıyor', () => {
+  const chrome = [{ name: 'Albert', lang: 'en-US' }, { name: 'Google US English', lang: 'en-US' }];
+  assert.strictEqual(dileUygunSes('en-US', chrome).name, 'Google US English');
+});
+
+dogrula('hiç uygun ses yoksa null dönüyor', () => {
+  // null: tarayıcının varsayılanına bırakılır, ses tümden susmaz.
+  assert.strictEqual(dileUygunSes('en-US', [SESLER[4]]), null);
+  assert.strictEqual(dileUygunSes('en-US', []), null);
 });
 
 console.log('\nSefer saatleri');

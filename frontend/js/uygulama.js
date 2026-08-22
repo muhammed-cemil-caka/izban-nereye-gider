@@ -21,7 +21,7 @@
     yonRozeti: document.getElementById('yonRozeti'),
     sure: document.getElementById('sureDegeri'),
     durak: document.getElementById('durakDegeri'),
-    aktarmaSayisi: document.getElementById('aktarmaDegeri'),
+    aktarmaDegeri: document.getElementById('aktarmaDegeri'),
     ozetCumle: document.getElementById('ozetCumle'),
     seferKutusu: document.getElementById('seferKutusu'),
     seferBaslik: document.getElementById('seferBaslik'),
@@ -790,7 +790,7 @@
     oge.yonRozeti.setAttribute('data-yon', sonuc.yon);
     oge.sure.textContent = sureMetniCevir(sonuc.dakika);
     oge.durak.textContent = sonuc.durakSayisi;
-    oge.aktarmaSayisi.textContent = sonuc.aktarmalar.length;
+    oge.aktarmaDegeri.textContent = sonuc.aktarmalar.length;
     oge.ozetCumle.textContent = ceviri('ozetCumle', {
       binis: sonuc.binis.ad,
       yon: sonuc.yonDurakAdi || sonuc.yonEtiketi,
