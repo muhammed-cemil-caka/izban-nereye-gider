@@ -156,7 +156,9 @@ function yonlendirmeBaslat(secenekler) {
     if (!secenekler.sesliMi || typeof speechSynthesis === 'undefined') return;
     try {
       var konusma = new SpeechSynthesisUtterance(metin);
-      konusma.lang = 'tr-TR';
+      // Sesin dili arayüzle aynı olmalı: İngilizce adımı Türkçe sesle
+      // okutmak anlaşılmaz hâle getiriyor.
+      konusma.lang = secilenDil() === 'en' ? 'en-US' : 'tr-TR';
       speechSynthesis.cancel();
       speechSynthesis.speak(konusma);
     } catch (sorun) { /* ses desteklenmiyorsa sessizce geç */ }
@@ -209,7 +211,7 @@ function yonlendirmeBaslat(secenekler) {
       }
 
       if (ilerleme.vardiMi) {
-        seslendir('Vardın.');
+        seslendir(ceviriMetni('vardin'));
         durdur('varildi');
         return;
       }

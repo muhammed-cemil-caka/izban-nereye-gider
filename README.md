@@ -770,14 +770,38 @@ node araclar/izban-kimlik-ekle.js
 41 durağın 41'i eşleşiyor; ikisi ad farkıyla: "Alsancak Gar" → *Alsancak*,
 "Havalimanı" → *Adnan Menderes Havalimanı*.
 
-**Kapsam sınırı ve yedek:** servis Aliağa – Tepeköy arasını veriyor, Selçuk
-uzantısında (Sağlık, Belevi, Selçuk) boş liste dönüyor. Bu durumda **yön
-üzerindeki bir sonraki durağın** kalkışları gösterilir ve bunun ne olduğu
-yazılır: o yöne giden her tren o duraktan geçiyor, dolayısıyla "durağıma tren
-ne zaman geliyor" sorusunun doğru cevabı bu.
+**Servis yalnızca aktarmasız seferleri veriyor.** Hat tek parça görünse de
+işletme üç dilime ayrılmış ve dilimi aşan çift boş liste dönüyor:
 
-Uzak bir uç seçmek (ör. Tepeköy) yanıltıcı olurdu: Aliağa'dan Tepeköy'e günde
-yalnızca 4 direkt sefer var, komşu duraktan ise 45.
+| Çift | Sefer |
+| --- | --- |
+| Aliağa → Cumaovası | 43 |
+| Aliağa → Torbalı | 4 |
+| Aliağa → Tepeköy | 4 |
+| Aliağa → Selçuk | 0 |
+| Tepeköy → Selçuk | 14 |
+| Halkapınar → Selçuk | 0 |
+
+Kırılma noktaları 41 durağın tamamı denenerek ölçüldü: **Cumaovası** ve
+**Tepeköy**. Her durak bu ikisine de bağlı olduğu için bu iki aktarmayla
+41 × 40 çiftin hepsi kapsanıyor.
+
+Yolculuk şöyle kuruluyor (`js/sefer.js` ↔ `sefer_servisi.dart`, aynı mantık):
+
+1. Zincir: `[biniş, aradaki aktarma durakları, iniş]`. Aktarma durağı
+   yolculuğun içinde değilse zincire girmez.
+2. Zincirdeki her düğüm çifti için aktarmasız sefer listesi çekilir (en çok
+   6 istek) ve 0 → son arası **artan tüm dizilişler** denenir: doğrudan, tek
+   aktarmayla, iki aktarmayla.
+3. Her ilk kalkış için zincir greedy bağlanır — en az bekleten bağlantı, en az
+   3 dk aktarma payıyla. 3 saatten uzun bekleten bağlantı yolculuk sayılmaz.
+4. **Baskın olmayanlar elenir:** daha geç kalkıp daha erken (ya da aynı anda)
+   varan bir yolculuk varsa diğeri listeden düşer. Ölçüldü: İnkılap → Selçuk'ta
+   06:05 ve 06:57 aynı Tepeköy bağlantısına yetişiyor, ikisi de 08:16'da
+   varıyor — erken kalkanı göstermek yolcuyu 52 dk fazla bekletirdi.
+
+Aktarma, sefer satırının altında bekleme süresiyle yazılır:
+`Tepeköy aktarması · 12 dk bekleme` / `change at Tepeköy · 12 min wait`.
 
 Tarife gün içinde değişmediği için yanıt oturum boyu saklanır — durak seçimi
 her değiştiğinde yeniden istenmez.
@@ -791,9 +815,18 @@ Türkçe değilse İngilizce.
 **Çevrilmeyen tek şey özel isimler:** durak ve turistik yer adları. Bunun
 dışındaki her metin çevriliyor — başlıklar, düğmeler, durum mesajları, yön
 etiketi (`Selçuk yönü` / `towards Selçuk`), süre birimleri (`2 sa 28 dk` /
-`2 h 28 min`), rozetler (`BİNİŞ` / `BOARD`) ve **turistik özetler**: veri hem
-Türkçe hem İngilizce Vikipedi'den çekiliyor (`ozet` ve `ozetEn`), 95 yerin
-90'ında İngilizce metin var.
+`2 h 28 min`), rozetler (`BİNİŞ` / `BOARD`), rota adımları (`Sola dön` /
+`Turn left`), sesli yönlendirmenin dili, ondalık ayracı (`2,3 km` / `2.3 km`)
+ve **turistik özetler**: veri hem Türkçe hem İngilizce Vikipedi'den çekiliyor
+(`ozet` ve `ozetEn`), 95 yerin 90'ında İngilizce, 88'inde Türkçe metin var.
+Eksik olanlarda türden ve ilçeden kısa bir açıklama üretiliyor
+(`Selçuk ilçesinde müze` / `Museum in Selçuk`) — diğer dilin metnine düşmek,
+İngilizce arayüzde Türkçe cümle bırakıyordu.
+
+Seçili dil tek bir yerde tutulur (`diller.js` → `ceviriMetni()`,
+`diller.dart` → `Diller.aktif`). Widget ağacının ya da uygulama kapsamının
+dışında kalan katmanlar — rota servisi, konum servisi, sefer motoru, harita
+işareti — metinlerini oradan alıyor; önce sabit Türkçeydiler.
 
 Kelime sırası dilden dile değiştiği için metin parçaları birleştirilmiyor,
 `{yer}` tutucularıyla şablon kullanılıyor:
@@ -852,9 +885,10 @@ ağıyla yapılır:
 — tek yönler yüzünden.
 
 **Toplu taşıma düğmesi rota çizmez**, aktarma zincirini anlatır: hangi durağa
-İZBAN ile gelinir, orada hangi aktarmalar/ESHOT hatları var. Sefer saati
-verilmez — OSRM'de toplu taşıma profili yok ve elimizde tarife verisi yok;
-uydurulmuş bir süre yolcuyu yanıltır. Ayrıntı:
+İZBAN ile gelinir, orada hangi aktarmalar/ESHOT hatları var. Otobüs saati
+verilmez — OSRM'de toplu taşıma profili yok ve elimizde ESHOT tarife verisi
+yok; uydurulmuş bir süre yolcuyu yanıltır. (İZBAN tarifesi ayrı: bkz.
+[Sefer saatleri](#sefer-saatleri).) Ayrıntı:
 [`belgeler/turistik-yerler-tasarim.md`](belgeler/turistik-yerler-tasarim.md)
 
 > **Test notu:** `Image.network` widget testlerinde gerçek istek atıyor ve

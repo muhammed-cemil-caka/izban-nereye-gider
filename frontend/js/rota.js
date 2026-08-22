@@ -15,44 +15,59 @@ var ROTA_TABANLARI = {
 // yürüyerek gidiyor, araba mesafesi orada yanıltıcı olurdu.
 var ROTA_TABAN = ROTA_TABANLARI.yuruyus;
 
-/** OSRM manevralarının Türkçe karşılıkları. */
-var YON_ADLARI = {
-  left: 'sola',
-  right: 'sağa',
-  'slight left': 'hafif sola',
-  'slight right': 'hafif sağa',
-  'sharp left': 'keskin sola',
-  'sharp right': 'keskin sağa',
-  straight: 'düz',
-  uturn: 'geri'
+/** OSRM manevra yönleri → sözlük anahtarları. */
+var YON_ANAHTARLARI = {
+  left: 'manevraSola',
+  right: 'manevraSaga',
+  'slight left': 'manevraHafifSola',
+  'slight right': 'manevraHafifSaga',
+  'sharp left': 'manevraKeskinSola',
+  'sharp right': 'manevraKeskinSaga',
+  straight: 'manevraDuz',
+  uturn: 'manevraGeri'
 };
 
+/** İlk harfi büyütür — cümle başına gelen yön adı için. */
+function basHarfiBuyut(metin) {
+  return metin ? metin.charAt(0).toLocaleUpperCase('tr') + metin.slice(1) : metin;
+}
+
+/**
+ * OSRM manevrasını arayüz diline çevirir.
+ *
+ * Adı tarihsel: önce yalnızca Türkçe üretiyordu. Artık seçili dile göre
+ * yazıyor — İngilizce arayüzde adım listesi de, sesli yönlendirme de
+ * İngilizce olsun diye.
+ */
 function manevrayiTurkcelestir(manevra, yolAdi) {
   var tur = manevra.type;
-  var yon = YON_ADLARI[manevra.modifier] || '';
+  var yonAnahtari = YON_ANAHTARLARI[manevra.modifier];
+  var yon = yonAnahtari ? ceviriMetni(yonAnahtari) : '';
   var yer = yolAdi ? ' — ' + yolAdi : '';
 
   switch (tur) {
     case 'depart':
-      return 'Yola çık' + yer;
+      return ceviriMetni('yolaCikYol', { yol: yer });
     case 'arrive':
-      return 'Vardın' + yer;
+      return ceviriMetni('vardinYol', { yol: yer });
     case 'turn':
-      return (yon ? yon.charAt(0).toUpperCase() + yon.slice(1) + ' dön' : 'Dön') + yer;
+      return yon
+        ? basHarfiBuyut(ceviriMetni('donYol', { yon: yon, yol: yer }))
+        : ceviriMetni('donSadeYol', { yol: yer });
     case 'end of road':
-      return 'Yolun sonunda ' + (yon || 'devam et') + ' dön' + yer;
+      return ceviriMetni('yolSonuYol', { yon: yon || ceviriMetni('manevraDevamEt'), yol: yer });
     case 'fork':
-      return 'Ayrımda ' + (yon || 'düz') + ' git' + yer;
+      return ceviriMetni('ayrimYol', { yon: yon || ceviriMetni('manevraDuz'), yol: yer });
     case 'new name':
     case 'continue':
-      return 'Devam et' + yer;
+      return ceviriMetni('devamEtYol', { yol: yer });
     case 'roundabout':
     case 'rotary':
-      return 'Kavşaktan çık' + yer;
+      return ceviriMetni('kavsakYol', { yol: yer });
     case 'merge':
-      return 'Yola katıl' + yer;
+      return ceviriMetni('yolaKatilYol', { yol: yer });
     default:
-      return 'Devam et' + yer;
+      return ceviriMetni('devamEtYol', { yol: yer });
   }
 }
 
@@ -74,14 +89,12 @@ function rotaAl(baslangic, bitis, kip) {
 
   return fetch(adres)
     .then(function (yanit) {
-      if (!yanit.ok) throw new Error('Rota servisi yanıtı: ' + yanit.status);
+      if (!yanit.ok) throw new Error(ceviriMetni('rotaAlinamadi'));
       return yanit.json();
     })
     .then(function (veri) {
       if (veri.code !== 'Ok' || !veri.routes || !veri.routes.length) {
-        throw new Error(secilenKip === 'araba'
-          ? 'Araba rotası bulunamadı.'
-          : 'Yürüyüş rotası bulunamadı.');
+        throw new Error(ceviriMetni('rotaAlinamadi'));
       }
 
       var rota = veri.routes[0];
@@ -144,7 +157,7 @@ function mesafeleriAl(baslangic, hedefler, kip) {
 
   return fetch(adres)
     .then(function (yanit) {
-      if (!yanit.ok) throw new Error('Mesafe servisi yanıtı: ' + yanit.status);
+      if (!yanit.ok) throw new Error('Mesafe servisi yanıtı: ' + yanit.status); // arayüze çıkmaz
       return yanit.json();
     })
     .then(function (veri) {
@@ -173,11 +186,13 @@ function mesafeleriAl(baslangic, hedefler, kip) {
  * yüklenen dosyanın diğerini ezmesi demekti.
  */
 function rotaSuresiBicimle(saniye) {
+  var dk = ceviriMetni('birimDk');
+  var sa = ceviriMetni('birimSa');
   var dakika = Math.max(1, Math.round(saniye / 60));
-  if (dakika < 60) return dakika + ' dk';
+  if (dakika < 60) return dakika + ' ' + dk;
   var saat = Math.floor(dakika / 60);
   var kalan = dakika % 60;
-  return kalan === 0 ? saat + ' sa' : saat + ' sa ' + kalan + ' dk';
+  return kalan === 0 ? saat + ' ' + sa : saat + ' ' + sa + ' ' + kalan + ' ' + dk;
 }
 
 if (typeof module !== 'undefined') {

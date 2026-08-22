@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../diller.dart';
 import 'izban_logosu.dart';
 
 /// Açılış ekranı: marka çizilerek gelir, sonra kendini kaldırır.
@@ -168,7 +169,7 @@ class _AcilisPerdesi extends StatelessWidget {
                   Opacity(
                     opacity: _altYazi.transform(t),
                     child: Text(
-                      'Aliağa – Selçuk banliyö hattı yolculuk asistanı',
+                      Diller.of(context).call('markaAlt'),
                       style: tema.textTheme.bodySmall,
                     ),
                   ),

@@ -1,3 +1,4 @@
+import '../diller.dart';
 import '../servisler/rota_servisi.dart';
 import 'durak.dart';
 
@@ -14,17 +15,23 @@ class YakinDurak {
 
   const YakinDurak(this.durak, this.mesafeM, {this.kip});
 
-  /// "1,6 km yürüyüş" / "1,6 km araba ile" / "1,6 km"
+  /// "1,6 km yürüyüş" / "1.6 km walk"
   String get mesafeKipMetni => switch (kip) {
-        RotaKipi.yuruyus => '$mesafeMetni yürüyüş',
-        RotaKipi.araba => '$mesafeMetni araba ile',
+        RotaKipi.yuruyus =>
+          Diller.aktif('mesafeYuruyus', {'mesafe': mesafeMetni}),
+        RotaKipi.araba =>
+          Diller.aktif('mesafeAraba', {'mesafe': mesafeMetni}),
         null => mesafeMetni,
       };
 
-  /// 450 → "450 m", 2300 → "2,3 km"
+  /// 450 → "450 m", 2300 → "2,3 km" / "2.3 km"
   String get mesafeMetni {
-    if (mesafeM < 1000) return '${mesafeM.round()} m';
-    return '${(mesafeM / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+    final ceviri = Diller.aktif;
+    if (mesafeM < 1000) return '${mesafeM.round()} ${ceviri('birimM')}';
+    // Ondalık ayracı dile göre: Türkçede virgül, İngilizcede nokta.
+    var deger = (mesafeM / 1000).toStringAsFixed(1);
+    if (ceviri.kod != 'en') deger = deger.replaceAll('.', ',');
+    return '$deger ${ceviri('birimKm')}';
   }
 
   /// Verilen konuma en yakın durağı bulur.

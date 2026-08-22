@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart' show rootBundle;
+import '../diller.dart';
 import '../modeller/durak.dart';
 import 'firestore_veri.dart';
 
@@ -69,8 +70,8 @@ class DurakServisi {
 
   String get kaynakEtiketi => switch (_kaynak) {
         VeriKaynagi.firebase => 'Firebase',
-        VeriKaynagi.firebaseDogrulandi => 'Firebase (doğrulandı)',
-        VeriKaynagi.yerel => 'yerel kopya',
+        VeriKaynagi.firebaseDogrulandi => Diller.aktif('firebaseDogrulandi'),
+        VeriKaynagi.yerel => Diller.aktif('yerelKopya'),
       };
 
   Future<List<Durak>> duraklariGetir() async {

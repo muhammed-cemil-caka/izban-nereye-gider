@@ -1,3 +1,4 @@
+import '../diller.dart';
 import 'durak.dart';
 
 enum Yon { kuzey, guney }
@@ -7,7 +8,11 @@ class Yolculuk {
   final Durak binis;
   final Durak inis;
   final Yon yon;
-  final String yonEtiketi;
+
+  /// Hattın ucundaki durağın adı — "Selçuk yönü" / "towards Selçuk" bundan
+  /// kurulur. Ham ad taşınıyor ki dil değişince etiket yeniden yazılabilsin.
+  final String yonDurakAdi;
+
   final int durakSayisi;
   final int dakika;
   final List<Durak> guzergah;
@@ -16,7 +21,7 @@ class Yolculuk {
     required this.binis,
     required this.inis,
     required this.yon,
-    required this.yonEtiketi,
+    required this.yonDurakAdi,
     required this.durakSayisi,
     required this.dakika,
     required this.guzergah,
@@ -25,14 +30,13 @@ class Yolculuk {
   List<Durak> get aktarmaliDuraklar =>
       guzergah.where((durak) => durak.aktarmaVar).toList();
 
+  /// "Selçuk yönü" / "towards Selçuk"
+  String get yonEtiketi =>
+      Diller.aktif('yonEtiketi', {'durak': yonDurakAdi});
+
   String get sureMetni => sureBicimle(dakika);
 
-  static String sureBicimle(int dakika) {
-    if (dakika < 60) return '$dakika dk';
-    final saat = dakika ~/ 60;
-    final kalan = dakika % 60;
-    return kalan == 0 ? '$saat sa' : '$saat sa $kalan dk';
-  }
+  static String sureBicimle(int dakika) => Diller.aktif.sure(dakika);
 
   /// Duraklar kuzeyden güneye sıralı geldiği için indeks karşılaştırması yeterli.
   static Yolculuk? hesapla(List<Durak> duraklar, String binisKod, String inisKod) {
@@ -53,9 +57,7 @@ class Yolculuk {
       binis: duraklar[binisIndeks],
       inis: duraklar[inisIndeks],
       yon: guneyeGidiyor ? Yon.guney : Yon.kuzey,
-      yonEtiketi: guneyeGidiyor
-          ? '${duraklar.last.ad} yönü'
-          : '${duraklar.first.ad} yönü',
+      yonDurakAdi: guneyeGidiyor ? duraklar.last.ad : duraklar.first.ad,
       durakSayisi: son - ilk,
       dakika: (duraklar[inisIndeks].dakika - duraklar[binisIndeks].dakika).abs(),
       guzergah: guneyeGidiyor ? guzergah : guzergah.reversed.toList(),

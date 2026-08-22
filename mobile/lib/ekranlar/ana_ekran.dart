@@ -58,9 +58,9 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   late final Future<List<Durak>> _duraklarGelecegi;
   List<TuristikYer> _turistikYerler = const [];
 
-  /// Sefer saatleri: durak çifti → sefer listesi. Tarife gün içinde
+  /// Sefer saatleri: durak çifti → yolculuk listesi. Tarife gün içinde
   /// değişmediği için oturum boyu saklanıyor.
-  final Map<String, List<Sefer>> _seferOnbellegi = {};
+  final Map<String, List<SeferYolculugu>> _seferOnbellegi = {};
   String? _seferAnahtari;
   bool _seferAraniyor = false;
   bool _seferHatasi = false;
@@ -107,6 +107,10 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// Yönlendirme paneli bunu dinler; her ölçümde tüm ekran çizilmesin.
   final _yonlendirmeNotifier = ValueNotifier<YonlendirmeDurumu?>(null);
   String? _yonlendirmeUyarisi;
+
+  /// Doğruluk uyarısı ekranda mı? Histerezis için metne bakmak yetmiyor:
+  /// aynı uyarı iki dilde de yazılabiliyor.
+  bool _dogrulukUyarisiAcik = false;
   bool _varildi = false;
   String? _konumHatasi;
   bool _konumAyarlariGerekli = false;
@@ -125,12 +129,14 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   }
 
   /// Biniş → iniş için sefer saatlerini getirir (gerekirse).
-  Future<void> _seferleriGetir(Durak binis, Durak inis) async {
-    final binisId = binis.izbanId;
-    final inisId = inis.izbanId;
-    if (binisId == null || inisId == null) return;
+  ///
+  /// Servis yalnızca aktarmasız seferleri döndürüyor; dilim aşan çiftlerde
+  /// (ör. Halkapınar → Selçuk) yolculuk sefer_servisi.dart'ta Cumaovası ve
+  /// Tepeköy aktarmalarıyla kuruluyor.
+  Future<void> _seferleriGetir(List<Durak> duraklar, Durak binis, Durak inis) async {
+    if (binis.izbanId == null || inis.izbanId == null) return;
 
-    final anahtar = '$binisId-$inisId';
+    final anahtar = '${binis.kod}-${inis.kod}';
     if (_seferAnahtari == anahtar) return;   // zaten bu çift için istendi
     _seferAnahtari = anahtar;
 
@@ -145,7 +151,8 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     });
 
     try {
-      final seferler = await const SeferServisi().seferleriAl(binisId, inisId);
+      final seferler = await const SeferServisi()
+          .yolculukSeferleriAl(duraklar, binis.kod, inis.kod);
       if (!mounted || _seferAnahtari != anahtar) return;
       setState(() {
         _seferOnbellegi[anahtar] = seferler;
@@ -209,7 +216,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _rotaHatasi = '${kip.etiket} rotası alınamadı.';
+        _rotaHatasi = Diller.aktif('rotaAlinamadi', {'kip': kip.etiket});
         _rotaAraniyor = false;
       });
     }
@@ -226,7 +233,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     RotaKipi kip,
   ) async {
     final adaylar = YakinDurak.enYakinlar(duraklar, yer.konum, adet: 6);
-    if (adaylar.isEmpty) throw Exception('Durak bulunamadı.');
+    if (adaylar.isEmpty) throw Exception(Diller.aktif('durakBulunamadi'));
 
     try {
       final olcumler = await const RotaServisi().mesafeler(
@@ -261,31 +268,31 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     final hatlar = durak.otobusHatlari.take(6).join(', ');
     final aktarma = durak.aktarma.join(' · ');
 
+    final ceviri = Diller.of(context);
+
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('${yer.ad} — toplu taşıma'),
+        title: Text(ceviri('topluBaslik', {'yer': yer.ad})),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 8,
           children: [
-            Text('1. İZBAN ile ${durak.ad} durağına gel.'),
-            if (aktarma.isNotEmpty) Text('2. ${durak.ad} aktarmaları: $aktarma'),
-            if (hatlar.isNotEmpty) Text('3. ESHOT hatları: $hatlar'),
-            Text('4. Oradan "Yürüyerek" ile ${yer.ad}.'),
+            Text('1. ${ceviri('topluAdim1', {'durak': durak.ad})}'),
+            if (aktarma.isNotEmpty)
+              Text('2. ${ceviri('topluAdim2', {'durak': durak.ad, 'aktarma': aktarma})}'),
+            if (hatlar.isNotEmpty)
+              Text('3. ${ceviri('topluAdim3', {'hatlar': hatlar})}'),
+            Text('4. ${ceviri('topluAdim4', {'yer': yer.ad})}'),
             const Divider(),
-            const Text(
-              'Sefer saati veremiyorum: elimizde tarife verisi yok, '
-              'uydurulmuş bir süre yanıltır.',
-              style: TextStyle(fontSize: 12),
-            ),
+            Text(ceviri('topluNot'), style: const TextStyle(fontSize: 12)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Tamam'),
+            child: Text(ceviri('tamam')),
           ),
         ],
       ),
@@ -459,7 +466,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
     } catch (sorun) {
       if (!mounted) return;
       setState(() {
-        _rotaHatasi = '${kip.etiket} rotası alınamadı.';
+        _rotaHatasi = Diller.aktif('rotaAlinamadi', {'kip': kip.etiket});
         _rotaAraniyor = false;
       });
     }
@@ -543,16 +550,22 @@ class _AnaEkranDurumu extends State<AnaEkran> {
 
         // Histerezis: uyarı 100 m'de çıkar, 70 m'nin altına inince kaybolur.
         // Tek bir eşik, doğruluk sınırda gezinirken uyarıyı yanıp söndürüyordu.
-        final gorunuyor = _yonlendirmeUyarisi != null &&
-            _yonlendirmeUyarisi!.startsWith('Konum ±');
+        // Metne bakmak yetmiyor artık: uyarı iki dilde de yazılabiliyor.
+        final gorunuyor = _dogrulukUyarisiAcik;
 
         String? uyari;
         if (durum.dogrulukM > 100 || (gorunuyor && durum.dogrulukM > 70)) {
-          uyari = 'Konum ±${durum.dogrulukM.round()} m — yönlendirme şaşabilir.';
+          uyari = Diller.aktif(
+            'yonlendirmeSasabilir',
+            {'m': durum.dogrulukM.round()},
+          );
         }
 
         if (uyari != _yonlendirmeUyarisi) {
-          setState(() => _yonlendirmeUyarisi = uyari);
+          setState(() {
+            _yonlendirmeUyarisi = uyari;
+            _dogrulukUyarisiAcik = uyari != null;
+          });
         }
       },
       rotadanCikildi: (konum) async {
@@ -585,19 +598,25 @@ class _AnaEkranDurumu extends State<AnaEkran> {
         } catch (_) {
           _yenidenHesaplaniyor = false;
           if (!mounted) return;
-          setState(() => _yonlendirmeUyarisi = 'Yeni rota alınamadı.');
+          setState(() {
+            _yonlendirmeUyarisi = Diller.aktif('yeniRotaYok');
+            _dogrulukUyarisiAcik = false;
+          });
           _yonlendirmeyiBitir();
         }
       },
       varildi: () {
         if (!mounted) return;
-        if (_sesliMi) _ses.konus('Vardın.');
+        if (_sesliMi) _ses.konus(Diller.aktif('vardin'));
         setState(() => _varildi = true);
         _yonlendirmeyiBitir(varisSonrasi: true);
       },
       hataOldu: (_) {
         if (!mounted) return;
-        setState(() => _yonlendirmeUyarisi = 'Konum alınamadı, yönlendirme durdu.');
+        setState(() {
+          _yonlendirmeUyarisi = Diller.aktif('konumYokYonlendirme');
+          _dogrulukUyarisiAcik = false;
+        });
         _yonlendirmeyiBitir();
       },
     );
@@ -751,7 +770,10 @@ class _AnaEkranDurumu extends State<AnaEkran> {
             return const Center(child: CircularProgressIndicator());
           }
           if (anlik.hasError) {
-            return Center(child: Text('Durak verisi okunamadı: ${anlik.error}'));
+            return Center(
+              child: Text(Diller.of(context)
+                  .call('veriOkunamadiAyrinti', {'ayrinti': anlik.error})),
+            );
           }
 
           final duraklar = anlik.data!;
@@ -764,7 +786,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
           // setState çağırmamak için kare sonuna bırakılıyor.
           if (yolculuk != null) {
             WidgetsBinding.instance.addPostFrameCallback(
-              (_) => _seferleriGetir(yolculuk.binis, yolculuk.inis),
+              (_) => _seferleriGetir(duraklar, yolculuk.binis, yolculuk.inis),
             );
           }
 
@@ -913,7 +935,7 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 _SeferKarti(
                   binis: yolculuk.binis,
                   inis: yolculuk.inis,
-                  seferler: _seferOnbellegi['${yolculuk.binis.izbanId}-${yolculuk.inis.izbanId}'],
+                  seferler: _seferOnbellegi['${yolculuk.binis.kod}-${yolculuk.inis.kod}'],
                   araniyor: _seferAraniyor,
                   hata: _seferHatasi,
                 ),
@@ -974,6 +996,8 @@ class _SecimKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ceviri = Diller.of(context);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -991,7 +1015,7 @@ class _SecimKarti extends StatelessWidget {
               child: IconButton.filledTonal(
                 onPressed: tersCevir,
                 icon: const Icon(Icons.swap_vert),
-                tooltip: 'Yer değiştir',
+                tooltip: ceviri('yerDegistir'),
               ),
             ),
             _DurakSecici(
@@ -1050,6 +1074,7 @@ class _OzetKarti extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
+    final ceviri = Diller.of(context);
 
     return Card(
       child: Padding(
@@ -1068,19 +1093,26 @@ class _OzetKarti extends StatelessWidget {
             Row(
               spacing: 10,
               children: [
-                _OzetKutu(deger: yolculuk.sureMetni, etiket: 'tahmini süre'),
-                _OzetKutu(deger: '${yolculuk.durakSayisi}', etiket: 'durak'),
+                _OzetKutu(deger: yolculuk.sureMetni, etiket: ceviri('ozetSure')),
+                _OzetKutu(
+                  deger: '${yolculuk.durakSayisi}',
+                  etiket: ceviri('ozetDurak'),
+                ),
                 _OzetKutu(
                   deger: '${yolculuk.aktarmaliDuraklar.length}',
-                  etiket: 'aktarma',
+                  etiket: ceviri('ozetAktarma'),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
-              '${yolculuk.binis.ad} durağından ${yolculuk.yonEtiketi}ndeki trene bin. '
-              '${yolculuk.durakSayisi} durak sonra, yaklaşık ${yolculuk.sureMetni} '
-              'içinde ${yolculuk.inis.ad} durağındasın.',
+              ceviri('ozetCumle', {
+                'binis': yolculuk.binis.ad,
+                'yon': yolculuk.yonDurakAdi,
+                'durak': yolculuk.durakSayisi,
+                'sure': yolculuk.sureMetni,
+                'inis': yolculuk.inis.ad,
+              }),
               style: tema.textTheme.bodyMedium,
             ),
           ],
@@ -1278,15 +1310,15 @@ class _OtobusHatlari extends StatelessWidget {
 
 /// Biniş durağından iniş durağına sıradaki trenler.
 ///
-/// Veri İzmir Büyükşehir Belediyesi açık servisinden. Selçuk uzantısında
-/// (Sağlık, Belevi, Selçuk) servis boş liste döndürüyor; uydurma saat basmak
-/// yerine durum açıkça yazılıyor.
+/// Veri İzmir Büyükşehir Belediyesi açık servisinden. Dilim aşan çiftlerde
+/// yolculuk Cumaovası/Tepeköy aktarmasıyla kuruluyor; aktarma satırın altında
+/// bekleme süresiyle yazıyor.
 class _SeferKarti extends StatelessWidget {
   static const gorunurSefer = 4;
 
   final Durak binis;
   final Durak inis;
-  final List<Sefer>? seferler;
+  final List<SeferYolculugu>? seferler;
   final bool araniyor;
   final bool hata;
 
@@ -1337,7 +1369,8 @@ class _SeferKarti extends StatelessWidget {
             _seferSatiri(context, siradaki[i], ilk: i == 0),
           const SizedBox(height: 2),
           Text(
-            '${seferler!.length} ${ceviri('sefer')} · ${ceviri('seferKaynak')}',
+            '${ceviri('seferSayisi', {'adet': seferler!.length})}'
+            ' · ${_aktarmaOzeti(ceviri)} · ${ceviri('seferKaynak')}',
             style: soluk?.copyWith(fontSize: 11),
           ),
         ],
@@ -1365,6 +1398,16 @@ class _SeferKarti extends StatelessWidget {
     );
   }
 
+  /// Not satırında "aktarmasız" / "1 aktarma" yazar; listeye bakınca kaç kez
+  /// tren değiştirileceği anlaşılmıyor.
+  String _aktarmaOzeti(Diller ceviri) {
+    final enAz = seferler!
+        .map((s) => s.aktarmalar.length)
+        .reduce((a, b) => a < b ? a : b);
+    if (enAz == 0) return ceviri('seferAktarmasiz');
+    return ceviri(enAz == 1 ? 'seferBirAktarma' : 'seferIkiAktarma');
+  }
+
   Widget _seferSatiri(BuildContext context, SiradakiSefer sefer, {required bool ilk}) {
     final tema = Theme.of(context);
     final renkler = tema.colorScheme;
@@ -1383,32 +1426,49 @@ class _SeferKarti extends StatelessWidget {
         color: ilk ? renkler.primary.withValues(alpha: .10) : null,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            sefer.sefer.kalkis,
-            style: tema.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: ilk ? renkler.primary : renkler.onSurface,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                sefer.sefer.kalkis,
+                style: tema.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: ilk ? renkler.primary : renkler.onSurface,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '→ ${sefer.sefer.varis}',
+                style: tema.textTheme.bodySmall?.copyWith(
+                  color: renkler.onSurface.withValues(alpha: .7),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                kalan,
+                style: tema.textTheme.bodySmall?.copyWith(
+                  color: ilk ? renkler.primary : renkler.onSurface.withValues(alpha: .7),
+                  fontWeight: ilk ? FontWeight.w700 : FontWeight.w400,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            '→ ${sefer.sefer.varis}',
-            style: tema.textTheme.bodySmall?.copyWith(
-              color: renkler.onSurface.withValues(alpha: .7),
+          // Aktarma notu satırın altına iner: kalkış–varış hizası bozulmasın.
+          if (sefer.sefer.aktarmalar.isNotEmpty)
+            Text(
+              sefer.sefer.aktarmalar
+                  .map((a) => ceviri('seferAktarmaNotu',
+                      {'durak': a.durak, 'dk': a.beklemeDk}))
+                  .join(' · '),
+              style: tema.textTheme.bodySmall?.copyWith(
+                fontSize: 11,
+                color: renkler.onSurface.withValues(alpha: .7),
+              ),
             ),
-          ),
-          const Spacer(),
-          Text(
-            kalan,
-            style: tema.textTheme.bodySmall?.copyWith(
-              color: ilk ? renkler.primary : renkler.onSurface.withValues(alpha: .7),
-              fontWeight: ilk ? FontWeight.w700 : FontWeight.w400,
-            ),
-          ),
         ],
       ),
     );
@@ -1442,10 +1502,17 @@ class _GeziKarti extends StatelessWidget {
     final ceviri = Diller.of(context);
     final tema = Theme.of(context);
 
-    final gruplar = <(String, List<({TuristikYer yer, double mesafeM})>)>[];
+    final gruplar =
+        <(String, String, List<({TuristikYer yer, double mesafeM})>)>[];
     for (final durak in {binis, inis}) {
       final yakinlar = TuristikServisi.duragaYakinlar(yerler, durak.kod);
-      if (yakinlar.isNotEmpty) gruplar.add(('${durak.ad} çevresi', yakinlar));
+      if (yakinlar.isNotEmpty) {
+        gruplar.add((
+          ceviri('geziCevresiTam', {'durak': durak.ad}),
+          durak.ilce,
+          yakinlar,
+        ));
+      }
     }
     if (gruplar.isEmpty) return const SizedBox.shrink();
 
@@ -1470,9 +1537,9 @@ class _GeziKarti extends StatelessWidget {
                 ],
               ),
             ),
-            for (final (baslik, liste) in gruplar) ...[
+            for (final (baslik, ilce, liste) in gruplar) ...[
               Text(
-                '$baslik · ${liste.length} yer',
+                '$baslik · ${liste.length} ${ceviri('yer')}',
                 style: tema.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: .4,
@@ -1487,6 +1554,7 @@ class _GeziKarti extends StatelessWidget {
                   separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemBuilder: (context, sira) => _YerKarti(
                     kayit: liste[sira],
+                    ilce: ilce,
                     yolTarifi: yolTarifi,
                     topluTasima: topluTasima,
                   ),
@@ -1524,19 +1592,54 @@ class _YerKarti extends StatelessWidget {
     'tarihi-yapi': Icons.home_work,
   };
 
+  /// Tür etiketleri; özet yoksa açıklama bunlardan üretilir.
+  static const turAnahtarlari = <String, String>{
+    'antik-kent': 'turAntikKent',
+    'muze': 'turMuze',
+    'cami': 'turCami',
+    'kilise': 'turKilise',
+    'kale': 'turKale',
+    'anit': 'turAnit',
+    'park': 'turPark',
+    'kultur-varligi': 'turKulturVarligi',
+    'kule': 'turKule',
+    'tarihi-yapi': 'turTarihiYapi',
+    'gezi-noktasi': 'turGeziNoktasi',
+  };
+
   final ({TuristikYer yer, double mesafeM}) kayit;
+
+  /// En yakın durağın ilçesi — üretilen açıklamada geçiyor.
+  final String ilce;
+
   final void Function(TuristikYer, RotaKipi) yolTarifi;
   final ValueChanged<TuristikYer> topluTasima;
 
   const _YerKarti({
     required this.kayit,
+    required this.ilce,
     required this.yolTarifi,
     required this.topluTasima,
   });
 
-  static String _mesafe(double m) => m < 1000
-      ? '${m.round()} m'
-      : '${(m / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+  static String _mesafe(double m) => Diller.aktif.mesafe(m);
+
+  /// Kart özeti.
+  ///
+  /// Wikidata/Vikipedi özeti seçili dilde olmayabiliyor: 95 yerin 5'inde
+  /// İngilizce açıklama, 7'sinde Türkçe açıklama yok. Eskiden diğer dilin
+  /// metnine düşülüyordu ve İngilizce arayüzde Türkçe cümleler kalıyordu.
+  /// Artık türden ve ilçeden kısa bir açıklama üretiliyor.
+  String _ozet(Diller ceviri) {
+    final yer = kayit.yer;
+    final ozet = ceviri.kod == 'en' ? yer.ozetEn : yer.ozet;
+    if (ozet.isNotEmpty) return ozet;
+
+    return ceviri('geziTurAciklama', {
+      'tur': ceviri(turAnahtarlari[yer.tur] ?? 'turGeziNoktasi'),
+      'ilce': ilce,
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1552,24 +1655,28 @@ class _YerKarti extends StatelessWidget {
         cocuk: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (yer.gorsel != null)
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-                child: Image.network(
-                  yer.gorsel!.kucukAdres,
-                  width: double.infinity,
-                  height: 120,
-                  fit: BoxFit.cover,
-                  // Görsel yüklenmezse (ağ yok) kart metinle çalışsın.
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                  loadingBuilder: (context, cocuk, ilerleme) => ilerleme == null
-                      ? cocuk
-                      : Container(
-                          height: 120,
-                          color: renkler.primary.withValues(alpha: .08),
-                        ),
-                ),
-              ),
+            // Görsel kutusu her kartta var. Fotoğrafsız kartta öge tümden
+            // atlanırsa kart 120 px kısalıyor ve şeritteki kartlar birbirini
+            // tutmuyor; yerine tür simgesi konur.
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+              child: yer.gorsel == null
+                  ? _gorselYedegi(renkler, yer.tur)
+                  : Image.network(
+                      yer.gorsel!.kucukAdres,
+                      width: double.infinity,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => _gorselYedegi(renkler, yer.tur),
+                      loadingBuilder: (context, cocuk, ilerleme) =>
+                          ilerleme == null
+                              ? cocuk
+                              : Container(
+                                  height: 120,
+                                  color: renkler.primary.withValues(alpha: .08),
+                                ),
+                    ),
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
@@ -1600,18 +1707,15 @@ class _YerKarti extends StatelessWidget {
                         color: renkler.onSurface.withValues(alpha: .6),
                       ),
                     ),
-                    if (yer.ozetDilde(ceviri.kod).isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Expanded(
-                        child: Text(
-                          yer.ozetDilde(ceviri.kod),
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                          style: tema.textTheme.bodySmall,
-                        ),
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: Text(
+                        _ozet(ceviri),
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: tema.textTheme.bodySmall,
                       ),
-                    ] else
-                      const Spacer(),
+                    ),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 4,
@@ -1657,6 +1761,19 @@ class _YerKarti extends StatelessWidget {
     );
   }
 }
+
+/// Fotoğrafsız (ya da yüklenemeyen) kartın görsel alanı.
+Widget _gorselYedegi(ColorScheme renkler, String tur) => Container(
+      width: double.infinity,
+      height: 120,
+      color: renkler.primary.withValues(alpha: .08),
+      alignment: Alignment.center,
+      child: Icon(
+        _YerKarti.simgeler[tur] ?? Icons.place,
+        size: 40,
+        color: renkler.primary.withValues(alpha: .55),
+      ),
+    );
 
 class _GeziDugmesi extends StatelessWidget {
   final IconData simge;
@@ -1769,7 +1886,7 @@ class _AktarmaTuru extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: '$tur aktarmasına yürüyüş yol tarifi',
+      label: Diller.aktif('aktarmayaTarif', {'tur': tur}),
       child: InkWell(
         onTap: () => basildi(hedef),
         borderRadius: BorderRadius.circular(999),
@@ -1921,10 +2038,8 @@ class _AktarmaKartiDurumu extends State<_AktarmaKarti> {
             else
               ...duraklar.map((durak) => _satir(tema, durak)),
             Text(
-              kaydirmali
-                  ? '${duraklar.length} aktarma noktası · listeyi kaydırarak '
-                      'devamını gör'
-                  : '${duraklar.length} aktarma noktası',
+              '${duraklar.length} ${ceviri('aktarmaNoktasi')}'
+              '${kaydirmali ? ' · ${ceviri('kaydirarakGor')}' : ''}',
               style: soluk,
             ),
           ],
@@ -1998,15 +2113,15 @@ class _KonumKarti extends StatelessWidget {
             Text(ceviri('konumBaslik'), style: tema.textTheme.labelMedium),
             const SizedBox(height: 8),
             if (araniyor)
-              const Row(
+              Row(
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  SizedBox(width: 12),
-                  Text('Konumun alınıyor…'),
+                  const SizedBox(width: 12),
+                  Text(ceviri('konumAraniyor')),
                 ],
               )
             else if (yakinDurak != null)
@@ -2026,7 +2141,7 @@ class _KonumKarti extends StatelessWidget {
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 8,
         children: [
-          const Text('En yakın durak:'),
+          Text(ceviri('enYakinDurak')),
           Text(
             yakin.durak.ad,
             style: tema.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -2077,13 +2192,10 @@ class _KonumKarti extends StatelessWidget {
     ];
   }
 
-  String _dogrulukMetni(double dogruluk) {
-    if (dogruluk > kabaKonumEsigiM) {
-      return 'Konum ±${dogruluk.round()} m doğrulukla alındı — '
-          'en yakın durak şaşabilir, aşağıdan seçebilirsin.';
-    }
-    return 'Konum doğruluğu ±${dogruluk.round()} m';
-  }
+  String _dogrulukMetni(double dogruluk) => Diller.aktif(
+        dogruluk > kabaKonumEsigiM ? 'dogrulukKaba' : 'dogruluk',
+        {'m': dogruluk.round()},
+      );
 
   /// GPS şaşarsa kullanıcı doğru durağı kendisi seçebilsin.
   List<Widget> _alternatifler(ThemeData tema, YakinDurak secili) {
@@ -2095,7 +2207,7 @@ class _KonumKarti extends StatelessWidget {
       const SizedBox(height: 12),
       const Divider(height: 1),
       const SizedBox(height: 12),
-      Text('Yakındaki diğer duraklar:', style: tema.textTheme.bodySmall),
+      Text(Diller.aktif('digerDuraklar'), style: tema.textTheme.bodySmall),
       const SizedBox(height: 8),
       Wrap(
         spacing: 8,
@@ -2113,7 +2225,7 @@ class _KonumKarti extends StatelessWidget {
   List<Widget> _hata(BuildContext context, ThemeData tema) {
     return [
       Text(
-        hata ?? 'Konum alınamadı.',
+        hata ?? Diller.of(context).call('konumYok'),
         style: tema.textTheme.bodyMedium?.copyWith(color: tema.colorScheme.error),
       ),
       const SizedBox(height: 12),
@@ -2123,12 +2235,12 @@ class _KonumKarti extends StatelessWidget {
         children: [
           OutlinedButton(
             onPressed: tekrarDene,
-            child: const Text('Konumumu bul'),
+            child: Text(Diller.of(context).call('konumumuBul')),
           ),
           if (ayarlarGerekli)
             TextButton(
               onPressed: ayarlariAc,
-              child: const Text('Ayarları aç'),
+              child: Text(Diller.of(context).call('ayarlariAc')),
             ),
         ],
       ),
@@ -2182,7 +2294,7 @@ class _RotaKarti extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 12),
-              Text('${kip.etiket} rotası hesaplanıyor…'),
+              Text('${kip.etiket} ${Diller.of(context).call('rotaHesaplaniyor')}'),
             ],
           ),
         ),
@@ -2212,8 +2324,8 @@ class _RotaKarti extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${hedef?.ad ?? ""} durağına '
-                    '${yol.kip == RotaKipi.araba ? "araba ile" : "yürüyüş"}',
+                    '${hedef?.ad ?? ''} '
+                    '${ceviri(yol.kip == RotaKipi.araba ? 'arabaIle' : 'yuruyus')}',
                     style: tema.textTheme.titleSmall,
                   ),
                 ),
@@ -2230,7 +2342,7 @@ class _RotaKarti extends StatelessWidget {
                 IconButton(
                   onPressed: temizle,
                   icon: const Icon(Icons.close, size: 20),
-                  tooltip: 'Yol tarifini kaldır',
+                  tooltip: ceviri('yolTarifiniKaldir'),
                   visualDensity: VisualDensity.compact,
                 ),
               ],
@@ -2244,16 +2356,16 @@ class _RotaKarti extends StatelessWidget {
                 ),
                 const Spacer(),
                 SegmentedButton<RotaKipi>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: RotaKipi.yuruyus,
-                      icon: Icon(Icons.directions_walk, size: 18),
-                      tooltip: 'Yürüyerek',
+                      icon: const Icon(Icons.directions_walk, size: 18),
+                      tooltip: ceviri('yuruyerek'),
                     ),
                     ButtonSegment(
                       value: RotaKipi.araba,
-                      icon: Icon(Icons.directions_car, size: 18),
-                      tooltip: 'Arabayla',
+                      icon: const Icon(Icons.directions_car, size: 18),
+                      tooltip: ceviri('arabayla'),
                     ),
                   ],
                   selected: {kip},
@@ -2299,9 +2411,7 @@ class _AdimListesiDurumu extends State<_AdimListesi> {
     super.dispose();
   }
 
-  static String _mesafe(double metre) => metre < 1000
-      ? '${metre.round()} m'
-      : '${(metre / 1000).toStringAsFixed(1)} km';
+  static String _mesafe(double metre) => Diller.aktif.mesafe(metre);
 
   @override
   Widget build(BuildContext context) {
@@ -2333,7 +2443,10 @@ class _AdimListesiDurumu extends State<_AdimListesi> {
     // Sabit piksel yerine gerçek satır yüksekliği ölçülüyor: yazı boyutunu
     // büyüten kullanıcıda da tam 7 adımlık pencere kalsın.
     final olcer = TextPainter(
-      text: TextSpan(text: 'Örnek', style: tema.textTheme.bodySmall),
+      text: TextSpan(
+        text: Diller.of(context).call('ornek'),
+        style: tema.textTheme.bodySmall,
+      ),
       textDirection: TextDirection.ltr,
       textScaler: MediaQuery.textScalerOf(context),
     )..layout();
@@ -2356,7 +2469,8 @@ class _AdimListesiDurumu extends State<_AdimListesi> {
         ),
         const SizedBox(height: 6),
         Text(
-          '${widget.adimlar.length} adım · listeyi kaydırarak devamını gör',
+          '${widget.adimlar.length} ${Diller.of(context).call('adim')}'
+          ' · ${Diller.of(context).call('kaydirarakGor')}',
           style: soluk,
         ),
       ],
@@ -2388,9 +2502,7 @@ class _YonlendirmePaneli extends StatelessWidget {
     required this.sesDegisti,
   });
 
-  static String _mesafe(double metre) => metre < 1000
-      ? '${metre.round()} m'
-      : '${(metre / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+  static String _mesafe(double metre) => Diller.aktif.mesafe(metre);
 
   /// Kalan süreyi rotanın kendi temposundan hesaplar.
   ///
@@ -2401,12 +2513,7 @@ class _YonlendirmePaneli extends StatelessWidget {
     if (rota == null || rota.mesafeM <= 0) return null;
 
     final saniye = rota.sureSn * (kalanM / rota.mesafeM);
-    final dakika = (saniye / 60).round().clamp(1, 1 << 31);
-
-    if (dakika < 60) return '$dakika dk';
-    final saat = dakika ~/ 60;
-    final kalanDk = dakika % 60;
-    return kalanDk == 0 ? '$saat sa' : '$saat sa $kalanDk dk';
+    return Diller.aktif.sure((saniye / 60).round().clamp(1, 1 << 31));
   }
 
   /// Anlık hız; hareket algılanmıyorsa null.
@@ -2415,14 +2522,16 @@ class _YonlendirmePaneli extends StatelessWidget {
   /// hız, konumun gerçekten güncellendiğinin doğrudan göstergesi.
   static String? _hizMetni(double hizMs) {
     if (hizMs < 0.3) return null;
-    return '${(hizMs * 3.6).toStringAsFixed(1).replaceAll('.', ',')} km/sa';
+    final ceviri = Diller.aktif;
+    var deger = (hizMs * 3.6).toStringAsFixed(1);
+    if (ceviri.kod != 'en') deger = deger.replaceAll('.', ',');
+    return '$deger ${ceviri('birimHiz')}';
   }
 
   String _kalanMetni(double kalanM) {
+    final kalan = Diller.aktif('kalan', {'mesafe': _mesafe(kalanM)});
     final sure = _kalanSure(rota, kalanM);
-    return sure == null
-        ? 'Kalan: ${_mesafe(kalanM)}'
-        : 'Kalan: ${_mesafe(kalanM)} · $sure';
+    return sure == null ? kalan : '$kalan · $sure';
   }
 
   @override
@@ -2489,7 +2598,7 @@ class _YonlendirmePaneli extends StatelessWidget {
                 Expanded(
                   child: Text(
                     varildi
-                        ? 'Yolculuk başlasın.'
+                        ? Diller.of(context).call('vardin')
                         : _kalanMetni(durum?.ilerleme.kalanM ?? 0),
                     style: tema.textTheme.bodySmall
                         ?.copyWith(color: renkler.onPrimary.withValues(alpha: .9)),
@@ -2499,7 +2608,7 @@ class _YonlendirmePaneli extends StatelessWidget {
                 IconButton(
                   onPressed: () => sesDegisti(!sesliMi),
                   visualDensity: VisualDensity.compact,
-                  tooltip: sesliMi ? 'Sesi kapat' : 'Sesi aç',
+                  tooltip: Diller.of(context).call(sesliMi ? 'sesiKapat' : 'sesiAc'),
                   icon: Icon(
                     sesliMi ? Icons.volume_up : Icons.volume_off,
                     size: 20,
@@ -2546,9 +2655,9 @@ class _YonlendirmePaneli extends StatelessWidget {
                   Expanded(
                     child: Text(
                       _hizMetni(durum?.hizMs ?? 0) ??
-                          (rota?.kip == RotaKipi.araba
-                              ? 'toplam sürüş'
-                              : 'toplam yürüyüş'),
+                          Diller.of(context).call(rota?.kip == RotaKipi.araba
+                              ? 'toplamSurus'
+                              : 'toplamYuruyus'),
                       style: tema.textTheme.bodySmall?.copyWith(
                         color: renkler.onPrimary.withValues(alpha: .8),
                       ),

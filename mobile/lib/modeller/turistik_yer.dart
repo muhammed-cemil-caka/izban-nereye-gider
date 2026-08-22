@@ -85,10 +85,6 @@ class TuristikYer {
     );
   }
 
-  /// Arayüz diline göre özet; o dilde yoksa eldeki metin.
-  String ozetDilde(String dilKodu) =>
-      dilKodu == 'en' ? (ozetEn.isNotEmpty ? ozetEn : ozet) : (ozet.isNotEmpty ? ozet : ozetEn);
-
   /// Verilen durağa kuş uçuşu uzaklık (metre); bağ yoksa null.
   double? durakUzakligi(String durakKodu) {
     for (final bag in duraklar) {

@@ -118,9 +118,14 @@ class _IzbanUygulamasiDurumu extends State<IzbanUygulamasi> {
           // Seçim yoksa cihaz dili: Türkçe değilse İngilizce.
           final cihaz = View.of(context).platformDispatcher.locale.languageCode;
           final kod = _dilKodu ?? (cihaz == 'tr' ? 'tr' : 'en');
+          final diller = Diller(kod);
+
+          // Rota, konum ve sefer servisleri BuildContext görmüyor; seçili dile
+          // buradan ulaşıyorlar.
+          Diller.aktif = diller;
 
           return DilKapsami(
-            diller: Diller(kod),
+            diller: diller,
             child: AcilisKapisi(
               cocuk: AnaEkran(
                 servis: widget.servis,

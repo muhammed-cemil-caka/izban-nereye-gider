@@ -1,4 +1,5 @@
 import 'dart:math' as matematik;
+import '../diller.dart';
 
 /// Aktarma yapılabilecek gerçek bir nokta (metro girişi, tramvay durağı...).
 ///
@@ -27,9 +28,7 @@ class AktarmaNoktasi {
     );
   }
 
-  String get mesafeMetni => mesafeM < 1000
-      ? '${mesafeM.round()} m'
-      : '${(mesafeM / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+  String get mesafeMetni => Diller.aktif.mesafe(mesafeM);
 }
 
 /// Rota hedefi — bir İZBAN durağı ya da bir aktarma noktası olabilir.
@@ -41,8 +40,10 @@ class RotaHedefi {
 
   factory RotaHedefi.durak(Durak durak) => RotaHedefi(durak.ad, durak.konum);
 
-  factory RotaHedefi.aktarma(AktarmaNoktasi nokta) =>
-      RotaHedefi('${nokta.ad} ${nokta.tur.toLowerCase()}', nokta.konum);
+  factory RotaHedefi.aktarma(AktarmaNoktasi nokta) => RotaHedefi(
+        '${nokta.ad} — ${Diller.aktif('aktarmaTuruEki', {'tur': nokta.tur})}',
+        nokta.konum,
+      );
 }
 
 /// Hat üzerindeki tek bir durak.

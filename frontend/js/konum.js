@@ -13,17 +13,18 @@ var ILK_SONUC_SURESI_MS = 6000; // bu süre sonunda eldeki en iyi ölçüm göst
 var IZLEME_SURESI_MS = 45000; // konumu iyileştirmek için toplam izleme süresi
 var BEKCI_SURESI_MS = 15000;  // hiçbir ölçüm gelmezse pes etme süresi
 
-/** Tarayıcı konum desteği ve güvenli bağlam kontrolü. */
+/**
+ * Tarayıcı konum desteği ve güvenli bağlam kontrolü.
+ *
+ * Hazır metin değil SÖZLÜK ANAHTARI döner: hata satırı ekranda dururken
+ * kullanıcı dili değiştirebiliyor, arayüz onu yeniden çevirebilsin.
+ */
 function konumDesteklenirMi() {
   if (!('geolocation' in navigator)) {
-    return { destekli: false, sebep: 'Tarayıcınız konum servisini desteklemiyor.' };
+    return { destekli: false, sebep: 'konumDesteklenmiyor' };
   }
   if (!window.isSecureContext) {
-    return {
-      destekli: false,
-      sebep: 'Konum yalnızca güvenli bağlantıda (https) çalışır. ' +
-             'Siteyi localhost veya https adresinden açın.'
-    };
+    return { destekli: false, sebep: 'konumGuvenliBaglam' };
   }
   return { destekli: true };
 }
@@ -37,7 +38,7 @@ function konumDesteklenirMi() {
  * Haritalar'ın mavi noktası gibi, zamanla toparlanıyor.
  *
  * @param {function} olcumGeldi  her iyileşmede çağrılır: (konum, kesinMi)
- * @param {function} hataOldu    kalıcı hatada çağrılır: (hataMesaji)
+ * @param {function} hataOldu    kalıcı hatada çağrılır: (sozlukAnahtari)
  * @returns {function} izlemeyi erken durdurmak için çağrılacak fonksiyon
  */
 function konumIzle(olcumGeldi, hataOldu) {
@@ -117,27 +118,24 @@ function konumIzle(olcumGeldi, hataOldu) {
   bekciSayaci = setTimeout(function () {
     if (!enIyi) {
       durdur();
-      hataOldu(
-        'Konum yanıt vermedi. macOS kullanıyorsan Sistem Ayarları → Gizlilik ve ' +
-        'Güvenlik → Konum Servisleri altında tarayıcına izin verilmiş olmalı.'
-      );
+      hataOldu('konumYanitVermedi');
     }
   }, BEKCI_SURESI_MS + 2000);
 
   return durdur;
 }
 
+/** Tarayıcı hata koduna karşılık gelen sözlük anahtarı. */
 function konumHatasiniAcikla(hata) {
   switch (hata.code) {
     case hata.PERMISSION_DENIED:
-      return 'Konum izni verilmedi. Adres çubuğundaki kilit simgesinden ' +
-             'izin verip tekrar deneyebilirsin.';
+      return 'konumIzniYok';
     case hata.POSITION_UNAVAILABLE:
-      return 'Konum bilgisi alınamadı.';
+      return 'konumBilgisiYok';
     case hata.TIMEOUT:
-      return 'Konum isteği zaman aşımına uğradı.';
+      return 'konumZamanAsimi';
     default:
-      return 'Konum alınamadı.';
+      return 'konumAlinamadi';
   }
 }
 /* ---------- Elle konum düzeltme ---------- */
@@ -165,7 +163,7 @@ function yerAra(sorgu) {
 
   return fetch(adres, { headers: { 'Accept': 'application/json' } })
     .then(function (yanit) {
-      if (!yanit.ok) throw new Error('Arama başarısız (' + yanit.status + ')');
+      if (!yanit.ok) throw new Error(ceviriMetni('aramaBasarisiz', { kod: yanit.status }));
       return yanit.json();
     })
     .then(function (sonuclar) {

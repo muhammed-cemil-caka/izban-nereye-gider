@@ -1,20 +1,26 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../diller.dart';
 import '../modeller/durak.dart';
 
 /// Rota kipi. FOSSGIS her OSRM profilini ayrı adreste sunuyor.
 enum RotaKipi {
-  yuruyus('routed-foot', 'foot', 'Yürüyüş'),
-  araba('routed-car', 'driving', 'Araba');
+  yuruyus('routed-foot', 'foot', 'kipYuruyus'),
+  araba('routed-car', 'driving', 'kipAraba');
 
   final String sunucu;
   final String profil;
-  final String etiket;
 
-  const RotaKipi(this.sunucu, this.profil, this.etiket);
+  /// Sözlük anahtarı; etiket seçili dile göre üretilir.
+  final String etiketAnahtari;
+
+  const RotaKipi(this.sunucu, this.profil, this.etiketAnahtari);
 
   String get taban =>
       'https://routing.openstreetmap.de/$sunucu/route/v1/$profil';
+
+  /// "Yürüyüş" / "Walking"
+  String get etiket => Diller.aktif(etiketAnahtari);
 }
 
 /// Rotanın bir adımı.
@@ -41,17 +47,17 @@ class Rota {
     this.kip = RotaKipi.yuruyus,
   });
 
-  String get mesafeMetni => mesafeM < 1000
-      ? '${mesafeM.round()} m'
-      : '${(mesafeM / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
-
-  String get sureMetni {
-    final dakika = (sureSn / 60).round().clamp(1, 1 << 31);
-    if (dakika < 60) return '$dakika dk';
-    final saat = dakika ~/ 60;
-    final kalan = dakika % 60;
-    return kalan == 0 ? '$saat sa' : '$saat sa $kalan dk';
+  String get mesafeMetni {
+    final ceviri = Diller.aktif;
+    if (mesafeM < 1000) return '${mesafeM.round()} ${ceviri('birimM')}';
+    // Ondalık ayracı dile göre: Türkçede virgül, İngilizcede nokta.
+    var deger = (mesafeM / 1000).toStringAsFixed(1);
+    if (ceviri.kod != 'en') deger = deger.replaceAll('.', ',');
+    return '$deger ${ceviri('birimKm')}';
   }
+
+  String get sureMetni =>
+      Diller.aktif.sure((sureSn / 60).round().clamp(1, 1 << 31));
 }
 
 /// Yürüyüş rotası hesaplar — OSRM (OpenStreetMap tabanlı).
@@ -65,48 +71,65 @@ class RotaServisi {
 
   static const _zamanAsimi = Duration(seconds: 15);
 
-  static const _yonAdlari = <String, String>{
-    'left': 'sola',
-    'right': 'sağa',
-    'slight left': 'hafif sola',
-    'slight right': 'hafif sağa',
-    'sharp left': 'keskin sola',
-    'sharp right': 'keskin sağa',
-    'straight': 'düz',
-    'uturn': 'geri',
+  /// OSRM manevra yönleri → sözlük anahtarları.
+  static const _yonAnahtarlari = <String, String>{
+    'left': 'manevraSola',
+    'right': 'manevraSaga',
+    'slight left': 'manevraHafifSola',
+    'slight right': 'manevraHafifSaga',
+    'sharp left': 'manevraKeskinSola',
+    'sharp right': 'manevraKeskinSaga',
+    'straight': 'manevraDuz',
+    'uturn': 'manevraGeri',
   };
 
-  /// OSRM manevralarını Türkçeleştirir.
+  /// İlk harfi büyütür — cümle başına gelen yön adı için.
+  static String _basHarfiBuyut(String metin) =>
+      metin.isEmpty ? metin : '${metin[0].toUpperCase()}${metin.substring(1)}';
+
+  /// OSRM manevrasını arayüz diline çevirir.
+  ///
+  /// Adı tarihsel: önce yalnızca Türkçe üretiyordu. Artık seçili dile göre
+  /// yazıyor — İngilizce arayüzde adım listesi de, sesli yönlendirme de
+  /// İngilizce olsun diye.
   static String manevrayiTurkcelestir(
     String tur,
     String? yonKodu,
     String? yolAdi,
   ) {
-    final yon = _yonAdlari[yonKodu] ?? '';
+    final ceviri = Diller.aktif;
+    final yonAnahtari = _yonAnahtarlari[yonKodu];
+    final yon = yonAnahtari == null ? '' : ceviri(yonAnahtari);
     final yer = (yolAdi != null && yolAdi.isNotEmpty) ? ' — $yolAdi' : '';
 
     switch (tur) {
       case 'depart':
-        return 'Yola çık$yer';
+        return ceviri('yolaCikYol', {'yol': yer});
       case 'arrive':
-        return 'Vardın$yer';
+        return ceviri('vardinYol', {'yol': yer});
       case 'turn':
-        if (yon.isEmpty) return 'Dön$yer';
-        return '${yon[0].toUpperCase()}${yon.substring(1)} dön$yer';
+        if (yon.isEmpty) return ceviri('donSadeYol', {'yol': yer});
+        return _basHarfiBuyut(ceviri('donYol', {'yon': yon, 'yol': yer}));
       case 'end of road':
-        return 'Yolun sonunda ${yon.isEmpty ? "devam et" : yon} dön$yer';
+        return ceviri('yolSonuYol', {
+          'yon': yon.isEmpty ? ceviri('manevraDevamEt') : yon,
+          'yol': yer,
+        });
       case 'fork':
-        return 'Ayrımda ${yon.isEmpty ? "düz" : yon} git$yer';
+        return ceviri('ayrimYol', {
+          'yon': yon.isEmpty ? ceviri('manevraDuz') : yon,
+          'yol': yer,
+        });
       case 'new name':
       case 'continue':
-        return 'Devam et$yer';
+        return ceviri('devamEtYol', {'yol': yer});
       case 'roundabout':
       case 'rotary':
-        return 'Kavşaktan çık$yer';
+        return ceviri('kavsakYol', {'yol': yer});
       case 'merge':
-        return 'Yola katıl$yer';
+        return ceviri('yolaKatilYol', {'yol': yer});
       default:
-        return 'Devam et$yer';
+        return ceviri('devamEtYol', {'yol': yer});
     }
   }
 
@@ -139,7 +162,7 @@ class RotaServisi {
     }
 
     final govde = jsonDecode(utf8.decode(yanit.bodyBytes)) as Map<String, dynamic>;
-    if (govde['code'] != 'Ok') throw Exception('Mesafeler alınamadı.');
+    if (govde['code'] != 'Ok') throw Exception(Diller.aktif('mesafelerAlinamadi'));
 
     final mesafeler = (govde['distances'] as List<dynamic>).first as List<dynamic>;
     final sureler = (govde['durations'] as List<dynamic>?)?.first as List<dynamic>?;
@@ -172,10 +195,11 @@ class RotaServisi {
     }
 
     final govde = jsonDecode(utf8.decode(yanit.bodyBytes)) as Map<String, dynamic>;
-    if (govde['code'] != 'Ok') throw Exception('${kip.etiket} rotası bulunamadı.');
+    final bulunamadi = Diller.aktif('rotaBulunamadi', {'kip': kip.etiket});
+    if (govde['code'] != 'Ok') throw Exception(bulunamadi);
 
     final rotalar = govde['routes'] as List<dynamic>;
-    if (rotalar.isEmpty) throw Exception('${kip.etiket} rotası bulunamadı.');
+    if (rotalar.isEmpty) throw Exception(bulunamadi);
 
     final rota = rotalar.first as Map<String, dynamic>;
     final geometri = rota['geometry'] as Map<String, dynamic>;

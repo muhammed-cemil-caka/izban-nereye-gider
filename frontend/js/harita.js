@@ -330,13 +330,11 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
         draggable: false,
         autoPan: !yonlendirmede,
         icon: yonlendirmede ? yonOkuSimgesi(aci) : new L.Icon.Default(),
-        title: yonlendirmede
-          ? 'Konumun'
-          : 'Konumun — yerini düzeltmek için 2 saniye basılı tut'
+        title: ceviriMetni(yonlendirmede ? 'haritaKonumBaslik' : 'haritaKonumBaslikUzun')
       }).addTo(harita);
 
       konumIsareti.bindTooltip(
-        yonlendirmede ? 'Buradasın' : 'Buradasın · düzeltmek için 2 sn basılı tut',
+        ceviriMetni(yonlendirmede ? 'haritaBuradasin' : 'haritaBuradasinUzun'),
         { direction: 'top' }
       );
 
@@ -566,9 +564,9 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
         var baglanti = L.DomUtil.create('a', '', kutu);
 
         baglanti.href = '#';
-        baglanti.title = 'Konumuma dön';
+        baglanti.title = ceviriMetni('konumaDon');
         baglanti.setAttribute('role', 'button');
-        baglanti.setAttribute('aria-label', 'Konumuma dön');
+        baglanti.setAttribute('aria-label', ceviriMetni('konumaDon'));
         baglanti.innerHTML =
           '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
           '<path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" ' +
@@ -613,6 +611,30 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     harita.invalidateSize();
   }
 
+  /**
+   * Dil değişince haritanın kendi metinlerini tazeler.
+   *
+   * İşaret ve düğme bir kez kuruluyor; arayüzün geri kalanı çevrilirken
+   * bunlar eski dilde kalıyordu.
+   */
+  function diliTazele() {
+    if (konumIsareti) {
+      var uzun = !konumIsaretiYonlendirmede;
+      var baslik = ceviriMetni(uzun ? 'haritaKonumBaslikUzun' : 'haritaKonumBaslik');
+      var ipucu = ceviriMetni(uzun ? 'haritaBuradasinUzun' : 'haritaBuradasin');
+      konumIsareti.options.title = baslik;
+      var govde = konumIsareti.getElement();
+      if (govde) govde.setAttribute('title', baslik);
+      if (konumIsareti.getTooltip()) konumIsareti.setTooltipContent(ipucu);
+    }
+
+    var donDugmesi = kap.querySelector('.konuma-don a');
+    if (donDugmesi) {
+      donDugmesi.title = ceviriMetni('konumaDon');
+      donDugmesi.setAttribute('aria-label', ceviriMetni('konumaDon'));
+    }
+  }
+
   // Kap, harita kurulduktan sonra yeniden boyutlanabiliyor (pencere değişimi,
   // yazı tipi yüklenmesi, kartın geç yerleşmesi). Leaflet bunu kendiliğinden
   // fark etmiyor; eski ölçüyle çalışıp döşemeleri eksik bırakıyor.
@@ -639,6 +661,7 @@ function haritaKur(elemanKimligi, duragaTiklandi, konumSuruklendi) {
     guzergahaOdaklan: guzergahaOdaklan,
     konumaOdaklan: konumaOdaklan,
     konumaGeriDon: konumaGeriDon,
-    boyutuTazele: boyutuTazele
+    boyutuTazele: boyutuTazele,
+    diliTazele: diliTazele
   };
 }

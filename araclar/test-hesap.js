@@ -4,6 +4,9 @@
 // Mantık testleri sentetik veriyle çalışır — gerçek durak listesi değiştiğinde
 // kırılmasınlar diye. Gerçek dosya ayrıca bütünlük açısından denetlenir.
 const assert = require('assert');
+// Sözlük ilk yüklenmeli: hesap.js ve rota.js metinlerini buradan alıyor,
+// klasik script olarak yüklendiklerinde küresel oluyorlar.
+require('../frontend/js/diller.js');
 const { HAT_VERISI, DURAKLAR } = require('../frontend/js/duraklar.js');
 const {
   yolculukHesapla, sureBicimle,
@@ -11,6 +14,10 @@ const {
   durakAra, aramaIcinSadelestir
 } = require('../frontend/js/hesap.js');
 const { manevrayiTurkcelestir, rotaSuresiBicimle } = require('../frontend/js/rota.js');
+const {
+  seferZinciri, zincirYollari, ilkBaglanti, yolculuguKur,
+  baskinOlanlar, siradakiSeferler
+} = require('../frontend/js/sefer.js');
 const {
   rotayaIzdusur, adimSinirlariniKur, rotaIlerlemesi, yonAcisi
 } = require('../frontend/js/yonlendirme.js');
@@ -432,6 +439,153 @@ dogrula('yalnızca durağa yakın hatlar sayılır', () => {
 
 dogrula('hat sıralaması sayıca yapılır', () => {
   assert.deepStrictEqual(['154', '53', 'C10', '9'].sort(hatSirala), ['9', '53', '154', 'C10']);
+});
+
+console.log('\nSefer saatleri');
+
+// Sentetik hat: aktarma durakları gerçek kodlarıyla, aralara dolgu duraklar.
+const SEFER_HATTI = [
+  { kod: 'kuzey', ad: 'Kuzey', izbanId: 1 },
+  { kod: 'cumaovasi', ad: 'Cumaovası', izbanId: 2 },
+  { kod: 'orta', ad: 'Orta', izbanId: 3 },
+  { kod: 'tepekoy', ad: 'Tepeköy', izbanId: 4 },
+  { kod: 'guney', ad: 'Güney', izbanId: 5 }
+];
+
+const sefer = (kalkis, varis) => ({
+  kalkis,
+  varis,
+  kalkisDk: Number(kalkis.slice(0, 2)) * 60 + Number(kalkis.slice(3, 5))
+});
+
+const yolculuk = (kalkisDk, varisDk) => ({
+  kalkis: '00:00', varis: '00:00', kalkisDk, varisDk, aktarmalar: []
+});
+
+dogrula('aradaki aktarma durakları zincire giriyor', () => {
+  assert.deepStrictEqual(
+    seferZinciri(SEFER_HATTI, 'kuzey', 'guney').map((d) => d.kod),
+    ['kuzey', 'cumaovasi', 'tepekoy', 'guney']
+  );
+});
+
+dogrula('yolculuğun dışındaki aktarma durağı zincire girmiyor', () => {
+  assert.deepStrictEqual(
+    seferZinciri(SEFER_HATTI, 'orta', 'guney').map((d) => d.kod),
+    ['orta', 'tepekoy', 'guney']
+  );
+});
+
+dogrula('ters yönde zincir yolculuk sırasında', () => {
+  assert.deepStrictEqual(
+    seferZinciri(SEFER_HATTI, 'guney', 'kuzey').map((d) => d.kod),
+    ['guney', 'tepekoy', 'cumaovasi', 'kuzey']
+  );
+});
+
+dogrula('geçersiz çift zincir üretmiyor', () => {
+  assert.strictEqual(seferZinciri(SEFER_HATTI, 'orta', 'orta'), null);
+  assert.strictEqual(seferZinciri(SEFER_HATTI, 'orta', 'yokboyle'), null);
+  const kimliksiz = [{ kod: 'a', ad: 'A' }].concat(SEFER_HATTI);
+  assert.strictEqual(seferZinciri(kimliksiz, 'a', 'guney'), null);
+});
+
+dogrula('dört düğümde dört yol çıkıyor', () => {
+  const yollar = zincirYollari(4).map((y) => y.join('-')).sort();
+  assert.deepStrictEqual(yollar, ['0-1-2-3', '0-1-3', '0-2-3', '0-3']);
+});
+
+dogrula('bağlantı en az bekleteni seçiyor', () => {
+  const liste = [sefer('08:00', '08:20'), sefer('09:00', '09:20')];
+  const b = ilkBaglanti(liste, 7 * 60 + 30);
+  assert.strictEqual(b.sefer.kalkis, '08:00');
+  assert.strictEqual(b.beklemeDk, 30);
+});
+
+dogrula('yetişilemeyecek bağlantı atlanıyor', () => {
+  const liste = [sefer('08:00', '08:20'), sefer('09:00', '09:20')];
+  // 07:59'da hazır: 08:00'a 1 dk var, en az aktarma süresi 3 dk.
+  const b = ilkBaglanti(liste, 7 * 60 + 59);
+  assert.strictEqual(b.sefer.kalkis, '09:00');
+  assert.strictEqual(b.beklemeDk, 61);
+});
+
+dogrula('gece yarısını aşan bekleme doğru', () => {
+  const liste = [sefer('08:00', '08:20')];
+  assert.strictEqual(ilkBaglanti(liste, 23 * 60 + 30).beklemeDk, 510);
+});
+
+dogrula('aktarmasız yolculuk doğrudan kuruluyor', () => {
+  const zincir = seferZinciri(SEFER_HATTI, 'kuzey', 'guney');
+  const kenarlar = { '0-3': [sefer('08:00', '09:30')] };
+  const y = yolculuguKur([0, 3], zincir, kenarlar, kenarlar['0-3'][0]);
+  assert.strictEqual(y.kalkis, '08:00');
+  assert.strictEqual(y.varis, '09:30');
+  assert.strictEqual(y.varisDk, 9 * 60 + 30);
+  assert.deepStrictEqual(y.aktarmalar, []);
+});
+
+dogrula('iki aktarmalı yolculuk zincirleniyor', () => {
+  const zincir = seferZinciri(SEFER_HATTI, 'kuzey', 'guney');
+  const kenarlar = {
+    '0-1': [sefer('08:00', '08:30')],
+    '1-2': [sefer('08:40', '09:10')],
+    '2-3': [sefer('09:20', '09:50')]
+  };
+  const y = yolculuguKur([0, 1, 2, 3], zincir, kenarlar, kenarlar['0-1'][0]);
+  assert.strictEqual(y.varis, '09:50');
+  assert.deepStrictEqual(y.aktarmalar.map((a) => a.durak), ['Cumaovası', 'Tepeköy']);
+  assert.deepStrictEqual(y.aktarmalar.map((a) => a.beklemeDk), [10, 10]);
+});
+
+dogrula('çok uzun bekleten bağlantı eleniyor', () => {
+  const zincir = seferZinciri(SEFER_HATTI, 'kuzey', 'guney');
+  const kenarlar = {
+    '0-1': [sefer('08:00', '08:30')],
+    // Tek bağlantı ertesi sabah: 3 saatlik sınırın çok üstünde.
+    '1-3': [sefer('06:00', '07:00')]
+  };
+  assert.strictEqual(
+    yolculuguKur([0, 1, 3], zincir, kenarlar, kenarlar['0-1'][0]),
+    null
+  );
+});
+
+dogrula('gece yarısını aşan sefer süresi doğru', () => {
+  const zincir = seferZinciri(SEFER_HATTI, 'kuzey', 'guney');
+  const kenarlar = { '0-3': [sefer('23:40', '00:20')] };
+  const y = yolculuguKur([0, 3], zincir, kenarlar, kenarlar['0-3'][0]);
+  assert.strictEqual(y.varisDk, 23 * 60 + 40 + 40);
+});
+
+dogrula('baskın olmayan yolculuk eleniyor', () => {
+  // 06:05 ve 06:57 aynı Selçuk trenine bindiriyor; erkeni beklemeye yarıyor.
+  const kalanlar = baskinOlanlar([
+    yolculuk(365, 496), yolculuk(417, 496), yolculuk(444, 556)
+  ]);
+  assert.deepStrictEqual(kalanlar.map((y) => y.kalkisDk), [417, 444]);
+});
+
+dogrula('yolculuklar kalkışa göre sıralı dönüyor', () => {
+  const kalanlar = baskinOlanlar([
+    yolculuk(600, 700), yolculuk(400, 500), yolculuk(500, 600)
+  ]);
+  assert.deepStrictEqual(kalanlar.map((y) => y.kalkisDk), [400, 500, 600]);
+});
+
+dogrula('sıradaki seferler kalan süreyle dönüyor', () => {
+  const liste = [yolculuk(480, 540), yolculuk(600, 660), yolculuk(720, 780)];
+  const s = siradakiSeferler(liste, 2, 540);
+  assert.strictEqual(s.length, 2);
+  assert.strictEqual(s[0].kalanDk, 60);
+  assert.strictEqual(s[0].ertesiGun, false);
+});
+
+dogrula('gün bitince ertesi güne sarılıyor', () => {
+  const liste = [yolculuk(480, 540), yolculuk(600, 660)];
+  const s = siradakiSeferler(liste, 2, 23 * 60);
+  assert.ok(s.every((x) => x.ertesiGun));
+  assert.strictEqual(s[0].kalanDk, null);
 });
 
 console.log(`\n${sayac} test geçti.\n`);

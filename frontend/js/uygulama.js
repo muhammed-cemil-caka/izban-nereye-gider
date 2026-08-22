@@ -83,21 +83,14 @@
 
   /* ---------- Dil ---------- */
 
-  var dilKodu = typeof dilKodunuBul === 'function' ? dilKodunuBul() : 'tr';
+  // Seçili dil diller.js'te tutuluyor: rota adımları, harita ipuçları ve
+  // konum hataları bu kapsamın dışında üretiliyor ve onların da aynı dile
+  // bakması gerekiyor.
+  var dilKodu = dilAyarla(typeof dilKodunuBul === 'function' ? dilKodunuBul() : 'tr');
 
   /** Sözlükten metin. Anahtar yoksa anahtarın kendisi döner (gözden kaçmasın). */
   function ceviri(anahtar, degerler) {
-    var sozluk = (typeof DILLER !== 'undefined' && DILLER[dilKodu]) || {};
-    var metin = sozluk[anahtar] || anahtar;
-
-    // {anahtar} yer tutucuları: dilden dile kelime sırası değiştiği için
-    // metin parçalarını birleştirmek yerine şablon kullanılıyor.
-    if (degerler) {
-      Object.keys(degerler).forEach(function (k) {
-        metin = metin.split('{' + k + '}').join(degerler[k]);
-      });
-    }
-    return metin;
+    return ceviriMetni(anahtar, degerler);
   }
 
   /**
@@ -107,6 +100,7 @@
    * için olduğu gibi kalır, turistik özetler de Türkçe Vikipedi'den geliyor.
    */
   function diliUygula() {
+    dilAyarla(dilKodu);
     document.documentElement.lang = dilKodu;
 
     document.querySelectorAll('[data-ceviri]').forEach(function (el) {
@@ -130,10 +124,19 @@
       );
     }
 
+    // Harita işareti ve "konuma dön" düğmesi bir kez kuruluyor; dil değişince
+    // kendileri tazelenmiyor.
+    if (harita && harita.diliTazele) harita.diliTazele();
+
+    // Konum hatası ekranda duruyorsa o da yeni dile geçmeli.
+    if (sonKonumHatasi) konumDurumunuYaz(ceviri(sonKonumHatasi), 'hata');
+
     guncelle();
     if (sonKonum && tumAdaylar.length) {
       yakinDuragiGoster(tumAdaylar, sonDogruluk.dogrulukM, true);
     }
+    // Rota kartı ekranda duruyorsa adım metinleri de yeni dile geçmeli.
+    if (sonRota && sonRotaHedefi) rotaSonucunuYaz(sonRota, sonRotaHedefi);
   }
 
   /** 148 → "2 sa 28 dk" / "2 h 28 min" */
@@ -268,7 +271,7 @@
    */
   function aktarmayaYonlendir(nokta, durakAdi) {
     var hedef = {
-      ad: (nokta.ad || durakAdi) + ' ' + nokta.tur.toLowerCase(),
+      ad: (nokta.ad || durakAdi) + ' — ' + ceviri('aktarmaTuruEki', { tur: nokta.tur }),
       konum: nokta.konum
     };
     yolTarifiniGoster(hedef, 'yuruyus', { yonlendir: true });
@@ -298,7 +301,7 @@
     if (hatlar.length > GORUNUR_OTOBUS_HATTI) {
       var kalan = document.createElement('span');
       kalan.className = 'otobus-kalan';
-      kalan.textContent = '+' + (hatlar.length - GORUNUR_OTOBUS_HATTI) + ' hat';
+      kalan.textContent = ceviri('fazlaHat', { adet: hatlar.length - GORUNUR_OTOBUS_HATTI });
       kutu.appendChild(kalan);
     }
 
@@ -327,68 +330,38 @@
 
   var GORUNUR_SEFER = 4;
 
-  // Aynı çift için servisi tekrar tekrar çağırmamak adına oturum boyu saklanır;
-  // tarife gün içinde değişmiyor.
-  var seferOnbellegi = {};
+  // Kullanıcı seçimi hızla değişebiliyor; geciken yanıt yeni seçimin üstüne
+  // yazmasın diye her istek numaralanıyor.
   var seferIstegi = 0;
 
   /**
    * Biniş durağından iniş durağına sıradaki trenleri gösterir.
    *
-   * Veri İzmir Büyükşehir Belediyesi açık servisinden geliyor. Selçuk
-   * uzantısında (Sağlık, Belevi, Selçuk) servis boş liste döndürüyor; uydurma
-   * saat basmak yerine durum açıkça yazılır.
+   * Veri İzmir Büyükşehir Belediyesi açık servisinden geliyor. Servis yalnızca
+   * aktarmasız seferleri döndürdüğü için dilim aşan çiftlerde (ör. Halkapınar
+   * → Selçuk) yolculuk sefer.js'te Cumaovası/Tepeköy aktarmasıyla kuruluyor.
    */
   function seferleriGoster(sonuc) {
     var binis = sonuc.binis;
     var inis = sonuc.inis;
 
-    if (typeof seferleriAl !== 'function' || !binis.izbanId || !inis.izbanId) {
+    if (typeof yolculukSeferleriAl !== 'function' || !binis.izbanId || !inis.izbanId) {
       oge.seferKutusu.hidden = true;
       return;
     }
 
-    var anahtar = binis.izbanId + '-' + inis.izbanId;
     var istek = ++seferIstegi;
 
     oge.seferKutusu.hidden = false;
     oge.seferBaslik.textContent =
       binis.ad + ' → ' + inis.ad + ' · ' + ceviri('siradakiTrenler').toLowerCase();
-    oge.seferNot.textContent = '';
-
-    if (seferOnbellegi[anahtar]) {
-      seferleriYaz(seferOnbellegi[anahtar].seferler, seferOnbellegi[anahtar].yedek);
-      return;
-    }
-
     oge.seferListesi.textContent = '';
     oge.seferNot.textContent = ceviri('seferAliniyor');
 
-    seferleriAl(binis.izbanId, inis.izbanId)
+    yolculukSeferleriAl(aktifDuraklar, binis.kod, inis.kod)
       .then(function (seferler) {
         if (istek !== seferIstegi) return;   // kullanıcı seçimi değiştirdi
-        if (seferler.length) {
-          seferOnbellegi[anahtar] = { seferler: seferler, yedek: null };
-          seferleriYaz(seferler, null);
-          return;
-        }
-
-        // Kapsam dışı çift (Selçuk uzantısı): aynı yöndeki kapsanan uca
-        // düşülür. Kullanıcı "trenim ne zaman" diye soruyor; o tren en
-        // azından oraya kadar aynı tren.
-        var yedek = yedekVaris(binis, inis);
-        if (!yedek) {
-          seferOnbellegi[anahtar] = { seferler: [], yedek: null };
-          seferleriYaz([], null);
-          return;
-        }
-
-        return seferleriAl(binis.izbanId, yedek.izbanId).then(function (liste) {
-          if (istek !== seferIstegi) return;
-          var kayit = { seferler: liste, yedek: liste.length ? yedek : null };
-          seferOnbellegi[anahtar] = kayit;
-          seferleriYaz(kayit.seferler, kayit.yedek);
-        });
+        seferleriYaz(seferler);
       })
       .catch(function () {
         if (istek !== seferIstegi) return;
@@ -397,27 +370,19 @@
       });
   }
 
-  /**
-   * Kapsam dışı çift için yedek varış: yön üzerindeki BİR SONRAKİ durak.
-   *
-   * Servis Aliağa – Tepeköy arasını veriyor, Selçuk uzantısı boş dönüyor.
-   * Uzak bir uç seçmek (ör. Tepeköy) yanıltıyor: Aliağa'dan Tepeköy'e günde
-   * yalnızca 4 direkt sefer var. Komşu durak ise o yöne giden HER trenin
-   * uğradığı yer, dolayısıyla "durağıma tren ne zaman geliyor" sorusunun
-   * gerçek cevabı.
-   */
-  function yedekVaris(binis, inis) {
-    var kodlar = aktifDuraklar.map(function (d) { return d.kod; });
-    var binisSira = kodlar.indexOf(binis.kod);
-    var inisSira = kodlar.indexOf(inis.kod);
-    if (binisSira < 0 || inisSira < 0 || binisSira === inisSira) return null;
+  /** Aktarmalı yolculukta "Tepeköy aktarması · 12 dk bekleme" satırı. */
+  function aktarmaNotuYaz(satir, aktarmalar) {
+    if (!aktarmalar.length) return;
 
-    var yon = inisSira > binisSira ? 1 : -1;
-    var komsu = aktifDuraklar[binisSira + yon];
-    return komsu && komsu.izbanId ? komsu : null;
+    var not = document.createElement('span');
+    not.className = 'sefer-aktarma';
+    not.textContent = aktarmalar.map(function (a) {
+      return ceviri('seferAktarmaNotu', { durak: a.durak, dk: a.beklemeDk });
+    }).join(' · ');
+    satir.appendChild(not);
   }
 
-  function seferleriYaz(seferler, yedekDurak) {
+  function seferleriYaz(seferler) {
     oge.seferListesi.textContent = '';
 
     if (!seferler.length) {
@@ -430,7 +395,7 @@
       var satir = document.createElement('li');
       satir.className = 'sefer' + (sira === 0 ? ' sefer--ilk' : '');
 
-      var kalkis = document.createElement('strong');
+      var kalkis = document.createElement('span');
       kalkis.className = 'sefer-kalkis';
       kalkis.textContent = sefer.kalkis;
       satir.appendChild(kalkis);
@@ -447,14 +412,22 @@
         : sefer.kalanDk === 0 ? ceviri('simdi') : sefer.kalanDk + ' ' + ceviri('dkSonra');
       satir.appendChild(kalan);
 
+      aktarmaNotuYaz(satir, sefer.aktarmalar);
+
       oge.seferListesi.appendChild(satir);
     });
 
-    var not = seferler.length + ' ' + ceviri('sefer') + ' · ' + ceviri('seferKaynak');
-    if (yedekDurak) {
-      not = ceviri('seferYedek').replace('{durak}', yedekDurak.ad) + ' · ' + not;
-    }
-    oge.seferNot.textContent = not;
+    // Kaç aktarma gerektiği listeye bakınca anlaşılmıyor; not satırında yazar.
+    var enAzAktarma = seferler.reduce(function (en, s) {
+      return Math.min(en, s.aktarmalar.length);
+    }, Infinity);
+    var aktarmaMetni = enAzAktarma === 0
+      ? ceviri('seferAktarmasiz')
+      : ceviri(enAzAktarma === 1 ? 'seferBirAktarma' : 'seferIkiAktarma');
+
+    oge.seferNot.textContent =
+      ceviri('seferSayisi', { adet: seferler.length }) + ' · ' +
+      aktarmaMetni + ' · ' + ceviri('seferKaynak');
   }
 
   /* ---------- Gezilecek yerler ---------- */
@@ -469,6 +442,32 @@
     kule: '🗼', 'tarihi-yapi': '🏚', 'gezi-noktasi': '📍'
   };
 
+  var GEZI_TUR_ANAHTARLARI = {
+    'antik-kent': 'turAntikKent', muze: 'turMuze', cami: 'turCami',
+    kilise: 'turKilise', kale: 'turKale', anit: 'turAnit', park: 'turPark',
+    'kultur-varligi': 'turKulturVarligi', kule: 'turKule',
+    'tarihi-yapi': 'turTarihiYapi', 'gezi-noktasi': 'turGeziNoktasi'
+  };
+
+  /**
+   * Kart özeti.
+   *
+   * Wikidata/Vikipedi özeti seçili dilde olmayabiliyor: 95 yerin 5'inde
+   * İngilizce açıklama, 7'sinde Türkçe açıklama yok. Eskiden diğer dilin
+   * metnine düşülüyordu ve İngilizce arayüzde Türkçe cümleler kalıyordu.
+   * Artık türden ve ilçeden kısa bir açıklama üretiliyor.
+   */
+  function geziOzeti(yer, durakKodu) {
+    var ozet = dilKodu === 'en' ? yer.ozetEn : yer.ozet;
+    if (ozet) return ozet;
+
+    var durak = durakBul(aktifDuraklar, durakKodu);
+    return ceviri('geziTurAciklama', {
+      tur: ceviri(GEZI_TUR_ANAHTARLARI[yer.tur] || 'turGeziNoktasi'),
+      ilce: (durak && durak.ilce) || 'İzmir'
+    });
+  }
+
   /** Bir durağın çevresindeki yerler, yakından uzağa. */
   function duragaYakinYerler(durakKodu) {
     if (typeof TURISTIK_YERLER === 'undefined') return [];
@@ -476,7 +475,7 @@
     return TURISTIK_YERLER
       .map(function (yer) {
         var bag = yer.duraklar.find(function (d) { return d.kod === durakKodu; });
-        return bag ? { yer: yer, mesafeM: bag.kusUcusuM } : null;
+        return bag ? { yer: yer, mesafeM: bag.kusUcusuM, durakKodu: durakKodu } : null;
       })
       .filter(Boolean)
       .sort(function (a, b) { return a.mesafeM - b.mesafeM; });
@@ -488,6 +487,17 @@
     var kart = document.createElement('article');
     kart.className = 'gezi-kart';
 
+    // Görsel kutusu her kartta var. Fotoğrafsız kartta öge tümden atlanırsa
+    // kart 140 px kısalıyor ve şeritteki kartlar birbirini tutmuyor; yerine
+    // tür simgesi konur.
+    function gorselYedegi() {
+      var yedek = document.createElement('div');
+      yedek.className = 'gezi-gorsel gezi-gorsel--bos';
+      yedek.setAttribute('aria-hidden', 'true');
+      yedek.textContent = GEZI_SIMGELERI[yer.tur] || '📍';
+      return yedek;
+    }
+
     if (yer.gorsel) {
       var gorsel = document.createElement('img');
       gorsel.className = 'gezi-gorsel';
@@ -495,8 +505,12 @@
       gorsel.alt = yer.ad;
       gorsel.loading = 'lazy';
       // Görsel yüklenmezse (Commons kapalı, ağ yok) kart metinle çalışsın.
-      gorsel.addEventListener('error', function () { gorsel.remove(); });
+      gorsel.addEventListener('error', function () {
+        if (gorsel.parentNode) gorsel.parentNode.replaceChild(gorselYedegi(), gorsel);
+      });
       kart.appendChild(gorsel);
+    } else {
+      kart.appendChild(gorselYedegi());
     }
 
     var govde = document.createElement('div');
@@ -514,8 +528,7 @@
 
     var ozet = document.createElement('p');
     ozet.className = 'gezi-ozet';
-    // Arayüz dili İngilizceyse İngilizce özet; yoksa eldeki metin.
-    ozet.textContent = (dilKodu === 'en' ? (yer.ozetEn || yer.ozet) : yer.ozet) || '';
+    ozet.textContent = geziOzeti(yer, kayit.durakKodu);
     govde.appendChild(ozet);
 
     var dugmeler = document.createElement('div');
@@ -737,8 +750,10 @@
 
         if (nokta) {
           oge2.type = 'button';
-          oge2.title = tur + ' aktarmasına yürüyüş yol tarifi (' +
-            mesafeBicimle(nokta.mesafeM) + ')';
+          oge2.title = ceviri('aktarmayaTarif', {
+            tur: tur,
+            mesafe: mesafeBicimle(nokta.mesafeM)
+          });
           oge2.addEventListener('click', function () {
             aktarmayaYonlendir(nokta, aktarma.ad);
           });
@@ -796,7 +811,7 @@
     var koordinatVar = durak.konum && (durak.konum.enlem || durak.konum.boylam);
     oge.binisYolTarifi.hidden = !koordinatVar;
     if (koordinatVar) {
-      oge.binisYolTarifi.textContent = durak.ad + ' durağına yol tarifi →';
+      oge.binisYolTarifi.textContent = ceviri('duragaYolTarifiAd', { durak: durak.ad });
       oge.binisYolTarifi.__durak = durak;
     }
   }
@@ -914,8 +929,11 @@
     var arabaMi = rota.kip === 'araba';
     // Hedef bir durak olabilir, turistik yer de: "Ayasuluk Camii durağına"
     // demek yanlış olurdu.
-    var ad = hedef.durakMi === false ? hedef.ad : hedef.ad + ' durağına';
-    oge.rotaBaslik.textContent = ad + ' ' + (arabaMi ? '— araba ile' : '— yürüyüş');
+    var ad = hedef.durakMi === false
+      ? hedef.ad
+      : ceviri('rotaBasligiDurak', { durak: hedef.ad });
+    oge.rotaBaslik.textContent =
+      ad + ' ' + ceviri(arabaMi ? 'rotaKipAraba' : 'rotaKipYuruyus');
     oge.rotaOlcu.textContent =
       mesafeBicimle(rota.mesafeM) + ' · ' + rotaSuresiBicimle(rota.sureSn);
 
@@ -947,7 +965,7 @@
    */
   function yolTarifiniGoster(durak, kip, secenekler) {
     if (!sonKonum) {
-      rotaDurumuYaz('Önce konumunu bulmam gerekiyor.', 'hata');
+      rotaDurumuYaz(ceviri('konumOnceGerekli'), 'hata');
       return;
     }
     if (typeof rotaAl !== 'function') return;
@@ -982,7 +1000,8 @@
     var arabaMi = sonRotaKip === 'araba';
     oge.rotaKipYuruyus.setAttribute('aria-pressed', String(!arabaMi));
     oge.rotaKipAraba.setAttribute('aria-pressed', String(arabaMi));
-    oge.yonlendirmeToplamEtiket.textContent = arabaMi ? 'toplam sürüş' : 'toplam yürüyüş';
+    oge.yonlendirmeToplamEtiket.textContent =
+      ceviri(arabaMi ? 'toplamSurus' : 'toplamYuruyus');
   }
 
   function hataGoster(mesaj) {
@@ -995,7 +1014,18 @@
 
   var yakinDurak = null;
 
+  // Ekranda duran konum hatasının sözlük anahtarı; dil değişince yeniden
+  // çevrilebilsin diye saklanır.
+  var sonKonumHatasi = null;
+
+  /** Sözlük anahtarıyla hata yazar ve anahtarı saklar. */
+  function konumHatasiYaz(anahtar) {
+    sonKonumHatasi = anahtar;
+    konumDurumunuYaz(ceviri(anahtar), 'hata');
+  }
+
   function konumDurumunuYaz(metin, durum) {
+    if (durum !== 'hata') sonKonumHatasi = null;
     oge.konumMetni.textContent = metin;
     oge.konumKarti.setAttribute('data-durum', durum);
     oge.konumSonucu.hidden = durum !== 'hazir';
@@ -1003,7 +1033,8 @@
     // Tekrar düğmesi iki durumda gerekli: hata varsa, ya da elle girilmiş bir
     // konum kullanılıyorsa (kullanıcı tarayıcı konumuna dönebilmeli).
     oge.konumTekrar.hidden = durum !== 'hata' && !elleKonumuOku();
-    oge.konumTekrar.textContent = elleKonumuOku() ? 'Konumumu yeniden bul' : 'Konumumu bul';
+    oge.konumTekrar.textContent =
+      ceviri(elleKonumuOku() ? 'konumumuYenidenBul' : 'konumumuBul');
   }
 
   // Bu değerin üstündeki doğruluklarda en yakın durak yanılabilir; kullanıcı uyarılır.
@@ -1018,14 +1049,15 @@
     yakinDurak = enYakin.durak;
 
     oge.yakinDurakAd.textContent = enYakin.durak.ad;
+    var olcu = mesafeBicimle(enYakin.mesafeM);
     oge.yakinDurakMesafe.textContent = enYakin.kip === 'araba'
-      ? mesafeBicimle(enYakin.mesafeM) + ' araba ile'
+      ? ceviri('mesafeAraba', { mesafe: olcu })
       : enYakin.kip === 'yuruyus'
-        ? mesafeBicimle(enYakin.mesafeM) + ' yürüyüş'
-        : mesafeBicimle(enYakin.mesafeM);
+        ? ceviri('mesafeYuruyus', { mesafe: olcu })
+        : olcu;
     oge.yolTarifi.setAttribute(
       'aria-label',
-      enYakin.durak.ad + ' durağına yürüyerek yol tarifini haritada göster'
+      ceviri('duragaTarif', { durak: enYakin.durak.ad })
     );
 
     dogruluguYaz(dogrulukM, kesinMi);
@@ -1048,10 +1080,7 @@
     var kaba = dogrulukM > KABA_KONUM_ESIGI_M;
     oge.konumDogruluk.setAttribute('data-kaba', kaba ? 'evet' : 'hayir');
 
-    var metin = kaba
-      ? 'Konum ±' + Math.round(dogrulukM) + ' m doğrulukla alındı — en yakın durak ' +
-        'şaşabilir, aşağıdan seçebilirsin.'
-      : ceviri('dogruluk', { m: Math.round(dogrulukM) });
+    var metin = ceviri(kaba ? 'dogrulukKaba' : 'dogruluk', { m: Math.round(dogrulukM) });
 
     // İzleme sürdüğü sürece konum iyileşmeye devam edebilir.
     if (!kesinMi) metin += ' · ' + ceviri('iyilestiriliyor');
@@ -1247,7 +1276,7 @@
 
     var adaylar = enYakinDuraklar(aktifDuraklar, konum, 4);
     if (!adaylar.length) {
-      konumDurumunuYaz('Duraklarda koordinat bilgisi yok.', 'hata');
+      konumHatasiYaz('konumKoordinatYok');
       return;
     }
     sonDogruluk = { dogrulukM: konum.dogrulukM, enYakinMesafe: adaylar[0].mesafeM };
@@ -1289,7 +1318,7 @@
     if (izlemeyiDurdur) izlemeyiDurdur();
     // Tarayıcı konumu istendiği anda elle girilen değer geçerliliğini yitirir.
     elleKonumuUnut();
-    konumDurumunuYaz('Konumun alınıyor…', 'bekliyor');
+    konumDurumunuYaz(ceviri('konumAliniyor'), 'bekliyor');
 
     izlemeyiDurdur = konumIzle(
       function (konum, kesinMi) {
@@ -1298,9 +1327,9 @@
         if (kesinMi) takibiBaslat();
         konumuIsle(konum, kesinMi);
       },
-      function (mesaj) {
+      function (anahtar) {
         // İzin reddi dahil her durumda site çalışmaya devam eder.
-        konumDurumunuYaz(mesaj, 'hata');
+        konumHatasiYaz(anahtar);
       }
     );
   }
@@ -1343,7 +1372,7 @@
     var eslesenler = durakAra(aktifDuraklar, sorgu).slice(0, 5);
     if (!eslesenler.length) return 0;
 
-    aramaBasligiEkle('Duraklar');
+    aramaBasligiEkle(ceviri('aramaDuraklar'));
     eslesenler.forEach(function (durak) {
       aramaSatiriEkle(durak.ad + ' · ' + durak.ilce, function () {
         // "Buradayım" demek yerine doğrudan durağı seçmek daha net.
@@ -1366,7 +1395,7 @@
   function yerSonuclariniYaz(sonuclar) {
     if (!sonuclar.length) return;
 
-    aramaBasligiEkle('Yerler');
+    aramaBasligiEkle(ceviri('aramaYerler'));
     sonuclar.forEach(function (yer) {
       aramaSatiriEkle(yer.ad, function () {
         // Elle girilen konum tarayıcıdan daha güvenilir sayılır: izleme durur.
@@ -1395,18 +1424,14 @@
 
       // Nominatim ücretsiz ve gönüllü bir servis; her tuşta istek atılmaz.
       aramaSayaci = setTimeout(function () {
-        aramaDurumuYaz('Yerler aranıyor…');
+        aramaDurumuYaz(ceviri('yerlerAraniyor'));
         yerAra(sorgu)
           .then(function (sonuclar) {
             yerSonuclariniYaz(sonuclar);
-            aramaDurumuYaz(
-              sonuclar.length || durakSayisi
-                ? ''
-                : 'Sonuç yok. Mahalle, cadde veya durak adı deneyebilirsin.'
-            );
+            aramaDurumuYaz(sonuclar.length || durakSayisi ? '' : ceviri('sonucYok'));
           })
           .catch(function () {
-            aramaDurumuYaz(durakSayisi ? '' : 'Yer araması şu an çalışmıyor.');
+            aramaDurumuYaz(durakSayisi ? '' : ceviri('aramaCalismiyor'));
           });
       }, 600);
     });
@@ -1485,7 +1510,7 @@
 
       durumDegisti: function (durum) {
         var adim = sonRota.adimlar[durum.ilerleme.adimIndeksi];
-        oge.yonlendirmeManevra.textContent = adim ? adim.metin : 'Devam et';
+        oge.yonlendirmeManevra.textContent = adim ? adim.metin : ceviri('devamEt');
         oge.yonlendirmeMesafe.textContent = mesafeBicimle(durum.ilerleme.sonrakiManevraM);
         // Süre, rotanın kendi temposundan: sabit yürüyüş hızı varsaymak yerine
         // servisin o rota için öngördüğü tempo kalan mesafeye uygulanıyor.
@@ -1494,7 +1519,7 @@
           : 0;
 
         oge.yonlendirmeKalan.textContent =
-          'Kalan: ' + mesafeBicimle(durum.ilerleme.kalanM) +
+          ceviri('kalan', { mesafe: mesafeBicimle(durum.ilerleme.kalanM) }) +
           ' · ' + rotaSuresiBicimle(kalanSaniye);
 
         // Toplam yürüyüşün ne kadarı bitti: çubuk ve sayılar.
@@ -1507,7 +1532,7 @@
 
         yonlendirmeUyarisiYaz(
           durum.konum.dogrulukM > 100
-            ? 'Konum ±' + Math.round(durum.konum.dogrulukM) + ' m — yönlendirme şaşabilir.'
+            ? ceviri('yonlendirmeSasabilir', { m: Math.round(durum.konum.dogrulukM) })
             : ''
         );
 
@@ -1524,7 +1549,7 @@
 
       yenidenHesapla: function (konum) {
         // Rotadan çıkıldı: yeni konumdan aynı hedefe rota istenir.
-        yonlendirmeUyarisiYaz('Rotadan çıktın, yeniden hesaplanıyor…');
+        yonlendirmeUyarisiYaz(ceviri('rotadanCiktin'));
         sonKonum = { enlem: konum.enlem, boylam: konum.boylam };
 
         rotaAl(sonKonum, sonRotaHedefi.konum, sonRotaKip)
@@ -1535,19 +1560,20 @@
             yonlendirmeyiBaslat();
           })
           .catch(function () {
-            yonlendirmeUyarisiYaz('Yeni rota alınamadı, yönlendirme durduruldu.');
+            yonlendirmeUyarisiYaz(ceviri('yeniRotaYok'));
             yonlendirmeyiBitir();
           });
       },
 
       bitti: function (sebep) {
         if (sebep === 'varildi') {
-          oge.yonlendirmeManevra.textContent = sonRotaHedefi.ad + ' durağına vardın.';
+          oge.yonlendirmeManevra.textContent =
+            ceviri('varildi', { durak: sonRotaHedefi.ad });
           oge.yonlendirmeMesafe.textContent = '✓';
           oge.yonlendirmeKalan.textContent = ceviri('yolculukBaslasin');
           yonlendirmeUyarisiYaz('');
         } else if (sebep === 'hata') {
-          yonlendirmeUyarisiYaz('Konum alınamadı, yönlendirme durduruldu.');
+          yonlendirmeUyarisiYaz(ceviri('konumYokYonlendirme'));
         }
         yonlendirmeOturumu = null;
       }
@@ -1594,7 +1620,7 @@
         if (izlemeyiDurdur) izlemeyiDurdur();
         takibiKapat();
         konumuIsle({ enlem: konum.enlem, boylam: konum.boylam, dogrulukM: null }, true);
-        elleKonumuKaydet(konum, 'haritadan seçtiğin nokta');
+        elleKonumuKaydet(konum, ceviri('haritadanSecilen'));
       }
     );
 

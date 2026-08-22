@@ -745,7 +745,15 @@ body.acilis-acik { overflow: hidden; }
 
    Kartlar yatay şeritte: 30'a yakın yer olabiliyor ve alt alta dizmek sayfayı
    uzatıyor. Şerit kendi içinde kaydırılır, sayfa yerinde kalır. */
-.gezi-gruplari { display: grid; gap: 1.1rem; }
+.gezi-gruplari {
+  display: grid;
+  /* Tek sütun, ama minmax(0, 1fr): `auto` sütun izi max-content kadar
+     büyüyor, içindeki yatay şerit de kartın dışına taşıyordu. Sıfır
+     alt sınır sütunu kutuya sabitler, şerit kendi içinde kaydırılır. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.1rem;
+}
+.gezi-grup { min-width: 0; }
 .gezi-grup-baslik {
   margin: 0 0 .5rem;
   font-size: .82rem; font-weight: 700;
@@ -783,6 +791,13 @@ body.acilis-acik { overflow: hidden; }
   object-fit: cover;
   display: block;
   background: var(--vurgu-soluk);
+  flex: none;
+}
+/* Fotoğrafsız kart: yer tür simgesiyle aynı yüksekliği doldurur, böylece
+   şeritteki kartlar aynı hizada kalır. */
+.gezi-gorsel--bos {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.6rem; line-height: 1;
 }
 /* Kart içi hizalama: satırlar ızgarayla sabitlenir. Serbest akışta özeti
    olmayan kartta düğmeler yukarı kayıyor, başlığı iki satır olan kartta
@@ -893,6 +908,12 @@ body.acilis-acik { overflow: hidden; }
 .sefer-varis { font-size: .85rem; color: var(--yazi-soluk); }
 .sefer-kalan { margin-left: auto; font-size: .78rem; color: var(--yazi-soluk); }
 .sefer--ilk .sefer-kalan { color: var(--vurgu); font-weight: 700; }
+/* Aktarma notu satırın altına iner: kalkış–varış hizası bozulmasın. */
+.sefer-aktarma {
+  flex-basis: 100%;
+  font-size: .72rem;
+  color: var(--yazi-soluk);
+}
 .sefer-not { margin: .5rem 0 0; font-size: .72rem; color: var(--yazi-soluk); }
 
 /* Dil düğmesi üst bantta, tema düğmesinin yanında. */

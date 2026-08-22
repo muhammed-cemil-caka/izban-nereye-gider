@@ -6,12 +6,14 @@ function durakBul(duraklar, kod) {
   return duraklar.find(function (d) { return d.kod === kod; }) || null;
 }
 
-/** 140 → "2 sa 20 dk" */
+/** 140 → "2 sa 20 dk" / "2 h 20 min" */
 function sureBicimle(dakika) {
-  if (dakika < 60) return dakika + ' dk';
+  var dk = ceviriMetni('birimDk');
+  var sa = ceviriMetni('birimSa');
+  if (dakika < 60) return dakika + ' ' + dk;
   var saat = Math.floor(dakika / 60);
   var kalan = dakika % 60;
-  return kalan === 0 ? saat + ' sa' : saat + ' sa ' + kalan + ' dk';
+  return kalan === 0 ? saat + ' ' + sa : saat + ' ' + sa + ' ' + kalan + ' ' + dk;
 }
 
 /**
@@ -23,10 +25,10 @@ function yolculukHesapla(duraklar, binisKod, inisKod) {
   var inisIndeks = duraklar.findIndex(function (d) { return d.kod === inisKod; });
 
   if (binisIndeks === -1 || inisIndeks === -1) {
-    return { gecerli: false, hata: 'Durak bulunamadı.' };
+    return { gecerli: false, hata: ceviriMetni('durakBulunamadi') };
   }
   if (binisIndeks === inisIndeks) {
-    return { gecerli: false, hata: 'Biniş ve iniş durağı aynı olamaz.' };
+    return { gecerli: false, hata: ceviriMetni('ayniDurak') };
   }
 
   var guneyeGidiyor = inisIndeks > binisIndeks;
@@ -59,9 +61,9 @@ function yolculukHesapla(duraklar, binisKod, inisKod) {
     binis: duraklar[binisIndeks],
     inis: duraklar[inisIndeks],
     yon: guneyeGidiyor ? 'guney' : 'kuzey',
-    yonEtiketi: guneyeGidiyor
-      ? duraklar[duraklar.length - 1].ad + ' yönü'
-      : duraklar[0].ad + ' yönü',
+    yonEtiketi: ceviriMetni('yonEtiketi', {
+      durak: guneyeGidiyor ? duraklar[duraklar.length - 1].ad : duraklar[0].ad
+    }),
     // Arayüz dili değişince etiket yeniden kurulabilsin diye ham ad da taşınır.
     yonDurakAdi: guneyeGidiyor ? duraklar[duraklar.length - 1].ad : duraklar[0].ad,
     durakSayisi: son - ilk,
@@ -91,10 +93,13 @@ function metreUzaklik(a, b) {
   return 2 * yaricapM * Math.asin(Math.sqrt(h));
 }
 
-/** 450 → "450 m", 2300 → "2,3 km" */
+/** 450 → "450 m", 2300 → "2,3 km" / "2.3 km" */
 function mesafeBicimle(metre) {
-  if (metre < 1000) return Math.round(metre) + ' m';
-  return (metre / 1000).toFixed(1).replace('.', ',') + ' km';
+  if (metre < 1000) return Math.round(metre) + ' ' + ceviriMetni('birimM');
+  // Ondalık ayracı dile göre: Türkçede virgül, İngilizcede nokta.
+  var deger = (metre / 1000).toFixed(1);
+  if (secilenDil() !== 'en') deger = deger.replace('.', ',');
+  return deger + ' ' + ceviriMetni('birimKm');
 }
 
 /**

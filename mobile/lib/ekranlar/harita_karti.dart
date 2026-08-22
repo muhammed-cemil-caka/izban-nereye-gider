@@ -7,6 +7,7 @@ import 'dart:math' as matematik;
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../diller.dart';
 import '../modeller/durak.dart';
 import '../modeller/yolculuk.dart';
 import '../servisler/rota_servisi.dart';
@@ -460,11 +461,11 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('HARİTA', style: tema.textTheme.labelMedium),
+                Text(Diller.of(context).call('haritaBaslik'),
+                    style: tema.textTheme.labelMedium),
                 const SizedBox(height: 2),
                 Text(
-                  'Durağa dokun · konumu düzeltmek için işarete 2 sn basılı tut '
-                  '· ⊕ düğmesi konumuna döner',
+                  Diller.of(context).call('haritaIpucu'),
                   style: tema.textTheme.bodySmall,
                 ),
               ],
@@ -603,7 +604,7 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: Text(
-              'Harita verisi © OpenStreetMap katkıcıları',
+              Diller.of(context).call('haritaKatki'),
               style: tema.textTheme.bodySmall?.copyWith(
                 color: tema.textTheme.bodySmall?.color?.withValues(alpha: .7),
               ),
@@ -691,7 +692,7 @@ class _HaritaKartiDurumu extends State<HaritaKarti>
         onPointerUp: _isaretBirakildi,
         onPointerCancel: _isaretIptalEdildi,
         child: Semantics(
-          label: 'Konumun. Yerini düzeltmek için 2 saniye basılı tut.',
+          label: Diller.aktif('haritaKonumBaslikUzun'),
           // Taşımaya açıldığında iğne renk değiştirir: kullanıcı iki saniyenin
           // dolduğunu titreşimin yanında gözle de görsün.
           child: Icon(
@@ -854,7 +855,7 @@ class _KonumaDonDugmesi extends StatelessWidget {
               height: 44,
               child: Semantics(
                 button: true,
-                label: 'Konumuma dön',
+                label: Diller.aktif('konumaDon'),
                 child: Icon(Icons.my_location, size: 22, color: renkler.primary),
               ),
             ),

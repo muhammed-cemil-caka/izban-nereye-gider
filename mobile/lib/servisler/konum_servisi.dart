@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:geolocator/geolocator.dart';
+import '../diller.dart';
 import '../modeller/durak.dart';
 
 /// Konum isteğinin sonucu — hata durumları çağırana açıkça bildirilir.
@@ -31,9 +32,7 @@ class KonumServisi {
 
   Future<KonumSonucu> konumAl() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
-      return const KonumHatasi(
-        'Cihazın konum servisi kapalı. Ayarlardan açman gerekiyor.',
-      );
+      return KonumHatasi(Diller.aktif('konumServisiKapali'));
     }
 
     var izin = await Geolocator.checkPermission();
@@ -42,14 +41,14 @@ class KonumServisi {
     }
 
     if (izin == LocationPermission.deniedForever) {
-      return const KonumHatasi(
-        'Konum izni kalıcı olarak reddedilmiş. Uygulama ayarlarından açabilirsin.',
+      return KonumHatasi(
+        Diller.aktif('konumIzniKalici'),
         ayarlarGerekli: true,
       );
     }
 
     if (izin == LocationPermission.denied) {
-      return const KonumHatasi('Konum izni verilmedi.');
+      return KonumHatasi(Diller.aktif('konumIzniYok'));
     }
 
     try {
@@ -66,7 +65,7 @@ class KonumServisi {
         yer.accuracy,
       );
     } catch (sorun) {
-      return const KonumHatasi('Konum alınamadı, tekrar dener misin?');
+      return KonumHatasi(Diller.aktif('konumTekrarDene'));
     }
   }
 

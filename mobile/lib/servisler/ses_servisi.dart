@@ -1,4 +1,5 @@
 import 'package:flutter_tts/flutter_tts.dart';
+import '../diller.dart';
 
 /// Adım adım yönlendirmede talimatları sesli okur.
 ///
@@ -7,17 +8,21 @@ import 'package:flutter_tts/flutter_tts.dart';
 /// vazgeçilir — yönlendirme sesli olmadan çalışmaya devam eder.
 class SesServisi {
   final FlutterTts _motor = FlutterTts();
-  bool _hazirlandi = false;
   bool _kullanilabilir = true;
 
+  /// Motorun ayarlandığı dil. Kullanıcı yönlendirme sürerken dili
+  /// değiştirebiliyor; İngilizce adımı Türkçe sesle okutmak anlaşılmaz oluyor.
+  String? _ayarlananDil;
+
   Future<void> _hazirla() async {
-    if (_hazirlandi) return;
-    _hazirlandi = true;
+    final istenen = Diller.aktif.kod == 'en' ? 'en-US' : 'tr-TR';
+    if (_ayarlananDil == istenen) return;
 
     try {
-      await _motor.setLanguage('tr-TR');
+      await _motor.setLanguage(istenen);
       // Bir talimat okunurken yenisi gelirse öncekini kes; kuyruğa alma.
       await _motor.setQueueMode(0);
+      _ayarlananDil = istenen;
     } catch (_) {
       _kullanilabilir = false;
     }
@@ -39,7 +44,7 @@ class SesServisi {
   }
 
   Future<void> sustur() async {
-    if (!_hazirlandi || !_kullanilabilir) return;
+    if (_ayarlananDil == null || !_kullanilabilir) return;
     try {
       await _motor.stop();
     } catch (_) {

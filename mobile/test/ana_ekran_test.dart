@@ -62,13 +62,20 @@ Widget _uygulama({KonumSonucu? konum}) => IzbanUygulamasi(
 ///
 /// Dil de sabitlenir: uygulama seçim yoksa cihaz dilini kullanıyor, test
 /// ortamının dili İngilizce ve metinler İngilizce çıkıyordu.
-void _uzunEkran(WidgetTester tester) {
+void _uzunEkran(WidgetTester tester, {String dil = 'tr'}) {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(1000, 2600);
-  tester.platformDispatcher.localeTestValue = const Locale('tr');
+  tester.platformDispatcher.localeTestValue = Locale(dil);
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearLocaleTestValue);
 }
+
+/// Ekrandaki bütün metinleri toplar — dil denetimi için.
+List<String> _tumMetinler(WidgetTester tester) => tester
+    .widgetList<Text>(find.byType(Text))
+    .map((t) => t.data ?? '')
+    .where((m) => m.isNotEmpty)
+    .toList();
 
 void main() {
   testWidgets('açılışta yolculuk özeti gösteriliyor', (tester) async {
@@ -178,5 +185,38 @@ void main() {
     // Halkapınar'dan Selçuk'a: 151 - 63 = 88 dk
     expect(find.text('1 sa 28 dk'), findsOneWidget);
     expect(find.text('Selçuk yönü'), findsOneWidget);
+  });
+
+  testWidgets('İngilizce arayüzde durak adları dışında Türkçe kalmıyor',
+      (tester) async {
+    _uzunEkran(tester, dil: 'en');
+    await tester.pumpWidget(_uygulama(
+      konum: const KonumBulundu(Konum(enlem: 38.4380, boylam: 27.1695), 900),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ROUTE'), findsOneWidget);
+    expect(find.text('towards Selçuk'), findsOneWidget);
+    expect(find.text('2 h 31 min'), findsOneWidget);
+    expect(find.text('Nearest station:'), findsOneWidget);
+    expect(find.textContaining('the nearest station may be off'), findsOneWidget);
+    expect(find.text('Other nearby stations:'), findsOneWidget);
+
+    // Durak ve ilçe adları özel isim; onlar dışında Türkçe metin kalmamalı.
+    final ozelIsimler = {
+      for (final d in _duraklar) ...{d.ad, d.ilce},
+      'İZBAN Nereye Gider?',
+    };
+    final turkce = RegExp('[çğıöşüÇĞİÖŞÜ]');
+
+    for (final metin in _tumMetinler(tester)) {
+      if (!turkce.hasMatch(metin)) continue;
+      final kalan = ozelIsimler.fold(metin, (m, ad) => m.replaceAll(ad, ''));
+      expect(
+        turkce.hasMatch(kalan),
+        isFalse,
+        reason: 'İngilizce arayüzde Türkçe metin: "$metin"',
+      );
+    }
   });
 }
