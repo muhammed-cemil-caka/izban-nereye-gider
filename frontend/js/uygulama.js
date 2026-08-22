@@ -717,7 +717,28 @@
    * servisinden gelen SÜREYE göre verilir. Araçta uzun ama hızlı çevre yol,
    * kısa ama yavaş şehir içinden iyi olabiliyor.
    */
+  /**
+   * Önceden hesaplanmış en yakın durak — ağa çıkmadan.
+   *
+   * Durak da yer de kıpırdamıyor, bu mesafeler sabit; veriye gömülüyorlar
+   * (bkz. araclar/turistik-mesafeleri-uret.js). Eskiden her tıklamada canlı
+   * mesafe matrisi çekiliyordu ve rota isteğiyle birlikte ARDIŞIK iki çağrı
+   * oluyordu — gecikme toplanıyor, ikisinden biri düşünce "rota alınamadı"
+   * çıkıyordu.
+   */
+  function hazirEnYakinDurak(yer, kip) {
+    var kayit = yer.enYakin && yer.enYakin[kip];
+    if (!kayit) return null;
+    var durak = durakBul(aktifDuraklar, kayit.kod);
+    if (!durak) return null;
+    return { durak: durak, mesafeM: kayit.mesafeM, sureSn: kayit.sureSn };
+  }
+
   function yereEnYakinDurak(yer, kip) {
+    var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
+    var hazir = hazirEnYakinDurak(yer, secilenKip);
+    if (hazir) return Promise.resolve(hazir);
+
     var adaylar = enYakinDuraklar(aktifDuraklar, yer.konum, 6);
     if (!adaylar.length) return Promise.reject(new Error(ceviri('durakBulunamadi')));
 
@@ -725,7 +746,7 @@
     var yedek = { durak: adaylar[0].durak, mesafeM: adaylar[0].mesafeM, kusUcusu: true };
     if (typeof mesafeleriAl !== 'function') return Promise.resolve(yedek);
 
-    return mesafeleriAl(yer.konum, adaylar.map(function (a) { return a.durak.konum; }), kip)
+    return mesafeleriAl(yer.konum, adaylar.map(function (a) { return a.durak.konum; }), secilenKip)
       .then(function (olcumler) {
         var sirali = adaylar
           .map(function (aday, sira) {
@@ -761,15 +782,23 @@
    * ölçüldü, Çiğli kuş uçuşu daha yakın ama yürüyüşle 2,5 km, Mavişehir 1,4 km.
    */
   function topluTasimaAnlat(yer) {
+    // Ölçüler veriye gömülüyse tek adımda, kesin değerle açılır.
+    var hazir = hazirEnYakinDurak(yer, 'yuruyus');
+    if (hazir) {
+      ++topluIstegi;
+      topluPencereyiAc(yer, hazir, false);
+      return;
+    }
+
     var adaylar = enYakinDuraklar(aktifDuraklar, yer.konum, 1);
     if (!adaylar.length) {
       rotaDurumuYaz(ceviri('durakBulunamadi'), 'hata');
       return;
     }
 
-    // Pencere HEMEN açılır: OSRM'i beklemek düğmeye bastıktan sonra saniyelerce
-    // hiçbir şey olmamış gibi görünmesine yol açıyordu. Önce kuş uçuşu durak
-    // yazılır, yürüyüş ağı yanıtı gelince satırlar yerinde tazelenir.
+    // Veri yoksa pencere yine HEMEN açılır: OSRM'i beklemek düğmeye bastıktan
+    // sonra saniyelerce hiçbir şey olmamış gibi görünmesine yol açıyordu. Önce
+    // kuş uçuşu durak yazılır, yürüyüş ağı yanıtı gelince yerinde tazelenir.
     var istek = ++topluIstegi;
     topluPencereyiAc(yer, { durak: adaylar[0].durak, mesafeM: adaylar[0].mesafeM }, true);
 

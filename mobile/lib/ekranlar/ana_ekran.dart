@@ -227,11 +227,31 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// Kuş uçuşu YALNIZCA ön eleme için (6 aday); karar OSRM matrisinden gelen
   /// SÜREYE göre verilir. Araçta uzun ama hızlı çevre yol, kısa ama yavaş
   /// şehir içinden iyi olabiliyor.
+  /// Önceden hesaplanmış en yakın durak — ağa çıkmadan.
+  ///
+  /// Ölçüler veriye gömülü (bkz. araclar/turistik-mesafeleri-uret.js); yoksa
+  /// null döner ve canlı hesaba düşülür.
+  ({Durak durak, double mesafeM})? _hazirEnYakinDurak(
+    TuristikYer yer,
+    List<Durak> duraklar,
+    RotaKipi kip,
+  ) {
+    final olcu = yer.enYakin[kip == RotaKipi.araba ? 'araba' : 'yuruyus'];
+    if (olcu == null) return null;
+    for (final durak in duraklar) {
+      if (durak.kod == olcu.kod) return (durak: durak, mesafeM: olcu.mesafeM);
+    }
+    return null;
+  }
+
   Future<({Durak durak, double mesafeM})> _yereEnYakinDurak(
     TuristikYer yer,
     List<Durak> duraklar,
     RotaKipi kip,
   ) async {
+    final hazir = _hazirEnYakinDurak(yer, duraklar, kip);
+    if (hazir != null) return hazir;
+
     final adaylar = YakinDurak.enYakinlar(duraklar, yer.konum, adet: 6);
     if (adaylar.isEmpty) throw Exception(Diller.aktif('durakBulunamadi'));
 
@@ -271,24 +291,29 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// yürüyüş ağı. İkisi farklı durak söylerse tarif kendi içinde çelişiyordu —
   /// ölçüldü, Çiğli kuş uçuşu daha yakın ama yürüyüşle 2,5 km, Mavişehir 1,4 km.
   void _topluTasimaAnlat(TuristikYer yer, List<Durak> duraklar) {
+    // Ölçüler veriye gömülüyse tek adımda, kesin değerle açılır.
+    final hazir = _hazirEnYakinDurak(yer, duraklar, RotaKipi.yuruyus);
+
     final adaylar = YakinDurak.enYakinlar(duraklar, yer.konum, adet: 1);
-    if (adaylar.isEmpty) return;
+    if (hazir == null && adaylar.isEmpty) return;
 
-    // Pencere HEMEN açılır: OSRM'i beklemek düğmeye bastıktan sonra saniyelerce
-    // hiçbir şey olmamış gibi görünmesine yol açıyor. Önce kuş uçuşu durak
-    // yazılır, yürüyüş ağı yanıtı gelince satırlar yerinde tazelenir.
+    // Veri yoksa pencere yine HEMEN açılır: OSRM'i beklemek düğmeye bastıktan
+    // sonra saniyelerce hiçbir şey olmamış gibi görünmesine yol açıyor. Önce
+    // kuş uçuşu durak yazılır, yürüyüş ağı yanıtı gelince yerinde tazelenir.
     final secim = ValueNotifier<({Durak durak, double mesafeM})>(
-      (durak: adaylar.first.durak, mesafeM: adaylar.first.mesafeM),
+      hazir ?? (durak: adaylar.first.durak, mesafeM: adaylar.first.mesafeM),
     );
-    final bekliyor = ValueNotifier<bool>(true);
+    final bekliyor = ValueNotifier<bool>(hazir == null);
 
-    _yereEnYakinDurak(yer, duraklar, RotaKipi.yuruyus).then((iyisi) {
-      secim.value = iyisi;
-      bekliyor.value = false;
-    }).catchError((_) {
-      // Servis yanıt vermezse kuş uçuşu tarif ekranda kalır; akış kesilmez.
-      bekliyor.value = false;
-    });
+    if (hazir == null) {
+      _yereEnYakinDurak(yer, duraklar, RotaKipi.yuruyus).then((iyisi) {
+        secim.value = iyisi;
+        bekliyor.value = false;
+      }).catchError((_) {
+        // Servis yanıt vermezse kuş uçuşu tarif ekranda kalır; akış kesilmez.
+        bekliyor.value = false;
+      });
+    }
 
     showDialog<void>(
       context: context,

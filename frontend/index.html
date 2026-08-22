@@ -6,7 +6,7 @@
   <title>İZBAN Nereye Gider?</title>
   <meta name="description" content="İZBAN hattında biniş ve iniş durağını seç; yönü, kaç durak kaldığını, tahmini süreyi ve aktarma noktalarını gör.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="css/stil.css?s=0c1e47d9">
+  <link rel="stylesheet" href="css/stil.css?s=a18610fd">
 </head>
 <body>
   <!-- Açılış ekranı. Marka çizilir, sonra kendini kapatır; sayfa arkada
@@ -29,12 +29,16 @@
               <stop offset="1" stop-color="#0C4CA3"/>
             </linearGradient>
             <!-- Süpürme: orta çizgi boyunca kalın bir çizgi, kesik deseniyle açılır.
-                 Yay uca doğru inceldiği için doğrudan çizgi olarak çizilemiyor. -->
+                 Yay uca doğru inceldiği için doğrudan çizgi olarak çizilemiyor.
+
+                 pathLength="1" şart: kesik deseni yolun GERÇEK uzunluğuna göre değil
+                 1'e göre ölçülür. Sabit bir uzunluk yazılırsa yarıçap değiştiğinde desen
+                 yoldan kısa kalıyor ve yayın kuyruğu animasyon başlamadan görünüyor. -->
             <mask id="izbanSupurmeKirmizi">
-              <path class="acilis-supurge" d="M 65.37 29.00 L 67.98 27.78 L 70.64 26.66 L 73.33 25.64 L 76.06 24.71 L 78.83 23.89 L 81.62 23.17 L 84.43 22.55 L 87.27 22.03 L 90.12 21.62 L 92.99 21.31 L 95.87 21.11 L 98.75 21.01 L 101.63 21.02 L 104.51 21.13 L 107.38 21.35 L 110.25 21.67 L 113.10 22.09 L 115.93 22.62 L 118.75 23.26 L 121.53 23.99 L 124.29 24.83 L 127.02 25.76 L 129.71 26.80 L 132.36 27.93 L 134.97 29.16 L 137.53 30.48 L 140.04 31.90 L 142.50 33.41 L 144.90 35.00 L 147.24 36.68 L 149.52 38.45 L 151.73 40.30 L 153.88 42.22 L 155.95 44.23 L 157.95 46.31 L 159.87 48.46 L 161.71 50.67 L 163.47 52.96 L 165.14 55.31 L 166.73 57.71 L 168.23 60.17 L 169.63 62.69 L 170.95 65.26 L 172.17 67.87" stroke="#fff" stroke-width="34" fill="none"/>
+              <path class="acilis-supurge" pathLength="1" d="M 65.37 29.00 L 67.98 27.78 L 70.64 26.66 L 73.33 25.64 L 76.06 24.71 L 78.83 23.89 L 81.62 23.17 L 84.43 22.55 L 87.27 22.03 L 90.12 21.62 L 92.99 21.31 L 95.87 21.11 L 98.75 21.01 L 101.63 21.02 L 104.51 21.13 L 107.38 21.35 L 110.25 21.67 L 113.10 22.09 L 115.93 22.62 L 118.75 23.26 L 121.53 23.99 L 124.29 24.83 L 127.02 25.76 L 129.71 26.80 L 132.36 27.93 L 134.97 29.16 L 137.53 30.48 L 140.04 31.90 L 142.50 33.41 L 144.90 35.00 L 147.24 36.68 L 149.52 38.45 L 151.73 40.30 L 153.88 42.22 L 155.95 44.23 L 157.95 46.31 L 159.87 48.46 L 161.71 50.67 L 163.47 52.96 L 165.14 55.31 L 166.73 57.71 L 168.23 60.17 L 169.63 62.69 L 170.95 65.26 L 172.17 67.87" stroke="#fff" stroke-width="34" fill="none"/>
             </mask>
             <mask id="izbanSupurmeMavi">
-              <path class="acilis-supurge" d="M 134.63 171.00 L 132.02 172.22 L 129.36 173.34 L 126.67 174.36 L 123.94 175.29 L 121.17 176.11 L 118.38 176.83 L 115.57 177.45 L 112.73 177.97 L 109.88 178.38 L 107.01 178.69 L 104.13 178.89 L 101.25 178.99 L 98.37 178.98 L 95.49 178.87 L 92.62 178.65 L 89.75 178.33 L 86.90 177.91 L 84.07 177.38 L 81.25 176.74 L 78.47 176.01 L 75.71 175.17 L 72.98 174.24 L 70.29 173.20 L 67.64 172.07 L 65.03 170.84 L 62.47 169.52 L 59.96 168.10 L 57.50 166.59 L 55.10 165.00 L 52.76 163.32 L 50.48 161.55 L 48.27 159.70 L 46.12 157.78 L 44.05 155.77 L 42.05 153.69 L 40.13 151.54 L 38.29 149.33 L 36.53 147.04 L 34.86 144.69 L 33.27 142.29 L 31.77 139.83 L 30.37 137.31 L 29.05 134.74 L 27.83 132.13" stroke="#fff" stroke-width="34" fill="none"/>
+              <path class="acilis-supurge" pathLength="1" d="M 134.63 171.00 L 132.02 172.22 L 129.36 173.34 L 126.67 174.36 L 123.94 175.29 L 121.17 176.11 L 118.38 176.83 L 115.57 177.45 L 112.73 177.97 L 109.88 178.38 L 107.01 178.69 L 104.13 178.89 L 101.25 178.99 L 98.37 178.98 L 95.49 178.87 L 92.62 178.65 L 89.75 178.33 L 86.90 177.91 L 84.07 177.38 L 81.25 176.74 L 78.47 176.01 L 75.71 175.17 L 72.98 174.24 L 70.29 173.20 L 67.64 172.07 L 65.03 170.84 L 62.47 169.52 L 59.96 168.10 L 57.50 166.59 L 55.10 165.00 L 52.76 163.32 L 50.48 161.55 L 48.27 159.70 L 46.12 157.78 L 44.05 155.77 L 42.05 153.69 L 40.13 151.54 L 38.29 149.33 L 36.53 147.04 L 34.86 144.69 L 33.27 142.29 L 31.77 139.83 L 30.37 137.31 L 29.05 134.74 L 27.83 132.13" stroke="#fff" stroke-width="34" fill="none"/>
             </mask>
           </defs>
 
@@ -285,16 +289,16 @@
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="vendor/leaflet/leaflet-rotate.js"></script>
   <script src="js/diller.js?s=26be2160"></script>
-  <script src="js/turistik.js?s=e25e037b"></script>
+  <script src="js/turistik.js?s=c3fa3bec"></script>
   <script src="js/duraklar.js?s=3edcf82e"></script>
   <script src="js/hesap.js?s=930b7d73"></script>
   <script src="js/konum.js?s=43c0e88e"></script>
   <script src="js/harita.js?s=66194dc2"></script>
   <script src="js/sefer.js?s=35ca2255"></script>
-  <script src="js/rota.js?s=87ee8cae"></script>
+  <script src="js/rota.js?s=732b1986"></script>
   <script src="js/yonlendirme.js?s=1db3603a"></script>
   <script src="js/firebase-ayar.js?s=94b89262"></script>
   <script src="js/firebase-veri.js?s=d54456cd"></script>
-  <script src="js/uygulama.js?s=bf99845f"></script>
+  <script src="js/uygulama.js?s=716013b7"></script>
 </body>
 </html>

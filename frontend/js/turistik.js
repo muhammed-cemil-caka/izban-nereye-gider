@@ -1,13 +1,14 @@
 // OTOMATİK ÜRETİLDİ — elle düzenlemeyin.
 // Kaynak: backend/veri/turistik-yerler.json — node araclar/veri-dagit.js
 const TURISTIK_VERI = {
-  "surum": "1.0.0",
-  "guncellemeTarihi": "2026-08-21",
+  "surum": "1.1.0",
+  "guncellemeTarihi": "2026-08-22",
   "kaynak": {
     "yer": "Wikidata — İZBAN durağına 1500 m'den yakın tarihi/turistik ögeler",
     "metin": "Wikipedia (tr) özet — CC BY-SA 4.0",
     "gorsel": "Wikimedia Commons — her görselin kendi lisansı",
-    "lisansUyarisi": "Metin ve görsellerde kaynak gösterimi zorunludur"
+    "lisansUyarisi": "Metin ve görsellerde kaynak gösterimi zorunludur",
+    "mesafe": "OSRM (FOSSGIS) — yere en yakın durak, yürüyüş ve araç ağında ölçüldü"
   },
   "yerler": [
     {
@@ -37,7 +38,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1422
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1981,
+          "sureSn": 1591
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 2404,
+          "sureSn": 173
+        }
+      }
     },
     {
       "kod": "alpaslan-mescidi",
@@ -66,7 +79,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 450
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 552,
+          "sureSn": 442
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1045,
+          "sureSn": 154
+        }
+      }
     },
     {
       "kod": "alsancak-gari-saat-kulesi",
@@ -99,7 +124,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1472
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 338,
+          "sureSn": 272
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 548,
+          "sureSn": 56
+        }
+      }
     },
     {
       "kod": "alsancak-hocazade-camii",
@@ -132,7 +169,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1265
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1019,
+          "sureSn": 822
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 2168,
+          "sureSn": 157
+        }
+      }
     },
     {
       "kod": "anonim-turbe-1",
@@ -161,7 +210,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 891
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 1372,
+          "sureSn": 1098
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 2268,
+          "sureSn": 232
+        }
+      }
     },
     {
       "kod": "arkas-sanat-merkezi",
@@ -190,7 +251,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1269
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1732,
+          "sureSn": 1386
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 2508,
+          "sureSn": 229
+        }
+      }
     },
     {
       "kod": "artemis-tapinagi",
@@ -219,7 +292,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 809
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 1537,
+          "sureSn": 1254
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 2276,
+          "sureSn": 234
+        }
+      }
     },
     {
       "kod": "artemision",
@@ -248,7 +333,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 809
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 1537,
+          "sureSn": 1254
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 2276,
+          "sureSn": 234
+        }
+      }
     },
     {
       "kod": "ataturk-bustu-ornekkoy",
@@ -281,7 +378,19 @@ const TURISTIK_VERI = {
           "kod": "nergiz",
           "kusUcusuM": 1497
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "nergiz",
+          "mesafeM": 1711,
+          "sureSn": 1369
+        },
+        "araba": {
+          "kod": "nergiz",
+          "mesafeM": 2726,
+          "sureSn": 309
+        }
+      }
     },
     {
       "kod": "ataturk-bustu-selcuk",
@@ -310,7 +419,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 838
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 1139,
+          "sureSn": 911
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 2311,
+          "sureSn": 216
+        }
+      }
     },
     {
       "kod": "ataturk-annesi-ve-kadin-haklari-aniti",
@@ -347,7 +468,19 @@ const TURISTIK_VERI = {
           "kod": "naldoken",
           "kusUcusuM": 1073
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "karsiyaka",
+          "mesafeM": 912,
+          "sureSn": 729
+        },
+        "araba": {
+          "kod": "naldoken",
+          "mesafeM": 1400,
+          "sureSn": 169
+        }
+      }
     },
     {
       "kod": "ayasuluk",
@@ -376,7 +509,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 683
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 1128,
+          "sureSn": 902
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1226,
+          "sureSn": 181
+        }
+      }
     },
     {
       "kod": "ayasuluk-kale-camii",
@@ -405,7 +550,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 670
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 1091,
+          "sureSn": 873
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1296,
+          "sureSn": 191
+        }
+      }
     },
     {
       "kod": "ayasuluk-kalesi",
@@ -434,7 +591,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 691
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 1133,
+          "sureSn": 906
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1226,
+          "sureSn": 181
+        }
+      }
     },
     {
       "kod": "aziz-stepanos-kilisesi",
@@ -463,7 +632,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1330
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1865,
+          "sureSn": 1496
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 2512,
+          "sureSn": 189
+        }
+      }
     },
     {
       "kod": "aziz-vukolos-kilisesi",
@@ -496,7 +677,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 743
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 917,
+          "sureSn": 737
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 1271,
+          "sureSn": 108
+        }
+      }
     },
     {
       "kod": "aziz-yuhanna-katedrali",
@@ -529,7 +722,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1359
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1853,
+          "sureSn": 1486
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 2327,
+          "sureSn": 214
+        }
+      }
     },
     {
       "kod": "aziz-yuhanna-kilisesi",
@@ -562,7 +767,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1414
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 524,
+          "sureSn": 420
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 804,
+          "sureSn": 84
+        }
+      }
     },
     {
       "kod": "bostanli-acik-hava-arkeoloji-muzesi",
@@ -599,7 +816,19 @@ const TURISTIK_VERI = {
           "kod": "demirkopru",
           "kusUcusuM": 1444
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "nergiz",
+          "mesafeM": 892,
+          "sureSn": 714
+        },
+        "araba": {
+          "kod": "nergiz",
+          "mesafeM": 1125,
+          "sureSn": 154
+        }
+      }
     },
     {
       "kod": "cumhuriyet-agaci",
@@ -628,7 +857,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 877
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1230,
+          "sureSn": 985
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1553,
+          "sureSn": 169
+        }
+      }
     },
     {
       "kod": "cesme-selcuk",
@@ -657,7 +898,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 639
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 4712,
+          "sureSn": 3989
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1033,
+          "sureSn": 109
+        }
+      }
     },
     {
       "kod": "cinarli-camii",
@@ -686,7 +939,19 @@ const TURISTIK_VERI = {
           "kod": "menemen",
           "kusUcusuM": 830
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "menemen",
+          "mesafeM": 1064,
+          "sureSn": 851
+        },
+        "araba": {
+          "kod": "menemen",
+          "mesafeM": 1250,
+          "sureSn": 137
+        }
+      }
     },
     {
       "kod": "cinili-cesme",
@@ -723,7 +988,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1446
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1343,
+          "sureSn": 1078
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 2193,
+          "sureSn": 252
+        }
+      }
     },
     {
       "kod": "corakkapi-camii",
@@ -756,7 +1033,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1078
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1367,
+          "sureSn": 1098
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 1619,
+          "sureSn": 127
+        }
+      }
     },
     {
       "kod": "efes-muzesi",
@@ -785,7 +1074,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 493
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 754,
+          "sureSn": 603
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1200,
+          "sureSn": 168
+        }
+      }
     },
     {
       "kod": "emir-sultan-turbesi",
@@ -818,7 +1119,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1223
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1455,
+          "sureSn": 1168
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 1832,
+          "sureSn": 195
+        }
+      }
     },
     {
       "kod": "eski-otogar-camii",
@@ -847,7 +1160,19 @@ const TURISTIK_VERI = {
           "kod": "halkapinar",
           "kusUcusuM": 159
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "halkapinar",
+          "mesafeM": 244,
+          "sureSn": 195
+        },
+        "araba": {
+          "kod": "halkapinar",
+          "mesafeM": 1758,
+          "sureSn": 138
+        }
+      }
     },
     {
       "kod": "eski-smyrna",
@@ -876,7 +1201,19 @@ const TURISTIK_VERI = {
           "kod": "bayrakli",
           "kusUcusuM": 491
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "bayrakli",
+          "mesafeM": 607,
+          "sureSn": 485
+        },
+        "araba": {
+          "kod": "bayrakli",
+          "mesafeM": 1337,
+          "sureSn": 168
+        }
+      }
     },
     {
       "kod": "gazi-sigla-bey-turbesi",
@@ -905,7 +1242,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 554
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 718,
+          "sureSn": 575
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 930,
+          "sureSn": 99
+        }
+      }
     },
     {
       "kod": "halkapinar-i-stiklal-sehitligi",
@@ -942,7 +1291,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1436
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "halkapinar",
+          "mesafeM": 449,
+          "sureSn": 359
+        },
+        "araba": {
+          "kod": "halkapinar",
+          "mesafeM": 357,
+          "sureSn": 38
+        }
+      }
     },
     {
       "kod": "hamza-rustem-fotograf-evi",
@@ -975,7 +1336,19 @@ const TURISTIK_VERI = {
           "kod": "semikler",
           "kusUcusuM": 1306
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "mavisehir",
+          "mesafeM": 850,
+          "sureSn": 680
+        },
+        "araba": {
+          "kod": "cigli",
+          "mesafeM": 3521,
+          "sureSn": 385
+        }
+      }
     },
     {
       "kod": "hatuniye-camii",
@@ -1008,7 +1381,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1312
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1559,
+          "sureSn": 1251
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 1964,
+          "sureSn": 187
+        }
+      }
     },
     {
       "kod": "hayat-cemberi",
@@ -1037,7 +1422,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 169
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 246,
+          "sureSn": 197
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 420,
+          "sureSn": 56
+        }
+      }
     },
     {
       "kod": "homeros-aniti",
@@ -1070,7 +1467,19 @@ const TURISTIK_VERI = {
           "kod": "halkapinar",
           "kusUcusuM": 1260
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "bayrakli",
+          "mesafeM": 2531,
+          "sureSn": 2025
+        },
+        "araba": {
+          "kod": "salhane",
+          "mesafeM": 2537,
+          "sureSn": 266
+        }
+      }
     },
     {
       "kod": "i-lyas-peygamber-kilisesi",
@@ -1099,7 +1508,19 @@ const TURISTIK_VERI = {
           "kod": "sirinyer",
           "kusUcusuM": 1048
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "sirinyer",
+          "mesafeM": 1413,
+          "sureSn": 1130
+        },
+        "araba": {
+          "kod": "sirinyer",
+          "mesafeM": 1942,
+          "sureSn": 147
+        }
+      }
     },
     {
       "kod": "i-nsan-haklari-aniti",
@@ -1132,7 +1553,19 @@ const TURISTIK_VERI = {
           "kod": "nergiz",
           "kusUcusuM": 1243
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "karsiyaka",
+          "mesafeM": 1638,
+          "sureSn": 1311
+        },
+        "araba": {
+          "kod": "naldoken",
+          "mesafeM": 2776,
+          "sureSn": 299
+        }
+      }
     },
     {
       "kod": "i-sa-bey-camii",
@@ -1161,7 +1594,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 652
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 766,
+          "sureSn": 613
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1244,
+          "sureSn": 171
+        }
+      }
     },
     {
       "kod": "i-sa-bey-hamami",
@@ -1190,7 +1635,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 669
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 867,
+          "sureSn": 694
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1368,
+          "sureSn": 222
+        }
+      }
     },
     {
       "kod": "i-shak-bey-camii-selcuk",
@@ -1219,7 +1676,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 399
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 663,
+          "sureSn": 530
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1070,
+          "sureSn": 115
+        }
+      }
     },
     {
       "kod": "i-zmir-ataturk-muzesi",
@@ -1248,7 +1717,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 791
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1174,
+          "sureSn": 940
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1603,
+          "sureSn": 176
+        }
+      }
     },
     {
       "kod": "i-zmir-basin-muzesi",
@@ -1281,7 +1762,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 772
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 943,
+          "sureSn": 759
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 1366,
+          "sureSn": 128
+        }
+      }
     },
     {
       "kod": "i-zmir-fuari-saat-kulesi",
@@ -1318,7 +1811,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1452
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1440,
+          "sureSn": 1156
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 2006,
+          "sureSn": 281
+        }
+      }
     },
     {
       "kod": "i-zmir-hayvanat-bahcesi",
@@ -1355,7 +1860,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1234
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 933,
+          "sureSn": 750
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 2208,
+          "sureSn": 352
+        }
+      }
     },
     {
       "kod": "i-zmir-kadin-muzesi",
@@ -1388,7 +1905,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1212
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1536,
+          "sureSn": 1233
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 1857,
+          "sureSn": 167
+        }
+      }
     },
     {
       "kod": "i-zmir-kultur-sanat-fabrikasi",
@@ -1421,7 +1950,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1299
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 573,
+          "sureSn": 461
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1023,
+          "sureSn": 104
+        }
+      }
     },
     {
       "kod": "i-zmir-kultur-sanat-fabrikasi-arkeoloji-ve-etnog",
@@ -1454,7 +1995,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1299
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 573,
+          "sureSn": 461
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1023,
+          "sureSn": 104
+        }
+      }
     },
     {
       "kod": "i-zmir-mask-muzesi",
@@ -1483,7 +2036,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 660
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 984,
+          "sureSn": 788
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1395,
+          "sureSn": 179
+        }
+      }
     },
     {
       "kod": "i-zmir-nostaljik-tramvayi",
@@ -1512,7 +2077,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 769
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1081,
+          "sureSn": 865
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1409,
+          "sureSn": 183
+        }
+      }
     },
     {
       "kod": "i-zmir-parasut-kulesi",
@@ -1549,7 +2126,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1302
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1329,
+          "sureSn": 1067
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 2289,
+          "sureSn": 283
+        }
+      }
     },
     {
       "kod": "i-zmir-resim-ve-heykel-muzesi",
@@ -1582,7 +2171,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1283
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 557,
+          "sureSn": 448
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1021,
+          "sureSn": 104
+        }
+      }
     },
     {
       "kod": "i-zmir-tarih-ve-sanat-muzesi",
@@ -1619,7 +2220,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1348
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1489,
+          "sureSn": 1195
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 2418,
+          "sureSn": 333
+        }
+      }
     },
     {
       "kod": "kadifekale",
@@ -1652,7 +2265,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1500
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1950,
+          "sureSn": 1560
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 2174,
+          "sureSn": 228
+        }
+      }
     },
     {
       "kod": "kadifekale-hava-sehitleri-camii",
@@ -1681,7 +2306,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1461
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1952,
+          "sureSn": 1565
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 2546,
+          "sureSn": 243
+        }
+      }
     },
     {
       "kod": "karakol-yani-camii",
@@ -1710,7 +2347,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 684
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 4735,
+          "sureSn": 4008
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 1086,
+          "sureSn": 113
+        }
+      }
     },
     {
       "kod": "kaskatli-havuz",
@@ -1747,7 +2396,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1295
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1268,
+          "sureSn": 1018
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1829,
+          "sureSn": 219
+        }
+      }
     },
     {
       "kod": "kemalpasa-camii",
@@ -1788,7 +2449,19 @@ const TURISTIK_VERI = {
           "kod": "naldoken",
           "kusUcusuM": 1332
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "karsiyaka",
+          "mesafeM": 430,
+          "sureSn": 344
+        },
+        "araba": {
+          "kod": "karsiyaka",
+          "mesafeM": 838,
+          "sureSn": 200
+        }
+      }
     },
     {
       "kod": "kordon",
@@ -1817,7 +2490,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 879
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1215,
+          "sureSn": 973
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 2092,
+          "sureSn": 219
+        }
+      }
     },
     {
       "kod": "kuba-camii-i-zmir",
@@ -1846,7 +2531,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 451
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 613,
+          "sureSn": 491
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 787,
+          "sureSn": 80
+        }
+      }
     },
     {
       "kod": "kurtulus-yolu-aniti",
@@ -1875,7 +2572,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 83
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 168,
+          "sureSn": 134
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 923,
+          "sureSn": 124
+        }
+      }
     },
     {
       "kod": "kulturpark",
@@ -1912,7 +2621,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1253
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1314,
+          "sureSn": 1055
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1991,
+          "sureSn": 277
+        }
+      }
     },
     {
       "kod": "larissa",
@@ -1941,7 +2662,19 @@ const TURISTIK_VERI = {
           "kod": "hatundere",
           "kusUcusuM": 1390
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hatundere",
+          "mesafeM": 2441,
+          "sureSn": 1952
+        },
+        "araba": {
+          "kod": "hatundere",
+          "mesafeM": 2684,
+          "sureSn": 339
+        }
+      }
     },
     {
       "kod": "latife-hanim-kosku-ani-evi",
@@ -1982,7 +2715,19 @@ const TURISTIK_VERI = {
           "kod": "naldoken",
           "kusUcusuM": 1479
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "karsiyaka",
+          "mesafeM": 227,
+          "sureSn": 184
+        },
+        "araba": {
+          "kod": "karsiyaka",
+          "mesafeM": 202,
+          "sureSn": 44
+        }
+      }
     },
     {
       "kod": "lunapark",
@@ -2019,7 +2764,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1343
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1119,
+          "sureSn": 899
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 2328,
+          "sureSn": 300
+        }
+      }
     },
     {
       "kod": "merkez-seyh-camii",
@@ -2052,7 +2809,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1208
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1479,
+          "sureSn": 1187
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 1856,
+          "sureSn": 198
+        }
+      }
     },
     {
       "kod": "muammer-aksoy-parki",
@@ -2089,7 +2858,19 @@ const TURISTIK_VERI = {
           "kod": "karsiyaka",
           "kusUcusuM": 908
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alaybey",
+          "mesafeM": 1027,
+          "sureSn": 822
+        },
+        "araba": {
+          "kod": "naldoken",
+          "mesafeM": 1341,
+          "sureSn": 182
+        }
+      }
     },
     {
       "kod": "naulochon",
@@ -2118,7 +2899,19 @@ const TURISTIK_VERI = {
           "kod": "bayrakli",
           "kusUcusuM": 578
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "bayrakli",
+          "mesafeM": 688,
+          "sureSn": 550
+        },
+        "araba": {
+          "kod": "bayrakli",
+          "mesafeM": 1362,
+          "sureSn": 172
+        }
+      }
     },
     {
       "kod": "nese-ve-karikatur-muzesi",
@@ -2141,7 +2934,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 445
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 696,
+          "sureSn": 558
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 956,
+          "sureSn": 215
+        }
+      }
     },
     {
       "kod": "nevvar-salih-i-sgoren-ulu-camii",
@@ -2168,7 +2973,19 @@ const TURISTIK_VERI = {
           "kod": "halkapinar",
           "kusUcusuM": 1119
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "salhane",
+          "mesafeM": 1516,
+          "sureSn": 1217
+        },
+        "araba": {
+          "kod": "salhane",
+          "mesafeM": 2507,
+          "sureSn": 236
+        }
+      }
     },
     {
       "kod": "ozgur-kadin-heykeli",
@@ -2205,7 +3022,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1475
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1669,
+          "sureSn": 1338
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1853,
+          "sureSn": 130
+        }
+      }
     },
     {
       "kod": "pakistan-pavyonu",
@@ -2242,7 +3071,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1445
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1452,
+          "sureSn": 1165
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1993,
+          "sureSn": 276
+        }
+      }
     },
     {
       "kod": "santissimo-rosario-kilisesi",
@@ -2271,7 +3112,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 510
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 661,
+          "sureSn": 529
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1057,
+          "sureSn": 153
+        }
+      }
     },
     {
       "kod": "selcuk-efes-kent-bellegi",
@@ -2300,7 +3153,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 385
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 480,
+          "sureSn": 384
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 974,
+          "sureSn": 134
+        }
+      }
     },
     {
       "kod": "selcuk-efes-kent-bellegi-binasi",
@@ -2329,7 +3194,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 163
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 257,
+          "sureSn": 206
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 922,
+          "sureSn": 123
+        }
+      }
     },
     {
       "kod": "seydikoy-tren-i-stasyonu",
@@ -2358,7 +3235,19 @@ const TURISTIK_VERI = {
           "kod": "gaziemir",
           "kusUcusuM": 1194
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "gaziemir",
+          "mesafeM": 1447,
+          "sureSn": 1158
+        },
+        "araba": {
+          "kod": "sarnic",
+          "mesafeM": 2862,
+          "sureSn": 230
+        }
+      }
     },
     {
       "kod": "seydikoy-tumulusu",
@@ -2391,7 +3280,19 @@ const TURISTIK_VERI = {
           "kod": "gaziemir",
           "kusUcusuM": 1243
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "esbas",
+          "mesafeM": 54,
+          "sureSn": 45
+        },
+        "araba": {
+          "kod": "esbas",
+          "mesafeM": 1214,
+          "sureSn": 112
+        }
+      }
     },
     {
       "kod": "sillyos",
@@ -2422,7 +3323,19 @@ const TURISTIK_VERI = {
           "kod": "egekent",
           "kusUcusuM": 1319
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "atasanayi",
+          "mesafeM": 896,
+          "sureSn": 717
+        },
+        "araba": {
+          "kod": "egekent",
+          "mesafeM": 2616,
+          "sureSn": 251
+        }
+      }
     },
     {
       "kod": "smyrna",
@@ -2455,7 +3368,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 1270
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1550,
+          "sureSn": 1245
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 2071,
+          "sureSn": 207
+        }
+      }
     },
     {
       "kod": "sogukkuyu-camii-karsiyaka",
@@ -2496,7 +3421,19 @@ const TURISTIK_VERI = {
           "kod": "nergiz",
           "kusUcusuM": 1282
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "karsiyaka",
+          "mesafeM": 1153,
+          "sureSn": 935
+        },
+        "araba": {
+          "kod": "karsiyaka",
+          "mesafeM": 1076,
+          "sureSn": 122
+        }
+      }
     },
     {
       "kod": "st-antuan-katolik-kilisesi",
@@ -2529,7 +3466,19 @@ const TURISTIK_VERI = {
           "kod": "turan",
           "kusUcusuM": 1328
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "bayrakli",
+          "mesafeM": 319,
+          "sureSn": 255
+        },
+        "araba": {
+          "kod": "bayrakli",
+          "mesafeM": 617,
+          "sureSn": 103
+        }
+      }
     },
     {
       "kod": "st-helen-kilisesi",
@@ -2566,7 +3515,19 @@ const TURISTIK_VERI = {
           "kod": "nergiz",
           "kusUcusuM": 1006
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "karsiyaka",
+          "mesafeM": 385,
+          "sureSn": 308
+        },
+        "araba": {
+          "kod": "karsiyaka",
+          "mesafeM": 660,
+          "sureSn": 121
+        }
+      }
     },
     {
       "kod": "st-jean-bazilikasi",
@@ -2595,7 +3556,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 501
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 669,
+          "sureSn": 535
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 835,
+          "sureSn": 138
+        }
+      }
     },
     {
       "kod": "surp-sarkis-ermeni-kilisesi",
@@ -2624,7 +3597,19 @@ const TURISTIK_VERI = {
           "kod": "menemen",
           "kusUcusuM": 473
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "menemen",
+          "mesafeM": 748,
+          "sureSn": 598
+        },
+        "araba": {
+          "kod": "menemen",
+          "mesafeM": 933,
+          "sureSn": 103
+        }
+      }
     },
     {
       "kod": "sehabeddin-sivasi-turbesi",
@@ -2653,7 +3638,19 @@ const TURISTIK_VERI = {
           "kod": "selcuk",
           "kusUcusuM": 491
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "selcuk",
+          "mesafeM": 665,
+          "sureSn": 532
+        },
+        "araba": {
+          "kod": "selcuk",
+          "mesafeM": 840,
+          "sureSn": 85
+        }
+      }
     },
     {
       "kod": "sehit-kubilay-aniti",
@@ -2682,7 +3679,19 @@ const TURISTIK_VERI = {
           "kod": "menemen",
           "kusUcusuM": 603
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "menemen",
+          "mesafeM": 1002,
+          "sureSn": 801
+        },
+        "araba": {
+          "kod": "menemen",
+          "mesafeM": 777,
+          "sureSn": 79
+        }
+      }
     },
     {
       "kod": "sehitlik-parki",
@@ -2715,7 +3724,19 @@ const TURISTIK_VERI = {
           "kod": "hilal",
           "kusUcusuM": 927
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "kemer",
+          "mesafeM": 1088,
+          "sureSn": 875
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 1459,
+          "sureSn": 163
+        }
+      }
     },
     {
       "kod": "tcdd-3-bolge-muze-ve-sanat-galerisi",
@@ -2744,7 +3765,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 125
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 310,
+          "sureSn": 251
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 952,
+          "sureSn": 92
+        }
+      }
     },
     {
       "kod": "tcdd-i-zmir-muze-ve-sanat-galerisi",
@@ -2773,7 +3806,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 123
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "alsancak-gar",
+          "mesafeM": 306,
+          "sureSn": 248
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 957,
+          "sureSn": 92
+        }
+      }
     },
     {
       "kod": "turgut-ozal-parki",
@@ -2806,7 +3851,19 @@ const TURISTIK_VERI = {
           "kod": "salhane",
           "kusUcusuM": 1065
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "bayrakli",
+          "mesafeM": 880,
+          "sureSn": 704
+        },
+        "araba": {
+          "kod": "halkapinar",
+          "mesafeM": 3512,
+          "sureSn": 242
+        }
+      }
     },
     {
       "kod": "ucan-yunuslar-heykeli",
@@ -2839,7 +3896,19 @@ const TURISTIK_VERI = {
           "kod": "karsiyaka",
           "kusUcusuM": 1237
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "nergiz",
+          "mesafeM": 1039,
+          "sureSn": 831
+        },
+        "araba": {
+          "kod": "nergiz",
+          "mesafeM": 1141,
+          "sureSn": 151
+        }
+      }
     },
     {
       "kod": "yasar-muzesi",
@@ -2872,7 +3941,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1129
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "halkapinar",
+          "mesafeM": 912,
+          "sureSn": 731
+        },
+        "araba": {
+          "kod": "halkapinar",
+          "mesafeM": 820,
+          "sureSn": 84
+        }
+      }
     },
     {
       "kod": "yatan-kadin-heykeli-1",
@@ -2909,7 +3990,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1280
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1208,
+          "sureSn": 970
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1837,
+          "sureSn": 222
+        }
+      }
     },
     {
       "kod": "yatan-kadin-heykeli-2",
@@ -2946,7 +4039,19 @@ const TURISTIK_VERI = {
           "kod": "kemer",
           "kusUcusuM": 1290
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1254,
+          "sureSn": 1007
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 1817,
+          "sureSn": 215
+        }
+      }
     },
     {
       "kod": "yeni-aya-fotini-kilisesi",
@@ -2979,7 +4084,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1460
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1852,
+          "sureSn": 1487
+        },
+        "araba": {
+          "kod": "alsancak-gar",
+          "mesafeM": 2124,
+          "sureSn": 163
+        }
+      }
     },
     {
       "kod": "yunuslu-havuz",
@@ -3016,7 +4133,19 @@ const TURISTIK_VERI = {
           "kod": "alsancak-gar",
           "kusUcusuM": 1451
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "hilal",
+          "mesafeM": 1345,
+          "sureSn": 1080
+        },
+        "araba": {
+          "kod": "kemer",
+          "mesafeM": 2125,
+          "sureSn": 223
+        }
+      }
     },
     {
       "kod": "zubeyde-hanim-anit-mezari",
@@ -3057,7 +4186,19 @@ const TURISTIK_VERI = {
           "kod": "naldoken",
           "kusUcusuM": 1090
         }
-      ]
+      ],
+      "enYakin": {
+        "yuruyus": {
+          "kod": "karsiyaka",
+          "mesafeM": 412,
+          "sureSn": 330
+        },
+        "araba": {
+          "kod": "karsiyaka",
+          "mesafeM": 696,
+          "sureSn": 101
+        }
+      }
     }
   ]
 };

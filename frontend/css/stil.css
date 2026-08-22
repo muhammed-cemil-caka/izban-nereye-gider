@@ -696,11 +696,13 @@ button.satir-baglanti {
 }
 .acilis-logo { width: 86%; height: 86%; display: block; }
 
-/* Süpürme deseni yay uzunluğundan (~96) uzun: ofset 100'den 0'a inerken
-   çizgi baştan sona açılır. */
+/* Yol pathLength="1" ile normalize edildi: ofset 1'den 0'a inerken çizgi
+   baştan sona açılır. Önce sabit 100 yazıyordu; halka yarıçapı büyüyünce yay
+   127 birim oldu, desen kısa kaldı ve yayın son 27 birimi animasyon
+   başlamadan görünüyordu. */
 .acilis-supurge {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
   animation: acilisSupur .8s cubic-bezier(.4, 0, .2, 1) .15s forwards;
 }
 #izbanSupurmeMavi .acilis-supurge { animation-delay: .45s; }

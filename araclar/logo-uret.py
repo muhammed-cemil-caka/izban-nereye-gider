@@ -134,12 +134,16 @@ def canliGovde(girinti='          '):
     <stop offset="1" stop-color="#0C4CA3"/>
   </linearGradient>
   <!-- Süpürme: orta çizgi boyunca kalın bir çizgi, kesik deseniyle açılır.
-       Yay uca doğru inceldiği için doğrudan çizgi olarak çizilemiyor. -->
+       Yay uca doğru inceldiği için doğrudan çizgi olarak çizilemiyor.
+
+       pathLength="1" şart: kesik deseni yolun GERÇEK uzunluğuna göre değil
+       1'e göre ölçülür. Sabit bir uzunluk yazılırsa yarıçap değiştiğinde desen
+       yoldan kısa kalıyor ve yayın kuyruğu animasyon başlamadan görünüyor. -->
   <mask id="izbanSupurmeKirmizi">
-    <path class="acilis-supurge" d="%s" stroke="#fff" stroke-width="34" fill="none"/>
+    <path class="acilis-supurge" pathLength="1" d="%s" stroke="#fff" stroke-width="34" fill="none"/>
   </mask>
   <mask id="izbanSupurmeMavi">
-    <path class="acilis-supurge" d="%s" stroke="#fff" stroke-width="34" fill="none"/>
+    <path class="acilis-supurge" pathLength="1" d="%s" stroke="#fff" stroke-width="34" fill="none"/>
   </mask>
 </defs>
 

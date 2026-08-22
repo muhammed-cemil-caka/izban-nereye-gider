@@ -15,6 +15,38 @@ var ROTA_TABANLARI = {
 // yürüyerek gidiyor, araba mesafesi orada yanıltıcı olurdu.
 var ROTA_TABAN = ROTA_TABANLARI.yuruyus;
 
+// Gönüllü sunucu ara sıra yavaşlıyor ya da düşüyor. Zaman aşımı yoktu:
+// asılı kalan istek arayüzü "hesaplanıyor…" hâlinde bırakıyordu.
+var ROTA_ZAMAN_ASIMI_MS = 12000;
+
+function birazBekle(ms) {
+  return new Promise(function (c) { setTimeout(c, ms); });
+}
+
+/**
+ * JSON getirir: zaman aşımlı ve bir kez yeniden denemeli.
+ *
+ * Tek seferlik hata kullanıcıya "rota alınamadı" diye yansıyordu; servis
+ * çoğunlukla ikinci denemede yanıt veriyor.
+ */
+function jsonAl(adres, deneme) {
+  var secenek = typeof AbortSignal !== 'undefined' && AbortSignal.timeout
+    ? { signal: AbortSignal.timeout(ROTA_ZAMAN_ASIMI_MS) }
+    : {};
+
+  return fetch(adres, secenek)
+    .then(function (yanit) {
+      if (!yanit.ok) throw new Error('Rota servisi yanıtı: ' + yanit.status);
+      return yanit.json();
+    })
+    .catch(function (sorun) {
+      if ((deneme || 0) >= 1) throw sorun;
+      return birazBekle(600).then(function () {
+        return jsonAl(adres, (deneme || 0) + 1);
+      });
+    });
+}
+
 /** OSRM manevra yönleri → sözlük anahtarları. */
 var YON_ANAHTARLARI = {
   left: 'manevraSola',
@@ -133,11 +165,8 @@ function rotaAl(baslangic, bitis, kip) {
     bitis.boylam + ',' + bitis.enlem +
     '?overview=full&geometries=geojson&steps=true';
 
-  return fetch(adres)
-    .then(function (yanit) {
-      if (!yanit.ok) throw new Error(ceviriMetni('rotaAlinamadi'));
-      return yanit.json();
-    })
+  return jsonAl(adres)
+    .catch(function () { throw new Error(ceviriMetni('rotaAlinamadi')); })
     .then(function (veri) {
       if (veri.code !== 'Ok' || !veri.routes || !veri.routes.length) {
         throw new Error(ceviriMetni('rotaAlinamadi'));
@@ -212,11 +241,7 @@ function mesafeleriAl(baslangic, hedefler, kip) {
   var adres = taban.replace('/route/v1/', '/table/v1/') +
     '/' + noktalar + '?sources=0&annotations=distance,duration';
 
-  return fetch(adres)
-    .then(function (yanit) {
-      if (!yanit.ok) throw new Error('Mesafe servisi yanıtı: ' + yanit.status); // arayüze çıkmaz
-      return yanit.json();
-    })
+  return jsonAl(adres)
     .then(function (veri) {
       if (veri.code !== 'Ok' || !veri.distances || !veri.distances[0]) {
         throw new Error('Mesafeler alınamadı.');

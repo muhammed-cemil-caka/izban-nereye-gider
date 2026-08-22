@@ -16,7 +16,8 @@
     "turistik": "node araclar/turistik-yerleri-uret.js",
     "izban-kimlik": "node araclar/izban-kimlik-ekle.js",
     "sefer-dogrula": "node araclar/sefer-dogrula.js",
-    "logo-dogrula": "python3 araclar/logo-dogrula.py"
+    "logo-dogrula": "python3 araclar/logo-dogrula.py",
+    "turistik-mesafe": "node araclar/turistik-mesafeleri-uret.js"
   },
   "repository": {
     "type": "git",

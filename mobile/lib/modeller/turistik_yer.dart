@@ -36,6 +36,34 @@ class YerDurakBagi {
   const YerDurakBagi(this.kod, this.kusUcusuM);
 }
 
+/// Yere bir kipte en yakın durak — önceden hesaplanmış.
+///
+/// Durak da yer de kıpırdamıyor, bu ölçüler sabit; veriye gömülüyorlar
+/// (bkz. araclar/turistik-mesafeleri-uret.js). Eskiden her dokunuşta canlı
+/// mesafe matrisi çekiliyor ve rota isteğiyle birlikte ARDIŞIK iki çağrı
+/// oluyordu — gecikme toplanıyor, ikisinden biri düşünce "rota alınamadı"
+/// çıkıyordu.
+class EnYakinDurakOlcusu {
+  final String kod;
+  final double mesafeM;
+  final double sureSn;
+
+  const EnYakinDurakOlcusu({
+    required this.kod,
+    required this.mesafeM,
+    required this.sureSn,
+  });
+
+  static EnYakinDurakOlcusu? jsondan(Map<String, dynamic>? json) {
+    if (json == null || json['kod'] is! String) return null;
+    return EnYakinDurakOlcusu(
+      kod: json['kod'] as String,
+      mesafeM: ((json['mesafeM'] as num?) ?? 0).toDouble(),
+      sureSn: ((json['sureSn'] as num?) ?? 0).toDouble(),
+    );
+  }
+}
+
 /// Tarihi/turistik yer. Kaynak: Wikidata + Wikipedia + Commons.
 class TuristikYer {
   final String kod;
@@ -49,6 +77,9 @@ class TuristikYer {
   final String? wikipediaEn;
   final List<YerDurakBagi> duraklar;
 
+  /// Kip adı ("yuruyus" / "araba") → en yakın durak ölçüsü.
+  final Map<String, EnYakinDurakOlcusu> enYakin;
+
   const TuristikYer({
     required this.kod,
     required this.ad,
@@ -60,6 +91,7 @@ class TuristikYer {
     required this.wikipedia,
     required this.wikipediaEn,
     required this.duraklar,
+    this.enYakin = const {},
   });
 
   factory TuristikYer.jsondan(Map<String, dynamic> json) {
@@ -82,6 +114,10 @@ class TuristikYer {
                 ((d)['kusUcusuM'] as num?)?.toDouble() ?? 0,
               ))
           .toList(),
+      enYakin: {
+        for (final giris in ((json['enYakin'] as Map<String, dynamic>?) ?? const {}).entries)
+          giris.key: ?EnYakinDurakOlcusu.jsondan(giris.value as Map<String, dynamic>?),
+      },
     );
   }
 

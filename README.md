@@ -286,6 +286,11 @@ Renkler resmî dosyadan örneklendi: **#ED1B24** kırmızı, **#0C4CA3** mavi.
 python3 araclar/logo-uret.py
 ```
 
+Süpürme animasyonundaki kesik deseni `pathLength="1"` ile normalize edilir.
+Sabit bir uzunluk (100) yazılıyordu; halka yarıçapı büyüyünce yay 127 birim
+oldu, desen kısa kaldı ve **yayın son 27 birimi animasyon başlamadan
+görünüyordu**. Artık desen yarıçaptan bağımsız.
+
 Betik iki yere yazar:
 
 | Hedef | Ne için |
@@ -777,6 +782,12 @@ Her iki adres de tek sabitte tutulur, geçiş tek satırdır:
 | Döşeme | `js/harita.js` → `DOSEME_ADRESI` | `harita_karti.dart` → `HaritaKarti.dosemeAdresi` |
 | Rota | `js/rota.js` → `ROTA_TABAN` | `rota_servisi.dart` → `RotaServisi._taban` |
 
+Web tarafında rota istekleri **zaman aşımlı (12 sn) ve bir kez yeniden
+denemeli**. Zaman aşımı hiç yoktu: asılı kalan istek arayüzü sonsuza kadar
+"hesaplanıyor…" hâlinde bırakıyordu. Gönüllü sunucu ara sıra tek seferlik
+hata veriyor ve ikinci denemede yanıtlıyor; mobilde 15 sn'lik zaman aşımı
+zaten vardı.
+
 Haritada "© OpenStreetMap katkıcıları" ibaresi bulunmak zorundadır.
 
 ## Sefer saatleri
@@ -968,11 +979,40 @@ yürüyüş ağı. Önce kuş uçuşuyla seçiliyordu ve iki düğme aynı yer i
 durak söyleyebiliyordu — ölçüldü, Çiğli kuş uçuşu daha yakın ama yürüyüşle
 2,5 km, Mavişehir 1,4 km.
 
-**Pencere OSRM'i beklemez.** Önce kuş uçuşu durakla hemen açılır (ölçüldü:
-13 ms), yürüyüş ağı yanıtı gelince satırlar yerinde tazelenir ve not
-satırındaki "seçiliyor…" ibaresi kalkar. Beklemek, düğmeye bastıktan sonra
-saniyelerce hiçbir şey olmamış gibi görünmesine yol açıyordu. Servis yanıt
-vermezse kuş uçuşu tarif ekranda kalır.
+**Ölçüler önceden hesaplanır**, canlı çekilmez:
+
+```bash
+node araclar/turistik-mesafeleri-uret.js --yaz
+node araclar/veri-dagit.js
+```
+
+Durak da yer de kıpırdamıyor; bu mesafeler sabit. Her yer için iki kipte en
+yakın durak bir kez ölçülüp veriye yazılıyor:
+
+```json
+"enYakin": {
+  "yuruyus": { "kod": "selcuk", "mesafeM": 168, "sureSn": 124 },
+  "araba":   { "kod": "selcuk", "mesafeM": 420, "sureSn": 70 }
+}
+```
+
+Bu, turistik yere rota akışındaki **ardışık iki OSRM çağrısını bire indirir**.
+Önce her tıklamada önce mesafe matrisi, sonra rotanın kendisi isteniyordu;
+gecikme toplanıyor ve ikisinden biri düşünce "rota alınamadı" çıkıyordu.
+Ölçüldü: yürüyüş rotası **2000 ms → 1000 ms**, toplu taşıma penceresi 13 ms'de
+ve kesin değerle açılıyor (artık tazeleme aşaması yok). Veride `enYakin` yoksa
+eski canlı yola düşülür.
+
+Bir yan fayda: **95 yerin 11'inde kuş uçuşu en yakın durak yanlıştı.** Ahmet
+Piriştina Müzesi kuş uçuşu Hilal'e yakın ama yürüyüşle Kemer daha kısa; Fuar
+Saat Kulesi'nde Alsancak Gar yerine Hilal çıkıyor. Servis yanıt vermediğinde
+eskiden bu yanlış duraklar gösteriliyordu.
+
+> **Aracı çalıştırma notu:** FOSSGIS'in gönüllü sunucusu ağır. 400 ms aralıkla
+> denendiğinde ~190 isteklik seri sırasında sunucu bağlantı kabul etmez oldu
+> (curl HTTP 000) ve araç yeniden deneme döngüsünde takıldı. 1,5 sn aralıkla
+> sorunsuz geçiyor, toplam ~30 dakika. Araç her yerden sonra dosyaya yazıyor
+> ve yeniden çalıştırılınca ölçülmüş yerleri atlıyor.
 
 Adımlar listeden numaralanır. Sabit numaralarken aktarması ya da otobüs hattı
 olmayan durakta (ör. Selçuk) "1, 2, 4" diye atlıyordu.

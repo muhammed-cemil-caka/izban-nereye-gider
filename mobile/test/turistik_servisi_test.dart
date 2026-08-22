@@ -72,4 +72,35 @@ void main() {
     final servis = TuristikServisi.hazir([yer]);
     expect((await servis.yerleriGetir()).single.ad, 'Ayasuluk');
   });
+
+  group('önceden hesaplanmış en yakın durak', () {
+    test('enYakin alanı okunuyor', () {
+      final yer = TuristikYer.jsondan({
+        ..._ham,
+        'enYakin': {
+          'yuruyus': {'kod': 'selcuk', 'mesafeM': 168, 'sureSn': 124},
+          'araba': {'kod': 'tepekoy', 'mesafeM': 420, 'sureSn': 70},
+        },
+      });
+      expect(yer.enYakin['yuruyus']!.kod, 'selcuk');
+      expect(yer.enYakin['yuruyus']!.mesafeM, 168);
+      expect(yer.enYakin['araba']!.sureSn, 70);
+    });
+
+    test('alan yoksa boş harita döner', () {
+      expect(TuristikYer.jsondan(_ham).enYakin, isEmpty);
+    });
+
+    test('bozuk kayıt atlanır, sağlamı kalır', () {
+      final yer = TuristikYer.jsondan({
+        ..._ham,
+        'enYakin': {
+          'yuruyus': {'mesafeM': 168},
+          'araba': {'kod': 'tepekoy', 'mesafeM': 420, 'sureSn': 70},
+        },
+      });
+      expect(yer.enYakin.containsKey('yuruyus'), isFalse);
+      expect(yer.enYakin['araba']!.kod, 'tepekoy');
+    });
+  });
 }
