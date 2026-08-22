@@ -150,7 +150,14 @@ function zincirYollari(uzunluk) {
   return yollar;
 }
 
-/** Verilen ana en yakın bağlantı: en az bekleme, gece yarısını da aşarak. */
+/**
+ * Verilen ana yetişilebilen, EN ERKEN VARDIRAN bağlantı.
+ *
+ * En az bekleyen değil en erken vardıran seçilir: iki ölçüt bu hatta aynı
+ * sonucu veriyor (hepsi her durakta duruyor) ama hızlı bir sefer eklenirse
+ * beklemeye bakan seçim yolcuyu geç vardırırdı. Gece yarısını aşan bağlantılar
+ * için bekleme bir güne sarılır.
+ */
 function ilkBaglanti(seferler, hazirDk) {
   var enIyi = null;
 
@@ -158,8 +165,17 @@ function ilkBaglanti(seferler, hazirDk) {
     var bekleme = ((sefer.kalkisDk - hazirDk) % GUN_DK + GUN_DK) % GUN_DK;
     // Yetişilemeyecek kadar yakınsa o tren bugün kaçtı, sıradakine bakılır.
     if (bekleme < EN_AZ_AKTARMA_DK) bekleme += GUN_DK;
-    if (!enIyi || bekleme < enIyi.beklemeDk) {
-      enIyi = { sefer: sefer, beklemeDk: bekleme, kalkisDk: hazirDk + bekleme };
+
+    var kalkisDk = hazirDk + bekleme;
+    var varisDk = kalkisDk + seferSuresi(sefer);
+    if (!enIyi || varisDk < enIyi.varisDk ||
+        (varisDk === enIyi.varisDk && bekleme < enIyi.beklemeDk)) {
+      enIyi = {
+        sefer: sefer,
+        beklemeDk: bekleme,
+        kalkisDk: kalkisDk,
+        varisDk: varisDk
+      };
     }
   });
 
@@ -184,7 +200,7 @@ function yolculuguKur(yol, zincir, kenarlar, ilkSefer) {
       beklemeDk: baglanti.beklemeDk
     });
 
-    anVarisDk = baglanti.kalkisDk + seferSuresi(baglanti.sefer);
+    anVarisDk = baglanti.varisDk;
     sonVaris = baglanti.sefer.varis;
   }
 
@@ -267,12 +283,15 @@ function yolculukSeferleriAl(duraklar, binisKod, inisKod) {
 }
 
 /**
- * Şu andan sonraki ilk seferler.
+ * Şu andan GÜN SONUNA kadarki bütün seferler.
  *
- * Gün sonunda liste boşalmasın diye başa sarılır: gece 23:50'de bakan
- * kullanıcıya ertesi günün ilk seferleri gösterilir.
+ * Önce yalnızca ilk dördü gösteriliyordu; "akşam kaça kadar tren var" sorusu
+ * cevapsız kalıyordu. Liste uzayabildiği için arayüz kendi içinde kaydırıyor.
+ *
+ * Bugün sefer kalmadıysa (gece yarısına yakın) ertesi günün tarifesi
+ * gösterilir; kutu boş kalmasın.
  */
-function siradakiSeferler(seferler, adet, simdiDk) {
+function siradakiSeferler(seferler, simdiDk) {
   if (!seferler.length) return [];
 
   var an = typeof simdiDk === 'number' ? simdiDk : (function () {
@@ -280,26 +299,18 @@ function siradakiSeferler(seferler, adet, simdiDk) {
     return d.getHours() * 60 + d.getMinutes();
   })();
 
-  var sonrakiler = seferler.filter(function (s) { return s.kalkisDk >= an; });
-  var secilen = sonrakiler.slice(0, adet);
-
-  // Gün bitmişse ertesi günün başından tamamla.
-  if (secilen.length < adet) {
-    secilen = secilen.concat(
-      seferler.slice(0, adet - secilen.length).map(function (s) {
-        return Object.assign({}, s, { ertesiGun: true });
-      })
-    );
-  }
+  var kalanlar = seferler.filter(function (s) { return s.kalkisDk >= an; });
+  var ertesiGun = kalanlar.length === 0;
+  var secilen = ertesiGun ? seferler : kalanlar;
 
   return secilen.map(function (s) {
     return {
       kalkis: s.kalkis,
       varis: s.varis,
       aktarmalar: s.aktarmalar || [],
-      ertesiGun: Boolean(s.ertesiGun),
+      ertesiGun: ertesiGun,
       // Kalkışa kalan dakika; ertesi güne sarkanlarda gösterilmez.
-      kalanDk: s.ertesiGun ? null : s.kalkisDk - an
+      kalanDk: ertesiGun ? null : s.kalkisDk - an
     };
   });
 }

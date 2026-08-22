@@ -104,6 +104,16 @@ void main() {
       expect(b.beklemeDk, 61);
     });
 
+    test('en erken vardıran bağlantı seçilir', () {
+      // Aynı anda kalkan iki sefer: hızlı olan seçilmeli.
+      final ayni = [_sefer('09:00', '10:00'), _sefer('09:00', '09:40')];
+      expect(SeferServisi.ilkBaglanti(ayni, 8 * 60 + 30)!.sefer.varis, '09:40');
+
+      // Daha geç kalkıp daha erken varan da seçilir.
+      final gec = [_sefer('09:00', '10:30'), _sefer('09:20', '09:50')];
+      expect(SeferServisi.ilkBaglanti(gec, 8 * 60 + 30)!.sefer.kalkis, '09:20');
+    });
+
     test('gece yarısını aşan bekleme doğru hesaplanır', () {
       // 23:30'da hazır → ertesi sabah 08:00, 510 dakika.
       final b = SeferServisi.ilkBaglanti(liste, 23 * 60 + 30)!;
@@ -190,23 +200,30 @@ void main() {
       _yolculuk(12 * 60, 13 * 60),
     ];
 
-    test('şu andan sonraki seferler kalan süreyle döner', () {
-      final s = SeferServisi.siradakiler(seferler, 2, simdiDk: 9 * 60);
+    test('şu andan gün sonuna kadar bütün seferler döner', () {
+      final s = SeferServisi.siradakiler(seferler, simdiDk: 9 * 60);
+      // 08:00 geçti; 10:00 ve 12:00 kalıyor. Dördüncüyle kesilmiyor.
       expect(s.length, 2);
       expect(s.first.sefer.kalkisDk, 10 * 60);
       expect(s.first.kalanDk, 60);
       expect(s.first.ertesiGun, isFalse);
+      expect(s.last.sefer.kalkisDk, seferler.last.kalkisDk);
     });
 
-    test('gün bitince ertesi günün ilk seferlerine sarılır', () {
-      final s = SeferServisi.siradakiler(seferler, 2, simdiDk: 23 * 60);
+    test('tam kalkış anındaki sefer listede kalır', () {
+      expect(SeferServisi.siradakiler(seferler, simdiDk: 8 * 60).length, 3);
+    });
+
+    test('gün bitince ertesi günün tamamına sarılır', () {
+      final s = SeferServisi.siradakiler(seferler, simdiDk: 23 * 60);
+      expect(s.length, seferler.length);
       expect(s.every((x) => x.ertesiGun), isTrue);
       expect(s.first.sefer.kalkisDk, 8 * 60);
       expect(s.first.kalanDk, isNull);
     });
 
     test('boş liste boş döner', () {
-      expect(SeferServisi.siradakiler(const [], 4), isEmpty);
+      expect(SeferServisi.siradakiler(const []), isEmpty);
     });
   });
 }

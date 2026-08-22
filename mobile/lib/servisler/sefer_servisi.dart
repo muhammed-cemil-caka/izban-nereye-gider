@@ -181,19 +181,34 @@ class SeferServisi {
     return yollar;
   }
 
-  /// Verilen ana en yakın bağlantı: en az bekleme, gece yarısını da aşarak.
-  static ({Sefer sefer, int beklemeDk, int kalkisDk})? ilkBaglanti(
+  /// Verilen ana yetişilebilen, EN ERKEN VARDIRAN bağlantı.
+  ///
+  /// En az bekleyen değil en erken vardıran seçilir: iki ölçüt bu hatta aynı
+  /// sonucu veriyor (hepsi her durakta duruyor) ama hızlı bir sefer eklenirse
+  /// beklemeye bakan seçim yolcuyu geç vardırırdı. Gece yarısını aşan
+  /// bağlantılar için bekleme bir güne sarılır.
+  static ({Sefer sefer, int beklemeDk, int kalkisDk, int varisDk})? ilkBaglanti(
     List<Sefer> seferler,
     int hazirDk,
   ) {
-    ({Sefer sefer, int beklemeDk, int kalkisDk})? enIyi;
+    ({Sefer sefer, int beklemeDk, int kalkisDk, int varisDk})? enIyi;
 
     for (final sefer in seferler) {
       var bekleme = (sefer.kalkisDk - hazirDk) % _gunDk;
       // Yetişilemeyecek kadar yakınsa o tren bugün kaçtı, sıradakine bakılır.
       if (bekleme < enAzAktarmaDk) bekleme += _gunDk;
-      if (enIyi == null || bekleme < enIyi.beklemeDk) {
-        enIyi = (sefer: sefer, beklemeDk: bekleme, kalkisDk: hazirDk + bekleme);
+
+      final kalkisDk = hazirDk + bekleme;
+      final varisDk = kalkisDk + seferSuresi(sefer);
+      if (enIyi == null ||
+          varisDk < enIyi.varisDk ||
+          (varisDk == enIyi.varisDk && bekleme < enIyi.beklemeDk)) {
+        enIyi = (
+          sefer: sefer,
+          beklemeDk: bekleme,
+          kalkisDk: kalkisDk,
+          varisDk: varisDk,
+        );
       }
     }
 
@@ -223,7 +238,7 @@ class SeferServisi {
         beklemeDk: baglanti.beklemeDk,
       ));
 
-      anVarisDk = baglanti.kalkisDk + seferSuresi(baglanti.sefer);
+      anVarisDk = baglanti.varisDk;
       sonVaris = baglanti.sefer.varis;
     }
 
@@ -305,13 +320,16 @@ class SeferServisi {
     return baskinOlanlar(yolculuklar);
   }
 
-  /// Şu andan sonraki ilk [adet] yolculuk.
+  /// Şu andan GÜN SONUNA kadarki bütün yolculuklar.
   ///
-  /// Gün sonunda liste boşalmasın diye başa sarılır: gece 23:50'de bakan
-  /// kullanıcıya ertesi günün ilk seferleri gösterilir.
+  /// Önce yalnızca ilk dördü gösteriliyordu; "akşam kaça kadar tren var"
+  /// sorusu cevapsız kalıyordu. Liste uzayabildiği için arayüz kendi içinde
+  /// kaydırıyor.
+  ///
+  /// Bugün sefer kalmadıysa (gece yarısına yakın) ertesi günün tarifesi
+  /// gösterilir; kutu boş kalmasın.
   static List<SiradakiSefer> siradakiler(
-    List<SeferYolculugu> seferler,
-    int adet, {
+    List<SeferYolculugu> seferler, {
     int? simdiDk,
   }) {
     if (seferler.isEmpty) return const [];
@@ -321,15 +339,16 @@ class SeferServisi {
       return d.hour * 60 + d.minute;
     })();
 
-    final sonrakiler = seferler.where((s) => s.kalkisDk >= an).take(adet).toList();
-    final secilen = sonrakiler
-        .map((s) => SiradakiSefer(s, ertesiGun: false, kalanDk: s.kalkisDk - an))
+    final kalanlar = seferler.where((s) => s.kalkisDk >= an).toList();
+    final ertesiGun = kalanlar.isEmpty;
+    final secilen = ertesiGun ? seferler : kalanlar;
+
+    return secilen
+        .map((s) => SiradakiSefer(
+              s,
+              ertesiGun: ertesiGun,
+              kalanDk: ertesiGun ? null : s.kalkisDk - an,
+            ))
         .toList();
-
-    for (var i = 0; secilen.length < adet && i < seferler.length; i++) {
-      secilen.add(SiradakiSefer(seferler[i], ertesiGun: true));
-    }
-
-    return secilen;
   }
 }

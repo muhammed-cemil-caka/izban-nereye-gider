@@ -895,7 +895,23 @@ body.acilis-acik { overflow: hidden; }
   letter-spacing: .04em; text-transform: uppercase;
   color: var(--yazi-soluk);
 }
-.sefer-listesi { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+/* Liste gün sonuna kadar bütün seferleri gösteriyor (85 satıra kadar); kendi
+   içinde kaydırılır. Görünen satır sayısı JS ile ölçülür (--sefer-yukseklik)
+   çünkü aktarma notu olan satır iki kat yüksek. */
+.sefer-listesi {
+  list-style: none; margin: 0; padding: 0 .3rem 0 0;
+  display: grid; gap: .35rem;
+  max-height: max(180px, min(var(--sefer-yukseklik, 60vh), 60vh));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+.sefer-listesi::-webkit-scrollbar { width: 8px; }
+.sefer-listesi::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--yazi-soluk) 35%, transparent);
+  border-radius: 999px;
+}
 .sefer {
   display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap;
   padding: .3rem .5rem;

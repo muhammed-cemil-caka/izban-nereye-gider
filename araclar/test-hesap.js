@@ -645,19 +645,37 @@ dogrula('yolculuklar kalkışa göre sıralı dönüyor', () => {
   assert.deepStrictEqual(kalanlar.map((y) => y.kalkisDk), [400, 500, 600]);
 });
 
-dogrula('sıradaki seferler kalan süreyle dönüyor', () => {
+dogrula('şu andan gün sonuna kadar bütün seferler dönüyor', () => {
   const liste = [yolculuk(480, 540), yolculuk(600, 660), yolculuk(720, 780)];
-  const s = siradakiSeferler(liste, 2, 540);
+  const s = siradakiSeferler(liste, 540);
+  // 08:00 geçti; 10:00 ve 12:00 kalıyor. Dördüncüyle kesilmiyor.
   assert.strictEqual(s.length, 2);
   assert.strictEqual(s[0].kalanDk, 60);
   assert.strictEqual(s[0].ertesiGun, false);
+  assert.strictEqual(s.at(-1).kalkis, liste.at(-1).kalkis);
 });
 
-dogrula('gün bitince ertesi güne sarılıyor', () => {
+dogrula('tam kalkış anındaki sefer listede kalıyor', () => {
   const liste = [yolculuk(480, 540), yolculuk(600, 660)];
-  const s = siradakiSeferler(liste, 2, 23 * 60);
+  assert.strictEqual(siradakiSeferler(liste, 480).length, 2);
+});
+
+dogrula('gün bitince ertesi günün tamamına sarılıyor', () => {
+  const liste = [yolculuk(480, 540), yolculuk(600, 660)];
+  const s = siradakiSeferler(liste, 23 * 60);
+  assert.strictEqual(s.length, 2);
   assert.ok(s.every((x) => x.ertesiGun));
   assert.strictEqual(s[0].kalanDk, null);
+});
+
+dogrula('bağlantı en erken vardıranı seçiyor', () => {
+  // Aynı anda kalkan iki sefer: hızlı olan seçilmeli.
+  const liste = [sefer('09:00', '10:00'), sefer('09:00', '09:40')];
+  assert.strictEqual(ilkBaglanti(liste, 8 * 60 + 30).sefer.varis, '09:40');
+
+  // Daha geç kalkıp daha erken varan da seçilir.
+  const liste2 = [sefer('09:00', '10:30'), sefer('09:20', '09:50')];
+  assert.strictEqual(ilkBaglanti(liste2, 8 * 60 + 30).sefer.kalkis, '09:20');
 });
 
 console.log(`\n${sayac} test geçti.\n`);

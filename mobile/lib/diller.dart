@@ -108,6 +108,8 @@ class Diller {
     'seferBirAktarma': '1 aktarma',
     'seferIkiAktarma': '2 aktarma',
     'seferSayisi': '{adet} sefer',
+    'seferKalan': 'bugün kalan {adet} sefer',
+    'seferYarinki': 'yarının {adet} seferi',
 
     'konumServisiKapali': 'Cihazın konum servisi kapalı. Ayarlardan açman gerekiyor.',
     'konumIzniYok': 'Konum izni verilmedi.',
@@ -268,6 +270,8 @@ class Diller {
     'seferBirAktarma': '1 change',
     'seferIkiAktarma': '2 changes',
     'seferSayisi': '{adet} services',
+    'seferKalan': '{adet} services left today',
+    'seferYarinki': "tomorrow's {adet} services",
 
     'konumServisiKapali': 'Location services are off on your device. Turn them on in settings.',
     'konumIzniYok': 'Location permission was denied.',

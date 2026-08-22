@@ -328,7 +328,10 @@
 
   /* ---------- Sefer saatleri ---------- */
 
-  var GORUNUR_SEFER = 4;
+  // Liste gün sonuna kadar bütün seferleri gösteriyor; 85 satır olabiliyor.
+  // Aynı anda görünecek satır sayısı, kart sayfayı ekran boyu uzatmasın diye
+  // sınırlı — aktarma ve adım listelerindeki yöntemin aynısı.
+  var GORUNUR_SEFER = 6;
 
   // Kullanıcı seçimi hızla değişebiliyor; geciken yanıt yeni seçimin üstüne
   // yazmasın diye her istek numaralanıyor.
@@ -382,6 +385,25 @@
     satir.appendChild(not);
   }
 
+  /**
+   * Listeyi tam GORUNUR_SEFER satıra sabitler.
+   *
+   * Sabit piksel yetmiyor: aktarma notu olan satır iki kat yüksek. 7. satırın
+   * üst kenarı ölçülüp yükseklik ondan hesaplanıyor.
+   */
+  function seferYuksekliginiAyarla(adet) {
+    var liste = oge.seferListesi;
+    liste.style.removeProperty('--sefer-yukseklik');
+    if (adet <= GORUNUR_SEFER) return;
+
+    var ilk = liste.children[0];
+    var sonrasi = liste.children[GORUNUR_SEFER];
+    if (!ilk || !sonrasi) return;
+
+    var yukseklik = sonrasi.offsetTop - ilk.offsetTop;
+    if (yukseklik > 0) liste.style.setProperty('--sefer-yukseklik', yukseklik + 'px');
+  }
+
   function seferleriYaz(seferler) {
     oge.seferListesi.textContent = '';
 
@@ -390,7 +412,7 @@
       return;
     }
 
-    var siradaki = siradakiSeferler(seferler, GORUNUR_SEFER);
+    var siradaki = siradakiSeferler(seferler);
     siradaki.forEach(function (sefer, sira) {
       var satir = document.createElement('li');
       satir.className = 'sefer' + (sira === 0 ? ' sefer--ilk' : '');
@@ -417,6 +439,8 @@
       oge.seferListesi.appendChild(satir);
     });
 
+    seferYuksekliginiAyarla(siradaki.length);
+
     // Kaç aktarma gerektiği listeye bakınca anlaşılmıyor; not satırında yazar.
     var enAzAktarma = seferler.reduce(function (en, s) {
       return Math.min(en, s.aktarmalar.length);
@@ -425,9 +449,16 @@
       ? ceviri('seferAktarmasiz')
       : ceviri(enAzAktarma === 1 ? 'seferBirAktarma' : 'seferIkiAktarma');
 
-    oge.seferNot.textContent =
-      ceviri('seferSayisi', { adet: seferler.length }) + ' · ' +
-      aktarmaMetni + ' · ' + ceviri('seferKaynak');
+    // Sayı ekrandaki kadarını değil, gün sonuna kadar kalan seferi anlatır.
+    var parcalar = [
+      ceviri(siradaki[0].ertesiGun ? 'seferYarinki' : 'seferKalan',
+             { adet: siradaki.length }),
+      aktarmaMetni
+    ];
+    if (siradaki.length > GORUNUR_SEFER) parcalar.push(ceviri('kaydirarakGor'));
+    parcalar.push(ceviri('seferKaynak'));
+
+    oge.seferNot.textContent = parcalar.join(' · ');
   }
 
   /* ---------- Gezilecek yerler ---------- */

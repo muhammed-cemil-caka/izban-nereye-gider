@@ -941,16 +941,6 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                 ),
                 const SizedBox(height: 16),
                 _GuzergahKarti(yolculuk: yolculuk),
-                if (_turistikYerler.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _GeziKarti(
-                    yerler: _turistikYerler,
-                    binis: yolculuk.binis,
-                    inis: yolculuk.inis,
-                    yolTarifi: _yereYolTarifi,
-                    topluTasima: (yer) => _topluTasimaAnlat(yer, duraklar),
-                  ),
-                ],
                 if (yolculuk.aktarmaliDuraklar.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _AktarmaKarti(
@@ -959,6 +949,19 @@ class _AnaEkranDurumu extends State<AnaEkran> {
                       RotaHedefi.aktarma(nokta),
                       yonlendir: true,
                     ),
+                  ),
+                ],
+                // Gezilecek yerler en altta: 300 px'lik şerit araya girince
+                // sefer saatleri ve güzergâh ekranın çok aşağısına düşüyordu.
+                // Webdeki sıranın aynısı.
+                if (_turistikYerler.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _GeziKarti(
+                    yerler: _turistikYerler,
+                    binis: yolculuk.binis,
+                    inis: yolculuk.inis,
+                    yolTarifi: _yereYolTarifi,
+                    topluTasima: (yer) => _topluTasimaAnlat(yer, duraklar),
                   ),
                 ],
               ],
@@ -1313,8 +1316,10 @@ class _OtobusHatlari extends StatelessWidget {
 /// Veri İzmir Büyükşehir Belediyesi açık servisinden. Dilim aşan çiftlerde
 /// yolculuk Cumaovası/Tepeköy aktarmasıyla kuruluyor; aktarma satırın altında
 /// bekleme süresiyle yazıyor.
-class _SeferKarti extends StatelessWidget {
-  static const gorunurSefer = 4;
+class _SeferKarti extends StatefulWidget {
+  /// Aynı anda görünecek en fazla sefer satırı. Liste gün sonuna kadar bütün
+  /// seferleri gösteriyor (85 satıra kadar); kart sayfayı ekran boyu uzatmasın.
+  static const gorunurSefer = 6;
 
   final Durak binis;
   final Durak inis;
@@ -1331,10 +1336,27 @@ class _SeferKarti extends StatelessWidget {
   });
 
   @override
+  State<_SeferKarti> createState() => _SeferKartiDurumu();
+}
+
+class _SeferKartiDurumu extends State<_SeferKarti> {
+  final _kaydirma = ScrollController();
+
+  @override
+  void dispose() {
+    _kaydirma.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     final renkler = tema.colorScheme;
     final ceviri = Diller.of(context);
+
+    final binis = widget.binis;
+    final inis = widget.inis;
+    final seferler = widget.seferler;
 
     if (binis.izbanId == null || inis.izbanId == null) {
       return const SizedBox.shrink();
@@ -1345,7 +1367,7 @@ class _SeferKarti extends StatelessWidget {
     );
 
     Widget govde;
-    if (araniyor) {
+    if (widget.araniyor) {
       govde = Row(
         children: [
           const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
@@ -1353,24 +1375,53 @@ class _SeferKarti extends StatelessWidget {
           Text(ceviri('seferAliniyor'), style: soluk),
         ],
       );
-    } else if (hata) {
+    } else if (widget.hata) {
       govde = Text(ceviri('seferUlasilamiyor'), style: soluk);
     } else if (seferler == null) {
       govde = const SizedBox.shrink();
-    } else if (seferler!.isEmpty) {
+    } else if (seferler.isEmpty) {
       govde = Text(ceviri('seferYok'), style: soluk);
     } else {
-      final siradaki = SeferServisi.siradakiler(seferler!, gorunurSefer);
+      final siradaki = SeferServisi.siradakiler(seferler);
+
+      // Satır yükseklikleri değişken (aktarma notu olan satır iki kat yüksek),
+      // o yüzden pencere ekranın yarısıyla sınırlanıyor.
+      final kaydirmali = siradaki.length > _SeferKarti.gorunurSefer;
+      final pencere = MediaQuery.sizeOf(context).height * .42;
+
+      final sayac = ceviri(
+        siradaki.first.ertesiGun ? 'seferYarinki' : 'seferKalan',
+        {'adet': siradaki.length},
+      );
+
       govde = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 4,
         children: [
-          for (var i = 0; i < siradaki.length; i++)
-            _seferSatiri(context, siradaki[i], ilk: i == 0),
+          if (kaydirmali)
+            SizedBox(
+              height: pencere,
+              child: Scrollbar(
+                controller: _kaydirma,
+                thumbVisibility: true,
+                child: ListView.separated(
+                  controller: _kaydirma,
+                  padding: const EdgeInsets.only(right: 10),
+                  itemCount: siradaki.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 4),
+                  itemBuilder: (context, sira) =>
+                      _seferSatiri(context, siradaki[sira], ilk: sira == 0),
+                ),
+              ),
+            )
+          else
+            for (var i = 0; i < siradaki.length; i++)
+              _seferSatiri(context, siradaki[i], ilk: i == 0),
           const SizedBox(height: 2),
           Text(
-            '${ceviri('seferSayisi', {'adet': seferler!.length})}'
-            ' · ${_aktarmaOzeti(ceviri)} · ${ceviri('seferKaynak')}',
+            '$sayac · ${_aktarmaOzeti(ceviri, seferler)}'
+            '${kaydirmali ? ' · ${ceviri('kaydirarakGor')}' : ''}'
+            ' · ${ceviri('seferKaynak')}',
             style: soluk?.copyWith(fontSize: 11),
           ),
         ],
@@ -1400,8 +1451,8 @@ class _SeferKarti extends StatelessWidget {
 
   /// Not satırında "aktarmasız" / "1 aktarma" yazar; listeye bakınca kaç kez
   /// tren değiştirileceği anlaşılmıyor.
-  String _aktarmaOzeti(Diller ceviri) {
-    final enAz = seferler!
+  String _aktarmaOzeti(Diller ceviri, List<SeferYolculugu> seferler) {
+    final enAz = seferler
         .map((s) => s.aktarmalar.length)
         .reduce((a, b) => a < b ? a : b);
     if (enAz == 0) return ceviri('seferAktarmasiz');

@@ -117,6 +117,8 @@ var DILLER = {
     seferBirAktarma: '1 aktarma',
     seferIkiAktarma: '2 aktarma',
     seferSayisi: '{adet} sefer',
+    seferKalan: 'bugün kalan {adet} sefer',
+    seferYarinki: 'yarının {adet} seferi',
 
     konumDesteklenmiyor: 'Tarayıcınız konum servisini desteklemiyor.',
     konumGuvenliBaglam: 'Konum yalnızca güvenli bağlantıda (https) çalışır. Siteyi localhost veya https adresinden açın.',
@@ -302,6 +304,8 @@ var DILLER = {
     seferBirAktarma: '1 change',
     seferIkiAktarma: '2 changes',
     seferSayisi: '{adet} services',
+    seferKalan: '{adet} services left today',
+    seferYarinki: "tomorrow's {adet} services",
 
     konumDesteklenmiyor: 'Your browser does not support location services.',
     konumGuvenliBaglam: 'Location only works on a secure connection (https). Open the site over localhost or https.',

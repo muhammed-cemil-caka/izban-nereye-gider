@@ -14,7 +14,8 @@
     "aktarma-noktalari": "node araclar/aktarma-noktalarini-ekle.js",
     "mesafeler": "node araclar/mesafeleri-guncelle.js",
     "turistik": "node araclar/turistik-yerleri-uret.js",
-    "izban-kimlik": "node araclar/izban-kimlik-ekle.js"
+    "izban-kimlik": "node araclar/izban-kimlik-ekle.js",
+    "sefer-dogrula": "node araclar/sefer-dogrula.js"
   },
   "repository": {
     "type": "git",

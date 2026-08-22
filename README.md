@@ -800,8 +800,19 @@ Yolculuk şöyle kuruluyor (`js/sefer.js` ↔ `sefer_servisi.dart`, aynı mantı
    06:05 ve 06:57 aynı Tepeköy bağlantısına yetişiyor, ikisi de 08:16'da
    varıyor — erken kalkanı göstermek yolcuyu 52 dk fazla bekletirdi.
 
+Bağlantı seçilirken **en erken vardıran** sefer alınır, en az bekleten değil:
+bu hatta ikisi aynı sonucu veriyor (bütün seferler her durakta duruyor) ama
+hızlı bir sefer eklenirse beklemeye bakan seçim yolcuyu geç vardırırdı.
+
 Aktarma, sefer satırının altında bekleme süresiyle yazılır:
 `Tepeköy aktarması · 12 dk bekleme` / `change at Tepeköy · 12 min wait`.
+
+**Liste şu andan gün sonuna kadar.** Önce yalnızca ilk dört sefer
+gösteriliyordu ve "akşam kaça kadar tren var" sorusu cevapsız kalıyordu.
+Aynı anda 6 satır görünür, gerisi listenin kendi içinde kaydırılır — webde
+`--sefer-yukseklik` JS ile ölçülür (aktarma notu olan satır iki kat yüksek),
+mobilde pencere ekran yüksekliğinin %42'siyle sınırlanır. Bugün sefer
+kalmadıysa ertesi günün tarifesi gösterilir; kutu boş kalmasın.
 
 Tarife gün içinde değişmediği için yanıt oturum boyu saklanır — durak seçimi
 her değiştiğinde yeniden istenmez.
@@ -931,6 +942,20 @@ yok; uydurulmuş bir süre yolcuyu yanıltır. (İZBAN tarifesi ayrı: bkz.
 ```bash
 node araclar/test-hesap.js
 ```
+
+Sefer motorunu **canlı servise** karşı doğrulamak için (ağ ister, bu yüzden
+test paketinin dışında):
+
+```bash
+node araclar/sefer-dogrula.js
+```
+
+`test-hesap.js` mantığı sentetik veriyle sınıyor; bu araç başka bir soruyu
+soruyor: ürettiğimiz saatler gerçek mi? Her yolculuğun her bacağı servisin
+kendi yanıtında birebir var mı, aktarma beklemeleri tutuyor mu, aktarmasız
+çiftte listemiz servisin listesiyle aynı mı, liste gün sonuna kadar gidiyor mu,
+geçmiş sefer listeleniyor mu. `--tam` ile 41 durağın 1640 çiftinin hepsi
+denenir.
 
 Durak verisini OpenStreetMap'ten yeniden üretmek için:
 
