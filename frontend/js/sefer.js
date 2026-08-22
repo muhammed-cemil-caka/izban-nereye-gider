@@ -58,7 +58,13 @@ function seferSuresi(sefer) {
 function seferleriAl(kalkisId, varisId) {
   if (!kalkisId || !varisId) return Promise.resolve([]);
 
-  return fetch(SEFER_TABAN + '/' + kalkisId + '/' + varisId)
+  // Vekil varsa oradan: tarife CDN'de 6 saat duruyor, yüzlerce kullanıcı tek
+  // dış isteğe iniyor. Yoksa doğrudan servise gidilir.
+  return servisAdresi(
+    function () { return '/api/sefer/' + kalkisId + '/' + varisId; },
+    function () { return SEFER_TABAN + '/' + kalkisId + '/' + varisId; }
+  )
+    .then(function (adres) { return fetch(adres); })
     .then(function (yanit) {
       if (!yanit.ok) throw new Error('Sefer servisi yanıtı: ' + yanit.status);
       return yanit.json();

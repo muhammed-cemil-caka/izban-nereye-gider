@@ -1029,6 +1029,42 @@ bkz. [Sefer saatleri](#sefer-saatleri).) Ayrıntı:
 > `HttpOverrides` ile sahte bir istemci gerekiyor; saf mantık
 > `test/turistik_servisi_test.dart` içinde ağsız test ediliyor.
 
+## Ölçek: yüzlerce yolcu
+
+Dış servisler istemciden DOĞRUDAN çağrılıyordu. Tek kullanıcıda sorun yok,
+yüzlerce yolcuda üç sorun birden çıkıyor:
+
+1. **Yük** — herkes aynı tarifeyi ayrı ayrı çekiyor. 500 kişi × 6 istek = 3000
+   istek; oysa tarife günde bir değişiyor.
+2. **Engellenme** — FOSSGIS'in gönüllü OSRM sunucusu Referer'a bakarak
+   sınırlıyor. Ölçüldü: 400 ms aralıkla 190 istekte bağlantı kabul etmez oldu.
+3. **Anahtar** — ücretli sağlayıcıya geçilince anahtar istemcide görünür.
+
+Üçü de **vekil uçlarıyla** çözülüyor (`backend/functions/index.js`):
+
+| Uç | Ne vekilliyor | CDN'de kalma |
+| --- | --- | --- |
+| `/api/sefer/:kalkis/:varis` | İZBAN açık veri | 6 saat |
+| `/api/rota` | OSRM rota | 7 gün |
+| `/api/mesafe` | OSRM mesafe matrisi | 7 gün |
+
+Asıl kazanç Cloud Functions değil, **Hosting'in CDN'i**: yanıtlar
+`Cache-Control` ile işaretlendiği için aynı istek ikinci kez fonksiyona bile
+uğramıyor. `stale-while-revalidate` ile süre dolduğunda kullanıcı beklemez.
+Fonksiyon örneğinde ayrıca bellek önbelleği var — CDN soğukken ikinci katman.
+
+İstemciler vekili **bir kez yoklar**, yoksa oturum boyunca doğrudan servise
+gider (`frontend/js/servis.js`, `mobile/lib/servisler/servis_adresi.dart`).
+Yayına alınmamış bir kurulumda uygulama yine çalışır. Sağlayıcı sunucuda
+değiştiğinde istemcilere dokunulmaz — mobilde bu ayrıca değerli, mağaza
+güncellemesi kullanıcılara günlerce yayılıyor.
+
+Hosting başlıkları: `js`/`css` adresleri içerik damgası taşıdığı için
+(`?s=...`) bir yıl `immutable`; `index.html` her zaman taze. Ayrıca
+`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` ve HSTS.
+
+Yayına çıkış adımları: [`belgeler/yayina-cikis.md`](belgeler/yayina-cikis.md)
+
 ## Testler
 
 ```bash

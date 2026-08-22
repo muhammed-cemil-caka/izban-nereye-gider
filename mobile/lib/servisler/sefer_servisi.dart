@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../modeller/durak.dart';
+import 'servis_adresi.dart';
 
 /// Tek bir aktarmasız sefer — servisin döndürdüğü ham kayıt.
 class Sefer {
@@ -107,7 +108,12 @@ class SeferServisi {
 
   /// İki durak arasındaki AKTARMASIZ seferler.
   Future<List<Sefer>> seferleriAl(int kalkisId, int varisId) async {
-    final adres = Uri.parse('$_taban/$kalkisId/$varisId');
+    // Vekil varsa oradan: tarife CDN'de 6 saat duruyor, yüzlerce kullanıcı
+    // tek dış isteğe iniyor.
+    final adres = await ServisAdresi.coz(
+      () => Uri.parse('${ServisAdresi.taban}/api/sefer/$kalkisId/$varisId'),
+      () => Uri.parse('$_taban/$kalkisId/$varisId'),
+    );
     final yanit = await http.get(adres).timeout(_zamanAsimi);
     if (yanit.statusCode != 200) {
       throw Exception('Sefer servisi yanıtı: ${yanit.statusCode}');

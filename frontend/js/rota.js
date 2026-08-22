@@ -160,12 +160,23 @@ function rotaAl(baslangic, bitis, kip) {
   var secilenKip = kip === 'araba' ? 'araba' : 'yuruyus';
   var taban = ROTA_TABANLARI[secilenKip];
 
-  var adres = taban + '/' +
-    baslangic.boylam + ',' + baslangic.enlem + ';' +
-    bitis.boylam + ',' + bitis.enlem +
-    '?overview=full&geometries=geojson&steps=true';
+  // Vekil varsa oradan: rota geometrisi CDN'de 7 gün duruyor ve gönüllü
+  // sunucuya yüzlerce kullanıcı yerine avuç dolusu istek gidiyor.
+  var adresSozu = servisAdresi(
+    function () {
+      return '/api/rota?kip=' + secilenKip +
+        '&baslangic=' + baslangic.boylam + ',' + baslangic.enlem +
+        '&bitis=' + bitis.boylam + ',' + bitis.enlem;
+    },
+    function () {
+      return taban + '/' +
+        baslangic.boylam + ',' + baslangic.enlem + ';' +
+        bitis.boylam + ',' + bitis.enlem +
+        '?overview=full&geometries=geojson&steps=true';
+    }
+  );
 
-  return jsonAl(adres)
+  return adresSozu.then(jsonAl)
     .catch(function () { throw new Error(ceviriMetni('rotaAlinamadi')); })
     .then(function (veri) {
       if (veri.code !== 'Ok' || !veri.routes || !veri.routes.length) {
@@ -238,10 +249,21 @@ function mesafeleriAl(baslangic, hedefler, kip) {
     .map(function (n) { return n.boylam + ',' + n.enlem; })
     .join(';');
 
-  var adres = taban.replace('/route/v1/', '/table/v1/') +
-    '/' + noktalar + '?sources=0&annotations=distance,duration';
+  var adresSozu = servisAdresi(
+    function () {
+      return '/api/mesafe?kip=' + secilenKip +
+        '&baslangic=' + baslangic.boylam + ',' + baslangic.enlem +
+        '&hedefler=' + hedefler.map(function (n) {
+          return n.boylam + ',' + n.enlem;
+        }).join(';');
+    },
+    function () {
+      return taban.replace('/route/v1/', '/table/v1/') +
+        '/' + noktalar + '?sources=0&annotations=distance,duration';
+    }
+  );
 
-  return jsonAl(adres)
+  return adresSozu.then(jsonAl)
     .then(function (veri) {
       if (veri.code !== 'Ok' || !veri.distances || !veri.distances[0]) {
         throw new Error('Mesafeler alınamadı.');

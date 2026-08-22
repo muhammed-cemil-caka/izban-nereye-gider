@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../diller.dart';
 import '../modeller/durak.dart';
+import 'servis_adresi.dart';
 
 /// Rota kipi. FOSSGIS her OSRM profilini ayrı adreste sunuyor.
 enum RotaKipi {
@@ -213,9 +214,16 @@ class RotaServisi {
         .map((k) => '${k.boylam},${k.enlem}')
         .join(';');
 
-    final adres = Uri.parse(
-      '${kip.taban.replaceFirst('/route/v1/', '/table/v1/')}'
-      '/$noktalar?sources=0&annotations=distance,duration',
+    final adres = await ServisAdresi.coz(
+      () => Uri.parse(
+        '${ServisAdresi.taban}/api/mesafe?kip=${kip.name}'
+        '&baslangic=${baslangic.boylam},${baslangic.enlem}'
+        '&hedefler=${hedefler.map((h) => '${h.boylam},${h.enlem}').join(';')}',
+      ),
+      () => Uri.parse(
+        '${kip.taban.replaceFirst('/route/v1/', '/table/v1/')}'
+        '/$noktalar?sources=0&annotations=distance,duration',
+      ),
     );
 
     final yanit = await http.get(adres).timeout(_zamanAsimi);
@@ -245,10 +253,19 @@ class RotaServisi {
     Konum bitis, {
     RotaKipi kip = RotaKipi.yuruyus,
   }) async {
-    final adres = Uri.parse(
-      '${kip.taban}/${baslangic.boylam},${baslangic.enlem}'
-      ';${bitis.boylam},${bitis.enlem}'
-      '?overview=full&geometries=geojson&steps=true',
+    // Vekil varsa oradan: rota geometrisi CDN'de 7 gün duruyor ve gönüllü
+    // sunucuya yüzlerce kullanıcı yerine avuç dolusu istek gidiyor.
+    final adres = await ServisAdresi.coz(
+      () => Uri.parse(
+        '${ServisAdresi.taban}/api/rota?kip=${kip.name}'
+        '&baslangic=${baslangic.boylam},${baslangic.enlem}'
+        '&bitis=${bitis.boylam},${bitis.enlem}',
+      ),
+      () => Uri.parse(
+        '${kip.taban}/${baslangic.boylam},${baslangic.enlem}'
+        ';${bitis.boylam},${bitis.enlem}'
+        '?overview=full&geometries=geojson&steps=true',
+      ),
     );
 
     final yanit = await http.get(adres).timeout(_zamanAsimi);
