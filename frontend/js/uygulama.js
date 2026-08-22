@@ -761,17 +761,34 @@
    * ölçüldü, Çiğli kuş uçuşu daha yakın ama yürüyüşle 2,5 km, Mavişehir 1,4 km.
    */
   function topluTasimaAnlat(yer) {
-    rotaDurumuYaz(ceviri('topluHesaplaniyor'));
+    var adaylar = enYakinDuraklar(aktifDuraklar, yer.konum, 1);
+    if (!adaylar.length) {
+      rotaDurumuYaz(ceviri('durakBulunamadi'), 'hata');
+      return;
+    }
+
+    // Pencere HEMEN açılır: OSRM'i beklemek düğmeye bastıktan sonra saniyelerce
+    // hiçbir şey olmamış gibi görünmesine yol açıyordu. Önce kuş uçuşu durak
+    // yazılır, yürüyüş ağı yanıtı gelince satırlar yerinde tazelenir.
+    var istek = ++topluIstegi;
+    topluPencereyiAc(yer, { durak: adaylar[0].durak, mesafeM: adaylar[0].mesafeM }, true);
 
     yereEnYakinDurak(yer, 'yuruyus').then(function (secim) {
-      rotaDurumuYaz('');
-      topluPencereyiAc(yer, secim);
-    }).catch(function (sorun) {
-      rotaDurumuYaz(sorun.message || ceviri('durakBulunamadi'), 'hata');
+      if (istek !== topluIstegi || !oge.topluPencere.open) return;
+      topluPencereyiAc(yer, secim, false);
+    }).catch(function () {
+      // Servis yanıt vermezse kuş uçuşu tarif ekranda kalır; akış kesilmez.
+      if (istek === topluIstegi && oge.topluPencere.open) {
+        oge.topluNot.removeAttribute('data-bekliyor');
+      }
     });
   }
 
-  function topluPencereyiAc(yer, secim) {
+  // Kullanıcı arka arkaya iki yere basabiliyor; geciken yanıt yeni pencerenin
+  // üstüne yazmasın.
+  var topluIstegi = 0;
+
+  function topluPencereyiAc(yer, secim, bekliyor) {
     var durak = secim.durak;
     var hatlar = (durak.otobusHatlari || []).slice(0, GORUNUR_TOPLU_HAT).join(', ');
     var aktarmalar = (durak.aktarma || []).map(aktarmaTuruAdi).join(' · ');
@@ -797,12 +814,18 @@
       oge.topluAdimlar.appendChild(satir);
     });
     // Hat uyarısı yalnızca hat listelendiğinde anlamlı.
-    oge.topluNot.textContent = hatlar
+    var not = hatlar
       ? ceviri('topluNot') + ' ' + ceviri('topluHatUyari', { yer: yer.ad })
       : ceviri('topluNot');
+    // Mesafe kuş uçuşuyken bunu söyle: yürüyüş ağı yanıtı gelince düzelecek.
+    oge.topluNot.textContent = bekliyor ? ceviri('topluHesaplaniyor') + ' ' + not : not;
+    if (bekliyor) oge.topluNot.setAttribute('data-bekliyor', 'evet');
+    else oge.topluNot.removeAttribute('data-bekliyor');
 
-    if (oge.topluPencere.showModal) oge.topluPencere.showModal();
-    else oge.topluPencere.setAttribute('open', '');
+    if (!oge.topluPencere.open) {
+      if (oge.topluPencere.showModal) oge.topluPencere.showModal();
+      else oge.topluPencere.setAttribute('open', '');
+    }
   }
 
   function aktarmalariCiz(sonuc) {

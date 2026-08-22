@@ -293,6 +293,8 @@ Betik iki yere yazar:
 | `frontend/gorseller/izban-logo.svg` | Duran kopya — üst bantta `<img>` ile |
 | `frontend/index.html` (işaretler arası) | Açılış ekranındaki **canlanan** kopya |
 
+Geometriyi `araclar/logo-dogrula.py` denetler.
+
 İkisi de otomatik üretilir, elle düzenlenmez. Canlanan kopyanın satır içi
 olması gerekiyor: CSS ile canlandırılabilmesi için. Mobilde aynı geometri
 `mobile/lib/ekranlar/izban_logosu.dart` içinde `CustomPaint` ile çizilir —
@@ -312,20 +314,26 @@ logodaki kadar kalın olmadığı için harflere ince bir çizgi eklenir.
 x 73.5..165.9, mavininki 30.7..122.6 — simetrik olsa 34.1..126.5 olmalıydı.
 Mavi artık kırmızıdan türetiliyor: `(24+180, 116+180)`.
 
-**Alt yazı yayın dışında.** `İZMİR BANLİYÖ SİSTEMİ` y=131'deyken mavi yayın
-bandının içinden geçiyordu; ikisi de #0C4CA3 olduğu için yazı okunmuyordu.
-Çarpışma sınırı tarayıcıda `isPointInFill` ile ölçüldü:
+**Halka yarıçapı kelimeye göre küçüktü.** Resmî logo (izban.com.tr,
+`izban-izbanLnk.png`, 139×141) piksel piksel ölçüldüğünde yayların kelimeye
+hiç değmediği çıktı: kırmızı yayın kutusu satır 19..48, kelime 51'de başlıyor;
+mavi yay 92'de başlıyor, alt yazı 89'da bitiyor. Bizdeki 69.5 (→ 57.9) halkayı
+küçük bırakıyor, yaylar hem kelimeyi hem alt yazıyı kesiyordu — alt yazı yayla
+aynı renk (#0C4CA3) olduğu için okunmuyordu bile.
 
-| Taban çizgisi | Temiz kalan genişlik |
-| --- | --- |
-| 116 | 130 birim |
-| 118 | 78 birim |
-| 131 | 68 birim |
+Doğru yarıçap çarpışma çözümüyle bulundu: ortalanmış kilit için 78'den küçüğü
+çakışıyor, 84'ten büyüğü 200'lük kutuya sığmıyor. **79** seçildi. Kilit de
+halkanın merkezine oturtuldu (kelime tabanı 120→115, alt yazı 131→126).
 
-Alt yazıyı daraltmak seçenek değil — 21 harf 68 birime sığmıyor. Kilit yukarı
-alındı (kelime 120→105, alt yazı 131→116), aradaki 11 birimlik boşluk korundu.
-Kelimenin yaylarla kesişmesi tasarım gereği: harfler yayların üstüne, gövde
-rengiyle aynı renkte bir hâleyle (`paint-order="stroke"`) çiziliyor.
+Geometri her üretimden sonra denetlenebilir:
+
+```bash
+python3 araclar/logo-dogrula.py
+```
+
+Yaylar simetrik mi, kilit ortalı mı, yaylar metne değiyor mu, kutunun dışına
+taşıyor mu — hepsini ölçer. Şu an: metne 2.4 ve 3.2 birim, kutu kenarına 6.8
+birim boşluk.
 
 Logo hem açılış ekranında hem de ana sayfada başlığın yanında durur. Her iki
 yerde de **beyaz bir plakanın** üstündedir: marka renkleri koyu temada okunur
@@ -959,6 +967,12 @@ Durak, **"Yürüyerek" düğmesiyle aynı yöntemle** seçilir: kuş uçuşu de�
 yürüyüş ağı. Önce kuş uçuşuyla seçiliyordu ve iki düğme aynı yer için farklı
 durak söyleyebiliyordu — ölçüldü, Çiğli kuş uçuşu daha yakın ama yürüyüşle
 2,5 km, Mavişehir 1,4 km.
+
+**Pencere OSRM'i beklemez.** Önce kuş uçuşu durakla hemen açılır (ölçüldü:
+13 ms), yürüyüş ağı yanıtı gelince satırlar yerinde tazelenir ve not
+satırındaki "seçiliyor…" ibaresi kalkar. Beklemek, düğmeye bastıktan sonra
+saniyelerce hiçbir şey olmamış gibi görünmesine yol açıyordu. Servis yanıt
+vermezse kuş uçuşu tarif ekranda kalır.
 
 Adımlar listeden numaralanır. Sabit numaralarken aktarması ya da otobüs hattı
 olmayan durakta (ör. Selçuk) "1, 2, 4" diye atlıyordu.

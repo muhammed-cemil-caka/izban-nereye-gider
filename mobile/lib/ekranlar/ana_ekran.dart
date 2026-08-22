@@ -270,21 +270,63 @@ class _AnaEkranDurumu extends State<AnaEkran> {
   /// Durak, "Yürüyerek" düğmesiyle AYNI yöntemle seçilir: kuş uçuşu değil,
   /// yürüyüş ağı. İkisi farklı durak söylerse tarif kendi içinde çelişiyordu —
   /// ölçüldü, Çiğli kuş uçuşu daha yakın ama yürüyüşle 2,5 km, Mavişehir 1,4 km.
-  Future<void> _topluTasimaAnlat(TuristikYer yer, List<Durak> duraklar) async {
-    setState(() => _rotaHatasi = null);
+  void _topluTasimaAnlat(TuristikYer yer, List<Durak> duraklar) {
+    final adaylar = YakinDurak.enYakinlar(duraklar, yer.konum, adet: 1);
+    if (adaylar.isEmpty) return;
 
-    final ({Durak durak, double mesafeM}) secim;
-    try {
-      secim = await _yereEnYakinDurak(yer, duraklar, RotaKipi.yuruyus);
-    } catch (_) {
-      return;
-    }
-    if (!mounted) return;
+    // Pencere HEMEN açılır: OSRM'i beklemek düğmeye bastıktan sonra saniyelerce
+    // hiçbir şey olmamış gibi görünmesine yol açıyor. Önce kuş uçuşu durak
+    // yazılır, yürüyüş ağı yanıtı gelince satırlar yerinde tazelenir.
+    final secim = ValueNotifier<({Durak durak, double mesafeM})>(
+      (durak: adaylar.first.durak, mesafeM: adaylar.first.mesafeM),
+    );
+    final bekliyor = ValueNotifier<bool>(true);
 
+    _yereEnYakinDurak(yer, duraklar, RotaKipi.yuruyus).then((iyisi) {
+      secim.value = iyisi;
+      bekliyor.value = false;
+    }).catchError((_) {
+      // Servis yanıt vermezse kuş uçuşu tarif ekranda kalır; akış kesilmez.
+      bekliyor.value = false;
+    });
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final ceviri = Diller.of(context);
+        return AlertDialog(
+          title: Text(ceviri('topluBaslik', {'yer': yer.ad})),
+          content: ValueListenableBuilder(
+            valueListenable: secim,
+            builder: (context, s, _) => ValueListenableBuilder(
+              valueListenable: bekliyor,
+              builder: (context, bekle, _) =>
+                  _topluIcerik(ceviri, yer, s, bekliyor: bekle),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(ceviri('tamam')),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() {
+      secim.dispose();
+      bekliyor.dispose();
+    });
+  }
+
+  Widget _topluIcerik(
+    Diller ceviri,
+    TuristikYer yer,
+    ({Durak durak, double mesafeM}) secim, {
+    required bool bekliyor,
+  }) {
     final durak = secim.durak;
     final hatlar = durak.otobusHatlari.take(_gorunurTopluHat).join(', ');
-    final aktarma = durak.aktarma.map(Diller.aktif.aktarmaTuru).join(' · ');
-    final ceviri = Diller.of(context);
+    final aktarma = durak.aktarma.map(ceviri.aktarmaTuru).join(' · ');
 
     // Adımlar listeden numaralanır: aktarması ya da otobüs hattı olmayan
     // durakta sabit numaralar "1, 2, 4" diye atlıyordu.
@@ -292,40 +334,30 @@ class _AnaEkranDurumu extends State<AnaEkran> {
       ceviri('topluAdimIzban', {'durak': durak.ad}),
       ceviri('topluAdimYuru', {
         'yer': yer.ad,
-        'mesafe': Diller.aktif.mesafe(secim.mesafeM),
+        'mesafe': ceviri.mesafe(secim.mesafeM),
       }),
       if (aktarma.isNotEmpty)
         ceviri('topluAdimAktarma', {'durak': durak.ad, 'aktarma': aktarma}),
       if (hatlar.isNotEmpty) ceviri('topluAdimHatlar', {'hatlar': hatlar}),
     ];
 
-    // Hat uyarısı yalnızca hat listelendiğinde anlamlı.
-    final not = hatlar.isEmpty
-        ? ceviri('topluNot')
-        : '${ceviri('topluNot')} ${ceviri('topluHatUyari', {'yer': yer.ad})}';
+    // Hat uyarısı yalnızca hat listelendiğinde anlamlı. Mesafe kuş uçuşuyken
+    // bunu söyle: yürüyüş ağı yanıtı gelince düzelecek.
+    final not = [
+      if (bekliyor) ceviri('topluHesaplaniyor'),
+      ceviri('topluNot'),
+      if (hatlar.isNotEmpty) ceviri('topluHatUyari', {'yer': yer.ad}),
+    ].join(' ');
 
-    if (!mounted) return;
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(ceviri('topluBaslik', {'yer': yer.ad})),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 8,
-          children: [
-            for (var i = 0; i < adimlar.length; i++) Text('${i + 1}. ${adimlar[i]}'),
-            const Divider(),
-            Text(not, style: const TextStyle(fontSize: 12)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(ceviri('tamam')),
-          ),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 8,
+      children: [
+        for (var i = 0; i < adimlar.length; i++) Text('${i + 1}. ${adimlar[i]}'),
+        const Divider(),
+        Text(not, style: const TextStyle(fontSize: 12)),
+      ],
     );
   }
 

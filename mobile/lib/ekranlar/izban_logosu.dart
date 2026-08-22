@@ -52,7 +52,11 @@ class _IzbanCizeri extends CustomPainter {
   // 240'lık kaynaktan 200'lük kareye ölçek.
   static const _olcek = 200 / 240;
   static const _merkez = 100.0;
-  static const _yaricap = 69.5 * _olcek;
+  /// Halka yarıçapı. Resmî logoda yaylar kelimeye DEĞMİYOR; bizdeki 69.5
+  /// (→ 57.9) halkayı kelimeye göre küçük bırakıyor ve yaylar hem kelimeyi hem
+  /// alt yazıyı kesiyordu. Web tarafıyla aynı sayı — bkz. araclar/logo-uret.py
+  /// ve doğrulaması araclar/logo-dogrula.py
+  static const _yaricap = 79.0;
   static const _kalinlikKeskin = 34.0 * _olcek;
   static const _kalinlikSonuk = 6.0 * _olcek;
 
@@ -69,14 +73,9 @@ class _IzbanCizeri extends CustomPainter {
   static const _kirmiziYay = (sonuk: 116.0, keskin: 24.0);
   static const _maviYay = (sonuk: 116.0 + 180, keskin: 24.0 + 180);
 
-  /// Kelime kilidinin taban çizgileri.
-  ///
-  /// Alt yazı önce 131'deydi ve mavi yayın bandının içinden geçiyordu; ikisi
-  /// aynı renk olduğu için yazı okunmuyordu. Yayın çarpışma sınırı ölçüldü:
-  /// 116'da tam genişlik temiz, 118'de yalnızca 78 birim sığıyor — 21 harf
-  /// oraya girmiyor. Kilit yukarı alındı, aradaki 11 birimlik boşluk korundu.
-  static const _kelimeTabani = 105.0;
-  static const _altYaziTabani = 116.0;
+  /// Kelime kilidinin taban çizgileri: kilit halkanın merkezine oturur.
+  static const _kelimeTabani = 115.0;
+  static const _altYaziTabani = 126.0;
 
   final double kirmiziIlerleme;
   final double maviIlerleme;

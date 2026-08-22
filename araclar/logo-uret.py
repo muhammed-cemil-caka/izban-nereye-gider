@@ -6,11 +6,11 @@
   · frontend/index.html                — açılış ekranındaki canlanan kopya,
     iki işaret arasına gömülür (CSS ile canlandırılabilmesi için satır içi olmalı)
 
-Ölçüler resmî logodan (240x240 PNG) piksel ölçümüyle çıkarıldı:
-  · halka orta yarıçapı 69.5, yaylar uca doğru incelir (kalınlık 34 → 6)
+Ölçüler resmî logodan piksel ölçümüyle çıkarıldı:
   · kırmızı yay 24°..116° (0° = sağ, saat yönünün tersi)
-  · mavi yay onun tam 180° döndürülmüşü: 204°..296°
-  · kelime taban çizgisi y=120, "İZ" x 37..83, "BAN" x 91..202
+  · mavi yay onun tam 180° döndürülmüşü — marka dönme simetrik
+  · yaylar uca doğru incelir (kalınlık 34 → 6, 240'lık ölçekte)
+  · "İZ" x 37..83, "BAN" x 91..202 (240'lık ölçekte)
   · renkler #ED1B24 (kırmızı) ve #0C4CA3 (mavi)
 Hepsi 200'lük viewBox'a ölçeklenir. Mobil taraf aynı sayıları
 mobile/lib/ekranlar/izban_logosu.dart içinde yeniden üretir.
@@ -22,7 +22,17 @@ import pathlib
 
 OLCEK = 200 / 240
 MERKEZ = 100.0
-YARICAP = 69.5 * OLCEK
+
+# Halka yarıçapı. Resmî logoda yaylar kelimeye DEĞMİYOR: ölçüldü, kırmızı yayın
+# kutusu satır 19..48, kelime 51'de başlıyor; mavi yay 92'de başlıyor, alt yazı
+# 89'da bitiyor. Bizdeki 69.5 (→ 57.9) halkayı kelimeye göre küçük bırakıyor ve
+# yaylar hem kelimeyi hem alt yazıyı kesiyordu — alt yazı yayla aynı renk
+# olduğu için okunmuyordu bile.
+#
+# Doğru yarıçap çarpışma çözümüyle bulundu (bkz. araclar/logo-dogrula.py):
+# ortalanmış kilit için 78'den küçüğü çakışıyor, 84'ten büyüğü 200'lük kutuya
+# sığmıyor. 79 seçildi — metne 2.4, kutu kenarına 6.8 birim pay kalıyor.
+YARICAP = 79.0
 KIRMIZI_YAY = (24, 116)
 
 # Marka 180° dönme simetrik: mavi yay kırmızının tam karşısı. Önce elle
@@ -31,24 +41,13 @@ KIRMIZI_YAY = (24, 116)
 # mavininki 30.7..122.6 — simetrik olsa 34.1..126.5 olmalıydı.
 MAVI_YAY = (KIRMIZI_YAY[0] + 180, KIRMIZI_YAY[1] + 180)
 
-KALINLIK = (34, 6)  # keskin uçtan sönük uca
+KALINLIK = (34, 6)  # keskin uçtan sönük uca (240'lık ölçekte)
 
 # Kelime kilidinin (İZBAN + alt yazı) taban çizgileri.
-#
-# Alt yazı önce y=131'deydi ve mavi yayın bandının içinden geçiyordu; ikisi
-# aynı renk (#0C4CA3) olduğu için yazı okunmuyordu. Yayın çarpışma sınırı
-# tarayıcıda isPointInFill ile ölçüldü:
-#
-#   taban 116 → 130 birim genişlik temiz
-#   taban 118 →  78    "        "
-#   taban 131 →  68    "        "
-#
-# Alt yazıyı daraltmak seçenek değil: 21 harf 68 birime sığmıyor. Kilit
-# yukarı alındı, aradaki 11 birimlik boşluk korundu. Kelimenin yayla
-# kesişmesi tasarım gereği — harfler yayların üstüne, gövde rengiyle aynı
-# renkte bir hâleyle (paint-order="stroke") çiziliyor.
-KELIME_TABANI = 105
-ALT_YAZI_TABANI = 116
+# Kilit halkanın merkezine oturur: kelime mürekkebi taban-41..taban, alt yazı
+# taban+5..taban+11, ikisinin ortası y=100 olacak şekilde.
+KELIME_TABANI = 115
+ALT_YAZI_TABANI = 126
 
 YAZI_TIPI = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
 

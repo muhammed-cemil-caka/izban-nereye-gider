@@ -38,3 +38,6 @@ Thumbs.db
 
 # Geliştirme HTTPS sertifikası (kendinden imzalı, depoya girmez)
 .sertifika/
+
+# Python önbelleği (logo-dogrula.py, logo-uret.py içe aktarıyor)
+__pycache__/
